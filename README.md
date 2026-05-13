@@ -1,4 +1,6 @@
-# AI-Driven Clinical ECG Arrhythmia Analysis System
+ XAI-Based ECG Abnormality Detection and Cardiac Risk Reporting System
+
+
 
 **Author**: Venushan T  
 **Project Type**: Research Project (RP)  
