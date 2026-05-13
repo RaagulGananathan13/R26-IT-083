@@ -1,5 +1,4 @@
- XAI-Based ECG Abnormality Detection and Cardiac Risk Reporting System
-
+# XAI-Based ECG Abnormality Detection and Cardiac Risk Reporting System
 
 
 **Author**: Venushan T  
@@ -9,7 +8,7 @@
 
 ---
 
-## 📖 Overview
+##  Overview
 
 Cardiovascular disease is the leading cause of death globally, yet skilled cardiologists to interpret ECGs are scarce in many regions. Existing AI tools often act as "black boxes" or utilize free-text LLMs that can hallucinate non-existent clinical findings—creating unacceptable patient safety risks.
 
@@ -17,7 +16,7 @@ This project is a **clinically trustworthy, explainable, automated ECG analysis 
 
 ---
 
-## 🌟 Key Features & Novelty
+##  Key Features & Novelty
 
 1. **Three-Tier Hybrid Reporting Pipeline**: 
    - Instead of relying on an LLM to freely generate text from raw signals (which causes hallucinations), this system uses a "classifier-first, template-second" architecture. 
@@ -32,7 +31,7 @@ This project is a **clinically trustworthy, explainable, automated ECG analysis 
 
 ---
 
-## 🧠 Architecture Pipeline
+##  Architecture Pipeline
 
 1. **Preprocessing**: 12-lead, 500Hz signals are normalized using pre-computed statistics.
 2. **Classification (Tier 1)**: A custom **1D ResNet** processes all leads simultaneously to output probabilities for 5 superclasses (NORM, MI, STTC, CD, HYP).
@@ -41,7 +40,7 @@ This project is a **clinically trustworthy, explainable, automated ECG analysis 
 
 ---
 
-## 📊 Dataset & Performance
+## Dataset & Performance
 
 Trained on the **PTB-XL** dataset featuring 21,837 clinical 12-lead ECG recordings categorized into 5 superclasses.
 
@@ -55,7 +54,7 @@ Trained on the **PTB-XL** dataset featuring 21,837 clinical 12-lead ECG recordin
 
 ---
 
-## 🚀 Quick Start (Running Locally)
+##  Quick Start (Running Locally)
 
 To launch the web interface and explore the test set or upload your own `.dat`/`.hea` records:
 
