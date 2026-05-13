@@ -1,0 +1,45 @@
+/* =============================================================
+   equation.css — Equation Grid and Row Styles
+   ============================================================= */
+
+.equation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 26px;
+  row-gap: 8px;
+}
+
+.q-block-equation { margin-bottom: 0; }
+
+.equation-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1;
+}
+
+.eq-answer-line {
+  display: inline-block;
+  width: 58px;
+  border-bottom: 2px solid #111827;
+  transform: translateY(-3px);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ws-page.type-e-layout .ws-questions-e .equation-grid {
+    grid-template-columns: 1fr;
+    row-gap: 10px;
+  }
+  .equation-row { font-size: 30px; gap: 8px; }
+  .eq-answer-line { width: 50px; }
+}
+
+@media (max-width: 480px) {
+  .equation-row { font-size: 26px; }
+  .eq-answer-line { width: 44px; }
+}

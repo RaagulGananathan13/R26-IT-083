@@ -1,0 +1,281 @@
+/* =============================================================
+   worksheet.css — ws-page, Header Bar, Footer, Instructions,
+                   Fill Lines, Layout Variants
+   ============================================================= */
+
+/* ── PAGE SHELL ──────────────────────────────────────────────── */
+.ws-page {
+  background: white;
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  padding: 12mm;
+  margin: 0 auto;
+  box-shadow: var(--shadow-md);
+  border-radius: 4px;
+  font-family: var(--font-display);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER BAR ──────────────────────────────────────────────── */
+.ws-header-bar {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1.5px solid #1f2937;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  font-family: var(--font-display);
+}
+
+/* Brand column (logo) */
+.ws-brand-column {
+  width: 200px;
+  border-right: 1.2px solid #9ca3af;
+  padding-right: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.ws-brand-logo-wrap {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ws-brand-logo {
+  width: 100%;
+  max-height: 60px;
+  object-fit: contain;
+  object-position: left center;
+  filter: grayscale(100%);
+}
+.ws-brand-contact {
+  font-size: 9.5px;
+  color: #111827;
+  line-height: 1.35;
+  border-top: 1px solid #d1d5db;
+  padding-top: 5px;
+}
+.ws-brand-contact-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  white-space: nowrap;
+}
+.ws-brand-contact-line .u { text-decoration: underline; }
+.ws-brand-copy { margin-top: 1px; }
+
+/* Center column (title / level) */
+.ws-center-column {
+  flex: 1;
+  padding: 2px 12px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+.ws-main-title {
+  font-family: inherit;
+  font-size: 24px;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+  color: #000000;
+}
+.ws-main-title .muted { color: #000000; }
+.ws-meta-line {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.15;
+}
+.ws-level-line { font-size: 14px; font-weight: 800; line-height: 1.1; }
+
+/* Right column (fill fields) */
+.ws-right-column {
+  width: 200px;
+  padding-left: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+}
+.ws-fill-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.ws-fill-line .dots {
+  flex: 1;
+  border-bottom: 1.8px dotted #111827;
+  height: 0;
+  min-width: 70px;
+}
+
+/* ── MARKS BOX (teacher scoring) ─────────────────────────────── */
+.ws-marks-box {
+  border: 2px solid #1f2937;
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin-top: 6px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ws-marks-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #374151;
+  margin-bottom: 4px;
+}
+.ws-marks-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+.ws-marks-dots {
+  display: inline-block;
+  width: 30px;
+  border-bottom: 2px solid #111827;
+  height: 0;
+}
+.ws-marks-slash {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── INSTRUCTION LINE ────────────────────────────────────────── */
+.ws-instruction {
+  font-size: 14px;
+  color: var(--gray-700);
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.ws-instruction::before { content: '• '; color: var(--purple); }
+
+/* ── QUESTION AREA ───────────────────────────────────────────── */
+.ws-questions { flex: 1; min-height: 0; }
+
+.ws-questions-default {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ws-questions-default .q-block { margin-bottom: 0; }
+
+.ws-questions-e { display: flex; gap: 32px; align-items: flex-start; }
+.ws-questions-e > * { flex-shrink: 0; }
+.ws-questions-e .equation-grid { flex: 1; flex-shrink: 1; width: auto; min-width: 0; }
+
+.ws-questions-f { display: flex; align-items: stretch; }
+
+/* ── FOOTER ────*/
+.ws-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--gray-400);
+}
+.ws-footer-left { display: flex; align-items: center; min-height: 28px; }
+.ws-kid-sticker { display: inline-flex; align-items: center; }
+.ws-kid-svg { width: 98px; height: 30px; }
+
+.ws-bottom-contact {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--gray-600);
+}
+.ws-bottom-contact-line .u { text-decoration: underline; }
+
+/* ── LAYOUT VARIANTS ─────────────────────────────────────────── */
+
+/* Type E layout */
+.ws-page.type-e-layout .ws-instruction { margin-bottom: 10px; }
+.ws-page.type-e-layout .ws-questions-e .equation-grid {
+  flex: 1;
+  align-content: space-between;
+  grid-auto-rows: minmax(0, 1fr);
+  row-gap: 6px;
+}
+.ws-page.type-e-layout .q-block-equation { display: flex; flex-direction: column; justify-content: center; }
+.ws-page.type-e-layout .q-num { margin-bottom: 4px; }
+.ws-page.type-e-layout .ws-footer { margin-top: 10px; }
+.ws-page.type-e-layout .ws-bottom-contact { margin-top: 6px; }
+
+/* One / Two question layouts */
+.ws-page.one-question-layout .ws-questions-default,
+.ws-page.two-question-layout .ws-questions-default {
+  display: grid;
+  align-content: stretch;
+  gap: 12px;
+}
+.ws-page.one-question-layout .ws-questions-default { grid-template-rows: 1fr; }
+.ws-page.two-question-layout .ws-questions-default { grid-template-rows: 1fr 1fr; }
+
+.ws-page.one-question-layout .q-block,
+.ws-page.two-question-layout .q-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.ws-page.one-question-layout .num-row  { gap: 10px; }
+.ws-page.two-question-layout .num-row { gap: 8px; }
+
+.ws-page.one-question-layout .num-box  { width: 62px; height: 54px; font-size: 26px; border-width: 2px; }
+.ws-page.one-question-layout .num-circle { width: 62px; height: 62px; font-size: 26px; border-width: 2px; }
+.ws-page.two-question-layout .num-box  { width: 58px; height: 50px; font-size: 24px; border-width: 2px; }
+.ws-page.two-question-layout .num-circle { width: 58px; height: 58px; font-size: 24px; border-width: 2px; }
+
+/* Multi-page layout (50-question pool) */
+.ws-page + .ws-page { margin-top: 1.5rem; }
+
+/* ── RESPONSIVE WORKSHEET ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ws-page { min-height: auto; padding: 9mm; }
+  .ws-header-bar { flex-direction: column; gap: 10px; }
+  .ws-brand-column, .ws-right-column { width: 100%; border-right: none; padding: 0; }
+  .ws-center-column { padding: 0; }
+  .ws-main-title { font-size: 24px; }
+  .ws-meta-line { font-size: 13px; }
+  .ws-level-line { font-size: 14px; }
+  .ws-fill-line { font-size: 12px; }
+  .ws-kid-svg { width: 84px; height: 26px; }
+  .ws-marks-box { min-width: 70px; padding: 4px 10px; }
+  .ws-marks-label { font-size: 10px; }
+  .ws-marks-dots { width: 24px; }
+}
+
+@media (max-width: 480px) {
+  .ws-page { padding: 7mm; }
+  .ws-marks-box { min-width: 60px; }
+}

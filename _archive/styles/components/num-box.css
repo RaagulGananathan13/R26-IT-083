@@ -1,0 +1,124 @@
+/* =============================================================
+   num-box.css — Number Boxes, Circles, Colour Modifiers
+   ============================================================= */
+
+/* ── Q-BLOCK ─────────────────────────────────────────────────── */
+.q-block { margin-bottom: 24px; }
+.q-num { font-size: 13px; font-weight: 700; color: var(--gray-500); margin-bottom: 8px; }
+
+/* ── NUMBER BOX ──────────────────────────────────────────────── */
+.num-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+
+.num-box {
+  box-sizing: border-box;
+  width: 52px;
+  height: 44px;
+  border: 1.5px solid var(--orange-300);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+.num-blank { border: 2px solid var(--orange-300); background: #fff7ed; }
+
+/* Colour modifiers */
+.col-purple { background: #c084fc; color: #3b0764; }
+.col-blue   { background: #60a5fa; color: #1e3a5f; }
+.col-amber  { background: #fbbf24; color: #78350f; }
+.col-green  { background: #34d399; color: #064e3b; }
+.col-pink   { background: #f472b6; color: #831843; }
+.col-teal   { background: #2dd4bf; color: #134e4a; }
+.col-red    { background: #f87171; color: #7f1d1d; }
+.col-indigo { background: #818cf8; color: #1e1b4b; }
+.col-lime   { background: #a3e635; color: #365314; }
+.col-sky    { background: #38bdf8; color: #0c4a6e; }
+
+/* ── NUMBER CIRCLE ───────────────────────────────────────────── */
+.num-circle {
+  box-sizing: border-box;
+  width: 52px;
+  height: 52px;
+  border: 1.5px solid var(--orange-300);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+.circle-teal   { background: #0e7490; color: #e0f7fa; }
+.circle-purple { background: #c084fc; color: #3b0764; }
+.circle-amber  { background: #fbbf24; color: #78350f; }
+.circle-blank  { border: 2.5px solid var(--orange-300); background: transparent; }
+.circle-green  { background: #10b981; color: #d1fae5; }
+.circle-pink   { background: #f472b6; color: #831843; }
+
+/* ── NUMBER-LINE (Variation K) ───────────────────────────────── */
+.num-line-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-bottom: 10px;
+  padding: 4px 0;
+}
+
+.num-line-cell {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.num-line-box {
+  box-sizing: border-box;
+  width: 52px;
+  height: 48px;
+  border: 2.5px solid #111;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: #111827;
+  background: white;
+  flex-shrink: 0;
+}
+
+.num-line-filled {
+  background: white;
+}
+
+.num-line-blank {
+  /* border-color and background set inline by JS */
+}
+
+.num-line-connector {
+  width: 22px;
+  height: 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .num-box    { width: 46px; height: 40px; font-size: 16px; }
+  .num-circle { width: 46px; height: 46px; font-size: 16px; }
+
+  .ws-page.two-question-layout .num-box    { width: 50px; height: 44px; font-size: 19px; }
+  .ws-page.one-question-layout .num-box    { width: 54px; height: 46px; font-size: 21px; }
+  .ws-page.two-question-layout .num-circle { width: 50px; height: 50px; font-size: 19px; }
+  .ws-page.one-question-layout .num-circle { width: 54px; height: 54px; font-size: 21px; }
+
+  .num-line-box { width: 40px; height: 38px; font-size: 16px; border-width: 2px; }
+  .num-line-connector { width: 14px; height: 4px; }
+}
+
+@media (max-width: 480px) {
+  .num-line-box { width: 34px; height: 32px; font-size: 14px; }
+  .num-line-connector { width: 10px; height: 3px; }
+}

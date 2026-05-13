@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="GeniusBees Worksheet Generator — create printable number, equation, and tracing worksheets for young learners."/>
+  <title>Number Worksheet Generator — GeniusBees</title>
+
+  <!-- ── Styles ── -->
+  <link rel="stylesheet" href="styles/base.css"/>
+  <link rel="stylesheet" href="styles/layout.css"/>
+  <link rel="stylesheet" href="styles/sidebar.css"/>
+  <link rel="stylesheet" href="styles/worksheet.css"/>
+  <link rel="stylesheet" href="styles/components/num-box.css"/>
+  <link rel="stylesheet" href="styles/components/equation.css"/>
+  <link rel="stylesheet" href="styles/components/image-question.css"/>
+  <link rel="stylesheet" href="styles/components/trace4a.css"/>
+  <link rel="stylesheet" href="styles/print.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP NAVIGATION
+════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">WG</div>
+    Worksheet Generator
+  </div>
+  <div class="header-actions">
+    <a href="upload.html" class="btn btn-exact" style="text-decoration:none;">Upload Worksheet</a>
+    <button class="btn btn-outline" id="btnHeaderCombine" onclick="generateCombinedWorksheet()">Combine A–K</button>
+    <button class="btn btn-exact"   onclick="generatePoolPrint()">Generate 50 Variations</button>
+    <button class="btn btn-outline" onclick="printWorksheet()">Print / Save PDF</button>
+    <button class="btn btn-exact"   onclick="printWorksheet(true)">Print Exact Colors</button>
+    <button class="btn btn-primary" onclick="generateWorksheet()">Generate</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN LAYOUT
+════════════════════════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="mainSidebar">
+
+    <div class="sidebar-toolbar">
+      <button
+        class="btn btn-outline btn-icon"
+        id="btnSidebarToggle"
+        onclick="toggleSidebar()"
+        title="Minimize Sidebar"
+        aria-label="Minimize Sidebar"
+      >◀</button>
+    </div>
+
+    <!-- Search -->
+    <div class="card">
+      <div class="card-title">Search Worksheet</div>
+      <input
+        type="text"
+        class="field-input field-input-full"
+        id="worksheetSearch"
+        placeholder="Search by section or type…"
+        oninput="onWorksheetSearchInput()"
+      />
+      <div class="type-desc is-hidden" id="worksheetSearchEmpty" style="margin-top:8px;">
+        No matching worksheet options.
+      </div>
+    </div>
+
+    <!-- General Settings -->
+    <div class="card">
+      <div class="card-title">General</div>
+      <div class="toggle-row">
+        <span class="field-label">Show name fields</span>
+        <label class="toggle"><input type="checkbox" id="chkName" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="field-label">Show date field</span>
+        <label class="toggle"><input type="checkbox" id="chkDate" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Page title</span>
+        <input type="text" class="field-input field-input-wide" id="wsTitle" value="Write the numbers"/>
+      </div>
+      <div class="field-row">
+        <span class="field-label">English level</span>
+        <input type="text" class="field-input field-input-wide" id="wsLevel" value="3A3I"/>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Activity text</span>
+        <input type="text" class="field-input field-input-wide" id="wsActivity" value="Write the numbers." placeholder="Activity instruction text…"/>
+      </div>
+
+      <!-- New Metadata Fields for Uploaded Worksheets -->
+      <div id="uploadedMetadataFields" class="is-hidden" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+        <div class="field-row">
+          <span class="field-label" style="color:var(--gray-500); font-size:12px;">UPLOAD METADATA</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Activity Code</span>
+          <input type="text" class="field-input field-input-wide" id="wsActivityCode" readonly style="background:var(--bg); color:var(--gray-500);"/>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Grade</span>
+          <input type="text" class="field-input field-input-wide" id="wsGrade" readonly style="background:var(--bg); color:var(--gray-500);"/>
+        </div>
+        <div class="field-row" style="display:block;">
+          <span class="field-label" style="margin-bottom:4px; display:block;">Essential Details</span>
+          <textarea class="field-input field-input-wide" id="wsEssentialDetails" rows="2" readonly style="background:var(--bg); color:var(--gray-500); resize:vertical;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Worksheet Section -->
+    <div class="card">
+      <div class="card-title">Worksheet Section</div>
+      <div class="section-grid" id="sectionGrid">
+        <button class="section-btn active" type="button" onclick="selectSection(this,'3A3I')">3A3I</button>
+        <button class="section-btn"        type="button" onclick="selectSection(this,'2A8')">2A8</button>
+        <button class="section-btn"        type="button" onclick="selectSection(this,'4A121')">4A121</button>
+        <button class="section-btn"        type="button" onclick="selectSection(this,'4A')">4A</button>
+        <button class="section-btn"        type="button" onclick="selectSection(this,'UPLOADED')" style="background:#10b981; color:white; border-color:#10b981;">Uploaded</button>
+      </div>
+    </div>
+
+    <!-- 3A3I Variation Cards (populated by app.js from variations.js) -->
+    <div class="card" id="card3A3I">
+      <div class="card-title">3A3I Variations</div>
+      <div class="type-grid" id="typeGrid3A3I">
+        <!-- Populated dynamically by app.js -->
+      </div>
+    </div>
+
+    <!-- 2A8 Variation Cards -->
+    <div class="card is-hidden" id="card2A8">
+      <div class="card-title">2A8 Variations</div>
+      <div class="type-grid type-grid-single" id="typeGridSpecial">
+        <!-- Populated dynamically by app.js -->
+      </div>
+    </div>
+
+    <!-- 4A121 Variation Cards -->
+    <div class="card is-hidden" id="card4A121">
+      <div class="card-title">4A121 Variations</div>
+      <div class="type-grid type-grid-single" id="typeGrid4A121">
+        <!-- Populated dynamically by app.js -->
+      </div>
+    </div>
+
+    <!-- UPLOADED Variation Cards -->
+    <div class="card is-hidden" id="cardUPLOADED">
+      <div class="card-title">Uploaded Variations</div>
+      <div class="type-grid" id="typeGridUPLOADED">
+        <!-- Populated dynamically by app.js from localStorage -->
+      </div>
+    </div>
+
+    <!-- Image Link (Global Decoration / 4A121) -->
+    <div class="card" id="cardImageGlobal">
+      <div class="card-title">Image Link (Optional)</div>
+      <div class="field-row">
+        <span class="field-label">Image URL (S3/CDN)</span>
+      </div>
+      <input
+        type="url"
+        class="field-input field-input-full"
+        id="imageUrlGlobal"
+        placeholder="https://your-bucket.s3.amazonaws.com/image.jpg"
+        onchange="onSection4A121ImageUrlChange()"
+      />
+      
+      <!-- 4A121 specific grid controls -->
+      <div class="type-f-only is-hidden" style="margin-top:12px;">
+        <div class="field-row">
+          <span class="field-label">How many images</span>
+          <input type="number" class="field-input" id="imageCount4A121" value="15" min="1" max="40" onchange="onSection4A121ImageUrlChange()"/>
+        </div>
+        <div class="field-row" style="margin-top:6px;">
+          <span class="field-label">Images per row</span>
+          <input type="number" class="field-input" id="imagePerRow4A121" value="5" min="1" max="8" onchange="onSection4A121ImageUrlChange()"/>
+        </div>
+        <div class="type-desc" style="margin-top:8px;">
+          Paste one image URL, set the count, and it will tile as a repeated grid.
+        </div>
+      </div>
+
+      <!-- Decoration description for other sections -->
+      <div class="type-desc non-f-only is-hidden" style="margin-top:8px;">
+        If you provide an image URL, a decoration image will be placed near the top of the worksheet.
+      </div>
+    </div>
+
+    <!-- 4A Number Tracing (static cards — 4A1 through 4A10) -->
+    <div class="card is-hidden" id="card4A">
+      <div class="card-title">4A Number Tracing</div>
+      <div class="type-grid type-grid-4a" id="typeGrid4A">
+        <div class="type-card" data-type="4A1"  onclick="selectType(this,'4A1')"><span class="type-badge">4A1</span><div class="type-desc">Trace number 1</div></div>
+        <div class="type-card" data-type="4A2"  onclick="selectType(this,'4A2')"><span class="type-badge">4A2</span><div class="type-desc">Trace number 2</div></div>
+        <div class="type-card" data-type="4A3"  onclick="selectType(this,'4A3')"><span class="type-badge">4A3</span><div class="type-desc">Trace number 3</div></div>
+        <div class="type-card" data-type="4A4"  onclick="selectType(this,'4A4')"><span class="type-badge">4A4</span><div class="type-desc">Trace number 4</div></div>
+        <div class="type-card" data-type="4A5"  onclick="selectType(this,'4A5')"><span class="type-badge">4A5</span><div class="type-desc">Trace number 5</div></div>
+        <div class="type-card" data-type="4A6"  onclick="selectType(this,'4A6')"><span class="type-badge">4A6</span><div class="type-desc">Trace number 6</div></div>
+        <div class="type-card" data-type="4A7"  onclick="selectType(this,'4A7')"><span class="type-badge">4A7</span><div class="type-desc">Trace number 7</div></div>
+        <div class="type-card" data-type="4A8"  onclick="selectType(this,'4A8')"><span class="type-badge">4A8</span><div class="type-desc">Trace number 8</div></div>
+        <div class="type-card" data-type="4A9"  onclick="selectType(this,'4A9')"><span class="type-badge">4A9</span><div class="type-desc">Trace number 9</div></div>
+        <div class="type-card" data-type="4A10" onclick="selectType(this,'4A10')"><span class="type-badge">4A10</span><div class="type-desc">Trace number 10</div></div>
+      </div>
+    </div>
+
+    <!-- 4A Image inputs -->
+    <div class="card type-4a-only is-hidden" id="card4AImages">
+      <div class="card-title">Insert Image URL</div>
+      <div class="trace-image-hint" id="traceImageHint">Add image URLs for both questions.</div>
+      <div class="trace-image-groups" id="traceImageInputs"></div>
+    </div>
+
+    <!-- Number Range -->
+    <div class="card" id="cardNumberRange">
+      <div class="card-title">Number Range</div>
+      <div class="field-row">
+        <span class="field-label">Start number</span>
+        <input type="number" class="field-input" id="rangeStart" value="31" min="0" max="999"/>
+      </div>
+      <div class="field-row">
+        <span class="field-label">End number</span>
+        <input type="number" class="field-input" id="rangeEnd" value="70" min="1" max="9999"/>
+      </div>
+      <div class="field-row" id="perRowRow">
+        <span class="field-label">Numbers per row</span>
+        <input type="number" class="field-input" id="perRow" value="10" min="4" max="20"/>
+      </div>
+    </div>
+
+    <!-- Questions -->
+    <div class="card" id="cardQuestions">
+      <div class="card-title">Questions</div>
+      <div class="field-row">
+        <span class="field-label">Total questions</span>
+        <input type="number" class="field-input" id="totalQ" value="2" min="1" max="30"/>
+      </div>
+      <div class="field-row non-4a-control">
+        <span class="field-label">Blanks (B/C/D/J)</span>
+        <input type="number" class="field-input" id="blankCount" value="4" min="1" max="15"/>
+      </div>
+      <div class="field-row type-4a-only is-hidden">
+        <span class="field-label">Questions per page</span>
+        <input type="number" class="field-input" id="trace4AQCount" value="2" readonly/>
+      </div>
+      <div class="field-row type-e-only is-hidden">
+        <span class="field-label">Add value (addend)</span>
+        <input type="number" class="field-input" id="eqAddend" value="3" min="0" max="99"/>
+      </div>
+      <div class="field-row type-e-only is-hidden">
+        <span class="field-label">Question numbers</span>
+        <input type="text" class="field-input field-input-wide" id="eqNumberList" value="1,2,3,4,5,6,7,8,9,10,11"/>
+      </div>
+      <div class="field-row type-e-only is-hidden">
+        <button class="btn-change-q" type="button" onclick="changeTypeEQuestions()">Change Questions (random)</button>
+      </div>
+    </div>
+
+    <!-- ── Admin: Question Order Manager ── -->
+    <div class="card">
+      <div class="card-title">Question Order (Admin)</div>
+      <div class="order-manager-panel">
+        <div class="order-pool-grid" id="orderPoolGrid">
+          <!-- Populated after generateWorksheet() -->
+          <div class="type-desc" style="color:var(--gray-400);font-style:italic;padding:4px 0;">
+            Generate a worksheet to see the question pool here.
+          </div>
+        </div>
+        <div class="order-actions">
+          <button class="btn-order-shuffle" id="btnOrderShuffle">⇄ Shuffle</button>
+          <button class="btn-order-reset"   id="btnOrderReset">↺ Reset Order</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <button class="btn-generate" onclick="generateWorksheet()">Generate Worksheet</button>
+    <button class="btn-combine"  id="btnCombine" onclick="generateCombinedWorksheet()">Combine A–K</button>
+    <button class="btn-print"    onclick="printWorksheet()">Print / Save as PDF</button>
+    <button class="btn-print btn-print-exact" onclick="printWorksheet(true)">Print Exact Colors</button>
+
+  </aside>
+
+  <!-- Sidebar resizer -->
+  <div
+    class="sidebar-resizer"
+    id="sidebarResizer"
+    role="separator"
+    aria-label="Resize sidebar"
+    aria-orientation="vertical"
+  ></div>
+
+  <!-- Sidebar restore button (visible when collapsed) -->
+  <button
+    class="btn btn-outline btn-icon sidebar-restore-btn"
+    id="btnSidebarRestore"
+    onclick="toggleSidebar(false)"
+    title="Show Sidebar"
+    aria-label="Show Sidebar"
+  >▶</button>
+
+  <!-- ── PREVIEW ── -->
+  <main class="preview-area" id="previewArea">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">Preview</div>
+      <p>Configure your settings and click <strong>Generate Worksheet</strong> to preview</p>
+    </div>
+  </main>
+
+</div><!-- /.container -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS  (order matters — config → worksheets → generators → admin → app)
+════════════════════════════════════════════════════════════ -->
+<script src="scripts/config/levels.js"></script>
+<script src="scripts/config/variations.js"></script>
+<script src="scripts/worksheets/ws-3a3i.js"></script>
+<script src="scripts/worksheets/ws-2a8.js"></script>
+<script src="scripts/worksheets/ws-4a121.js"></script>
+<script src="scripts/worksheets/ws-4a.js"></script>
+<script src="scripts/generators/question-pool.js"></script>
+<script src="scripts/generators/worksheet-builder.js"></script>
+<script src="scripts/admin/order-manager.js"></script>
+<script src="scripts/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+/* =============================================================
+   image-question.css — Image Counting Question (4A121 / Type F)
+   ============================================================= */
+
+.ws-image-question {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+.ws-image-frame {
+  flex: 1;
+  min-height: 0;
+  border: 2px solid #fdba74;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: #fff7ed;
+}
+
+.ws-image-missing {
+  width: 100%;
+  min-height: 90mm;
+  border: 2px dashed #fb923c;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  color: #9a3412;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: #fff;
+}
+
+.ws-image-grid {
+  width: 100%;
+  display: grid;
+  justify-content: center;
+  align-content: center;
+  gap: 14px 12px;
+  padding: 2px 2px 98px;
+}
+
+.ws-image-item {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  border-radius: 6px;
+}
+
+.ws-answer-box-row {
+  display: flex;
+  justify-content: flex-end;
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+}
+
+.ws-answer-box {
+  width: 84px;
+  height: 84px;
+  border: 3px solid #4b5563;
+  border-radius: 14px;
+  background: white;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ws-image-grid { gap: 12px 10px; }
+  .ws-answer-box { width: 72px; height: 72px; }
+}
+
+@media (max-width: 480px) {
+  .ws-answer-box { width: 64px; height: 64px; }
+}

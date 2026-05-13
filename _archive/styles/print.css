@@ -1,0 +1,43 @@
+/* =============================================================
+   print.css — Print / PDF Styles
+   ============================================================= */
+
+@media print {
+  body { background: white; }
+  header, .sidebar, .sidebar-resizer, .sidebar-restore-btn { display: none !important; }
+
+  .preview-area {
+    padding: 0 !important;
+    background: white !important;
+    display: block !important;
+    overflow: visible !important;
+    gap: 0 !important;
+  }
+
+  .ws-page {
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 12mm;
+    page-break-after: always;
+  }
+
+  .ws-page:last-child { page-break-after: avoid; }
+
+  .empty-state { display: none !important; }
+
+  /* Ensure the order-manager panel does not print */
+  .order-manager-panel,
+  .btn-order-shuffle,
+  .btn-order-reset { display: none !important; }
+}
+
+/* ── PRINT POPUP (used in printWorksheet() new window) ───────── */
+.print-root {
+  font-family: 'Nunito', sans-serif;
+  background: white;
+  color: #1f2937;
+  margin: 0;
+}

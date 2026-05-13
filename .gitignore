@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Models / Large files
+*.pt
+*.pth
+*.h5
+*.hdf5
+checkpoints*/
+data/
+signals_cache/
+predictions/
+evaluation_results/
+
+# OS generated files
+.DS_Store
+Thumbs.db
