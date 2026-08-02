@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────
+#  Python
+# ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# ─────────────────────────────────────────
+#  Model Checkpoints (too large for GitHub)
+# ─────────────────────────────────────────
+ckpt_image_model/best.pth
+ckpt_image_model/last.pth
+ckpt_report_model/best.pth
+
+# ─────────────────────────────────────────
+#  Datasets (large CSV + image folders)
+# ─────────────────────────────────────────
+cardiomegaly_dataset/cardio_train.csv
+cardiomegaly_dataset/cardio_val.csv
+cardiomegaly_dataset/cardio_test.csv
+cardio_image_384/
+cardiomegaly_dataset/reports/
+
+# BART checkpoint folder inside dataset
+cardio_image_384/.ckpt/
+
+# ─────────────────────────────────────────
+#  Frontend
+# ─────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# ─────────────────────────────────────────
+#  Backend
+# ─────────────────────────────────────────
+backend/__pycache__/
+backend/*.pyc
+
+# ─────────────────────────────────────────
+#  OS / IDE
+# ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
