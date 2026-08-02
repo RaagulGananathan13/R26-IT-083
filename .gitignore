@@ -55,3 +55,25 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Credentialed MIMIC-CXR derivatives — PhysioNet DUA, do not redistribute
+stage1_clean/
+stage3_labels/
+training_manifest/*.csv
+reports/
+data/
+
+# Model weights
+checkpoints/
+*.pt
+*.pth
+*.npy
+*.parquet
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+labeling_env/
+node_modules/
+
