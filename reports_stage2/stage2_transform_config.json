@@ -1,0 +1,47 @@
+{
+  "stage": 2,
+  "img_size": 384,
+  "normalize": "per_image",
+  "use_clahe": false,
+  "aug_degrees": 5.0,
+  "aug_translate": [
+    0.03,
+    0.03
+  ],
+  "aug_scale": [
+    0.97,
+    1.03
+  ],
+  "horizontal_flip": false,
+  "color_jitter": false,
+  "random_autocontrast": false,
+  "resize_always_applied": true,
+  "out_channels": 3,
+  "dataset_gray_mean": 0.4732,
+  "dataset_gray_std": 0.3036,
+  "audit": {
+    "n_sampled": 3000,
+    "all_384": true,
+    "mean_spread_p05_p95": 29.8,
+    "cov_pct": 8.17,
+    "polarity_ok_pct": 98.1,
+    "degenerate": {
+      "near-constant (std<10)": 0,
+      ">90% black": 0,
+      ">50% white": 0,
+      "<20 grey levels": 0
+    },
+    "class_intensity_gap": 1.93
+  },
+  "normalisation_comparison": {
+    "raw [0,1]": 0.04111,
+    "ImageNet norm (CURRENT)": 0.17954,
+    "dataset grayscale mean/std": 0.13543,
+    "PER-IMAGE z-score (PROPOSED)": 0.0,
+    "CLAHE only": 0.04191,
+    "CLAHE + per-image z": 0.0
+  },
+  "gates_passed": 21,
+  "gates_failed": 0,
+  "throughput_img_per_s": 149.5
+}
