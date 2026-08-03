@@ -1,341 +1,335 @@
 # Explainable AI System for Cardiovascular Disease Detection and Diagnosis
 
-**Component:** Cardiomegaly Detection with XAI and Automatic Report Generation
+### Component: Cardiomegaly Detection with XAI and Automatic Report Generation
 
 **Name:** Raagul Gananathan
-
 **IT Number:** IT22130020
 
 ---
 
 ## Project Description
 
-Cardiovascular diseases are the leading cause of death globally, with around 17.9 million deaths every year. Cardiomegaly — an enlarged heart visible on chest X-rays — is one of the earliest indicators of conditions like heart failure and cardiomyopathy. Catching it early makes a real difference in patient outcomes, but manual reading of X-rays is slow, subjective, and depends heavily on the radiologist's experience.
+This component takes a chest X-ray and does three things with it: predicts whether the patient has cardiomegaly (an enlarged heart) along with seven other chest pathologies, shows you *where* on the image the model was looking when it made that call, and writes a draft radiology report in plain clinical language.
 
-This project builds an AI system that does four things when you give it a chest X-ray:
+The reason for all three is that a prediction on its own isn't much use to a radiologist. A number like `Cardiomegaly: 0.94` tells you nothing about whether the model looked at the heart or at a piece of tubing in the corner of the film. So every prediction comes with a Grad-CAM heatmap and a written report, and — this is the part I ended up spending most of the project on — the system is honest about when it shouldn't be trusted.
 
-1. **Tells you if cardiomegaly is present or not**, with a confidence score.
-2. **Detects co-existing conditions** — pleural effusion, pulmonary edema, pneumothorax, atelectasis, consolidation, lung opacity, and pneumonia — through multi-label classification, since these pathologies frequently occur alongside cardiomegaly.
-3. **Shows you exactly where the model is looking** using a GradCAM heatmap overlay on the X-ray.
-4. **Writes a radiology report** describing the findings, similar to what a radiologist would write.
-
-The primary focus is cardiomegaly, but the model doesn't stop there. In clinical practice, an enlarged heart rarely exists in isolation — patients often present with fluid in the lungs (edema), fluid around the lungs (pleural effusion), or collapsed lung tissue (atelectasis). Detecting these together gives a much more complete picture.
-
-The key idea is that it's not just a black-box classifier. The GradCAM heatmap and the generated report together act as explanations — a clinician can look at the heatmap to verify the model is focusing on the heart region, and read the report to see if the textual description makes clinical sense. This is what makes it an *explainable* AI system.
-
-The whole thing runs as a web app — a React frontend where you upload the X-ray, and a FastAPI backend that runs both models and returns the results.
+I should say up front what this is and isn't. It's a decision-support prototype. It is not a diagnostic tool, it has not been clinically validated, and every output needs a radiologist to check it. Throughout this README I've tried to report what I actually measured rather than what I hoped for.
 
 ---
 
 ## Objectives
 
-- Build a binary classifier for cardiomegaly using ConvNeXt-Base pretrained on ImageNet-22K, targeting high AUC on the test set.
-- Train a report generation model that takes a chest X-ray and produces a radiology report (Impression + Findings) using a ConvNeXt encoder paired with a BART decoder.
-- Integrate GradCAM to produce visual explanations that highlight the cardiac region, so clinicians can verify the model's reasoning.
-- Detect co-occurring conditions (edema, pleural effusion, atelectasis, etc.) alongside the primary cardiomegaly diagnosis.
-- Deploy everything as a usable web application with a clean clinical interface.
-- Make the system's outputs interpretable and trustworthy enough to serve as a decision-support tool.
+1. **Detect cardiomegaly** from a single frontal chest X-ray, with a confidence score rather than a bare yes/no.
+2. **Detect seven co-occurring pathologies** in the same pass — edema, pleural effusion, atelectasis, consolidation, lung opacity, pneumonia, pneumothorax — because these rarely appear alone and a cardiomegaly-only model gives a misleading picture.
+3. **Make the prediction explainable** with Grad-CAM, so a clinician can see whether the model attended to the cardiac silhouette or to something irrelevant.
+4. **Generate a readable draft report** that reflects the actual image rather than reciting a generic template.
+5. **Audit the system for fairness** across how the X-ray was taken. This started as a sanity check and turned into the main research contribution.
 
 ---
 
 ## Technologies Used
 
-**AI and Deep Learning**
+### AI and Deep Learning
+| | |
+|---|---|
+| Vision backbone | ConvNeXt-Base (ImageNet-pretrained), 384×384 input |
+| Text decoder | BioBART-v2-base (`GanjinZero/biobart-v2-base`) |
+| Explainability | Grad-CAM on the final convolutional stage |
+| Framework | PyTorch 2.x, torchvision, Hugging Face Transformers |
+| Metrics | ROUGE, scikit-learn, custom bootstrap implementations |
 
-- Python 3.11+
-- PyTorch 2.x with CUDA support
-- torchvision (image transforms, ConvNeXt-Base backbone)
-- timm (pretrained model weights — `convnext_base.fb_in22k_ft_in1k`)
-- HuggingFace Transformers (BART tokenizer and decoder)
-- scikit-learn (AUC-ROC, confusion matrix, classification report)
-- rouge-score (ROUGE-1/2/L for evaluating generated reports)
-- OpenCV (GradCAM heatmap colorization)
-- NumPy, Pandas, Matplotlib, Pillow
+### Backend
+| | |
+|---|---|
+| API | FastAPI (Python) |
+| Frontend | React |
+| Image handling | Pillow, OpenCV |
 
-**Backend**
+### Training
+| | |
+|---|---|
+| Hardware | Google Colab, NVIDIA L4 (24 GB) |
+| Precision | bfloat16 mixed precision, `channels_last` memory format |
+| Optimiser | AdamW, cosine schedule with warmup |
+| Stability | EMA weight averaging, gradient clipping, non-finite-loss abort |
+| Reliability | Resumable Drive checkpointing, automatic batch-size finder |
 
-- FastAPI 0.110 (REST API with `/predict` endpoint)
-- Uvicorn 0.29 (ASGI server)
-- python-multipart (file upload handling)
+### Dataset
+| | |
+|---|---|
+| Source | MIMIC-CXR / MIMIC-CXR-JPG (PhysioNet, credentialed) |
+| Split | Patient-disjoint — 36,362 train / 4,474 val / **4,722 test** |
+| Views | Frontal only (AP and PA) |
+| Labels | 8 pathologies, text-adjudicated fusion of CheXpert labels + report text |
 
-**Frontend**
-
-- React 19.x
-- Vite 6.x (build tool and dev server)
-- Tailwind CSS 4.x
-
-**Training**
-
-- Google Colab with NVIDIA T4 GPU (15GB VRAM)
-- Mixed precision training (FP16 via PyTorch AMP)
-- Gradient accumulation for the report model (effective batch size 16)
-
-**Dataset**
-
-- MIMIC-CXR (PhysioNet / MIT)
-- 384x384 grayscale chest X-ray images
-- Paired radiology reports with `report_text`, `findings_text`, and `impression_text` columns
+> ⚠️ MIMIC-CXR is credentialed data under a PhysioNet Data Use Agreement. No images, reports, or derived CSVs are in this repository — only code that regenerates them.
 
 ---
 
 ## How It Works
 
-The system has two trained models that work together:
+Two trained models share a single vision backbone.
 
-**Model 1 — Image Classifier (ConvNeXt-Base)**
-
-Takes a 384x384 chest X-ray, runs it through a ConvNeXt-Base backbone (with the early stages frozen and the later stages fine-tuned), and outputs a cardiomegaly prediction (positive/negative) with a confidence score. It also detects 7 other pathologies (edema, pleural effusion, atelectasis, consolidation, lung opacity, pneumonia, pneumothorax) through a multi-label classification head.
-
-GradCAM is computed on the last convolutional stage (`features[7]`). The gradients of the cardiomegaly output are backpropagated to produce a heatmap showing which spatial regions contributed most to the prediction. This heatmap is overlaid on the original X-ray so you can visually confirm the model is focusing on the heart.
-
-**Model 2 — Report Generator (ConvNeXt + BART)**
-
-Uses the same ConvNeXt backbone (frozen, loaded from Model 1's trained weights) as a vision encoder. The 12x12 spatial feature map is flattened into 144 visual tokens, projected from 1024 dimensions to 768 dimensions through a learned linear layer with LayerNorm and GELU activation, and then fed into a BART decoder as encoder outputs.
-
-BART generates the report text using beam search (4 beams) with no-repeat trigram blocking. The raw output goes through a regex-based cleaning pipeline that strips out training artifacts — things like "compared to the previous exam from ___" or "findings discussed with referring physician at 3:45 PM" — which are present in the MIMIC-CXR training data but meaningless for new patients.
-
-**The Shared Encoder**
-
-A key design choice is that Model 2's vision encoder is not trained from scratch. It loads the exact convolutional weights from Model 1's trained checkpoint and freezes them. This means both the classifier and the report generator are looking at the same visual features — if the classifier says cardiomegaly is present, the report generator is working from the same visual evidence.
-
----
-
-## Installation Steps
-
-### Prerequisites
-
-- Python 3.11 or newer
-- Node.js 18 or newer with npm
-- Git
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/<your-username>/CardioVision-XAI.git
-cd CardioVision-XAI
+```mermaid
+flowchart TD
+    A["Chest X-ray upload"] --> B["Preprocessing<br/>384x384 · grayscale · per-image z-score"]
+    B --> C["ConvNeXt-Base backbone"]
+    C --> D["Model 1<br/>Multi-label classifier"]
+    C --> E["Model 2<br/>BioBART report generator"]
+    D --> F["8 pathology probabilities"]
+    D --> G["Grad-CAM heatmap"]
+    E --> H["Draft radiology report"]
+    F --> I["Per-projection thresholds<br/>AP vs PA"]
+    I --> J["Final output + reliability flag"]
+    G --> J
+    H --> J
 ```
 
-### 2. Set up the backend
+### Model 1 — Image Classifier
 
-```bash
-cd backend
-
-# Create and activate virtual environment
-python -m venv .venv
-
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 3. Place model weights
-
-You need the trained checkpoint files. Place them like this:
+A 384×384 chest X-ray goes through ConvNeXt-Base and comes out as eight independent probabilities. The head is a small MLP:
 
 ```
-ckpt_image_model/
-    best.pth          <-- classifier weights
-
-ckpt_report_model/
-    best.pth          <-- report generator weights
+pooled features (1024)
+   -> LayerNorm
+   -> Dropout(0.3)
+   -> Linear(1024 -> 512)
+   -> GELU
+   -> Dropout(0.198)
+   -> Linear(512 -> 8)
 ```
 
-Then update the paths in `backend/inference.py` — look for `CKPT_DIR_IMG` and `CKPT_DIR_REP` near the top of the file and set them to wherever you put the checkpoints.
+Two things mattered more than I expected.
 
-### 4. Set up the frontend
+**Per-image z-score normalisation instead of ImageNet statistics.** ImageNet constants are written for natural RGB photographs. Chest X-rays are grayscale with a completely different intensity distribution, and using ImageNet normalisation made the variance across images **4.4× worse** than using the raw pixels. Normalising each image by its own mean and standard deviation fixed it.
 
-```bash
-cd ../frontend
-npm install
+**Class weighting.** Pneumothorax appears in about 4% of the training set. Without `pos_weight` the model is rewarded for simply never predicting it — and that is exactly what the first version learned to do.
+
+**Grad-CAM** is computed on `features[7]`, the last convolutional stage. The gradient of the cardiomegaly logit is backpropagated to that layer, producing a 12×12 map of which regions drove the prediction. That map is upsampled and overlaid on the original X-ray.
+
+### Model 2 — Report Generator
+
+```mermaid
+flowchart LR
+    A["X-ray"] --> B["ConvNeXt<br/>shared weights"]
+    B --> C["12x12x1024<br/>feature map"]
+    C --> D["Flatten to<br/>144 tokens"]
+    D --> E["Projection MLP<br/>1024 -> 768"]
+    E --> F["BART ENCODER<br/>adds positions"]
+    F --> G["BART decoder<br/>greedy"]
+    G --> H["FINDINGS: ...<br/>IMPRESSION: ..."]
 ```
 
-### 5. (Optional) Place dataset CSVs for ground truth comparison
-
-If you want the app to show the original radiologist's report alongside the AI-generated one, place the CSV files:
+The 12×12 spatial map is flattened into **144 visual tokens** and projected from 1024 to 768 dimensions through a two-layer MLP:
 
 ```
-cardiomegaly_dataset/
-    cardio_train.csv
-    cardio_val.csv
-    cardio_test.csv
+LayerNorm(1024) -> Linear(1024->768) -> GELU -> Dropout -> Linear(768->768) -> LayerNorm
 ```
 
----
+Those tokens go into BART as **`inputs_embeds`**, and that detail matters more than anything else in this model.
 
-## Usage Instructions
+An earlier version passed them as `encoder_outputs` instead, which skips BART's pretrained encoder entirely. The decoder's cross-attention was pretrained to read encoder *outputs* with a specific scale and structure — hand it raw projected convolutional features and it simply can't use them, so it falls back on its language prior. The model was writing fluent, plausible reports from memory without meaningfully looking at the X-ray. Switching to `inputs_embeds` means BART's encoder actually runs and adds its own learned positional embeddings, so the decoder can tell the apex from the base.
 
-### Running the app
+The last ConvNeXt stage is **unfrozen at 0.1× the base learning rate**; earlier stages stay frozen. Freezing the whole trunk left too little capacity to adapt, and unfreezing all of it destroyed the features the classifier depends on.
 
-Open two terminals.
+Decoding is **greedy** (`num_beams=1`), `min_length=24`, `max_length=192`. I originally used beam search with 4 beams because that's the conventional choice. An ablation across six strategies showed greedy beat beam-4 on five of seven metrics, so I switched.
 
-**Terminal 1 — Backend:**
+### Cleaning the reports — at the source, not the output
 
-```bash
-cd backend
-python app.py
-```
+MIMIC-CXR reports are dictated in a workflow where the radiologist can see the patient's previous scans. So the text is full of *"compared to the prior study,"* *"unchanged from the previous exam,"* *"findings discussed with Dr. ___ at 3:45 PM."*
 
-This starts the FastAPI server at `http://localhost:8000`.
+A model trained on that learns to say those things — about patients it has never seen, referencing scans that don't exist. **70.70%** of the raw training targets contained this language.
 
-**Terminal 2 — Frontend:**
+My first instinct was to strip it out of the generated text with regex. That works, but it papers over the problem: the model still spends capacity learning to produce text that gets deleted afterwards. Instead I clean the **training targets**, so the pattern is never learned. That's Stage 1 — 67 unit tests, 98.45% of the corpus retained, and fabricated prior-study references in generated reports now sit at exactly **0.0000** across all 4,722 test images.
 
-```bash
-cd frontend
-npm run dev
-```
+### The shared backbone
 
-This starts the React dev server at `http://localhost:5173`. Open that URL in your browser.
-
-### Using the interface
-
-1. Drag and drop a frontal chest X-ray image (PNG or JPG) onto the upload zone, or click to browse.
-2. Wait a few seconds for both models to process the image.
-3. You'll see:
-   - A diagnosis card showing cardiomegaly detected/not detected with confidence percentage.
-   - A GradCAM heatmap overlaid on the original X-ray.
-   - A generated radiology report split into Impression and Findings sections.
-   - Any secondary findings (edema, pleural effusion) detected by the multi-label classifier.
-4. You can toggle between the cleaned AI report, the raw model output, and the ground truth (if the image is from the test set) using the view switcher in the report panel.
-5. Use the copy button to copy the report text to clipboard.
-
-### Training the models yourself
-
-Both training scripts are designed for Google Colab with a T4 GPU. Each file has sections marked with `# %%` — copy each section into a separate Colab cell and run them in order.
-
-**Model 1** (`Model1_Image_Classifier.py`): Upload `cardio_image_384/` folder to Google Drive, set runtime to GPU T4, run all cells. Trains in roughly 3-4 hours.
-
-**Model 2** (`Model2_Report_Generator.py`): Upload both the image folder and the CSV files to Google Drive, set runtime to GPU T4, run all cells. Trains in roughly 20+ hours (can be resumed from checkpoint if Colab disconnects).
-
-### API endpoint
-
-```bash
-curl -X POST http://localhost:8000/predict -F "file=@chest_xray.png"
-```
-
-Returns JSON with prediction, confidence, base64-encoded GradCAM heatmap, generated report text, and co-pathology findings.
+Model 2's vision encoder is loaded from Model 1's trained checkpoint rather than trained from scratch. Both models therefore see identical visual features. If the classifier says cardiomegaly is present, the report generator is reasoning from the same evidence — they can't disagree because of a representation mismatch.
 
 ---
 
 ## Features
 
-**Classification**
-- Binary cardiomegaly detection with AUC-ROC of 0.92 on the test set.
-- Multi-label detection of 8 thoracic conditions simultaneously.
-- Confidence scoring with visual meter.
-
-**Explainability**
-- GradCAM heatmaps targeting the last convolutional stage of ConvNeXt, highlighting the cardiac region.
-- Generated radiology reports that describe what the model "sees" in natural language.
-- Negation-aware co-pathology extraction from the report text (correctly handles phrases like "no consolidation, effusion, or pneumothorax").
-
-**Report Generation**
-- 144 spatial visual tokens from ConvNeXt projected into BART's embedding space.
-- Beam search decoding with trigram blocking for fluent, non-repetitive output.
-- Post-processing pipeline with 25+ regex patterns to clean training artifacts.
-- Three-way report viewer: AI Report / Raw Output / Ground Truth toggle.
-
-**Web Interface**
-- Drag-and-drop image upload.
-- Real-time inference results displayed in a clean dashboard layout.
-- Copy-to-clipboard for reports.
-- Responsive design.
-
-**Training**
-- Mixed precision (FP16) with gradient scaling.
-- Cosine warmup learning rate schedule.
-- Early stopping with configurable patience.
-- Checkpoint saving and resume support.
-- Differential learning rates for the report model (projection layer trains 20x faster than BART).
+- ✅ **Cardiomegaly detection** — AUROC **0.9189**
+- ✅ **7 co-pathologies** in the same forward pass
+- ✅ **Grad-CAM heatmaps** per pathology
+- ✅ **Report generation** with zero fabricated prior-study references
+- ✅ **Acquisition fairness audit** — performance reported separately for AP and PA films
+- ✅ **Per-projection operating points** — 73.3% less subgroup disparity at no accuracy cost
+- ✅ **104 unit tests** across four modules, including controls built to falsify my own methods
+- ✅ **Reproducible** — every stage is a self-contained notebook with a smoke-test mode
 
 ---
 
 ## Project Structure
 
 ```
-Component_1/
-|
-|-- README.md                          # this file
-|-- Model1_Image_Classifier.py         # training script for ConvNeXt classifier
-|-- Model2_Report_Generator.py         # training script for ConvNeXt + BART report generator
-|
-|-- backend/
-|   |-- app.py                         # FastAPI server and routes
-|   |-- inference.py                   # model loading, GradCAM, report generation, NLP
-|   |-- requirements.txt              # Python dependencies
-|
-|-- frontend/
-|   |-- src/
-|   |   |-- App.jsx                    # main React component
-|   |   |-- App.css                    # global styles
-|   |   |-- components/
-|   |       |-- Header.jsx             # app header
-|   |       |-- UploadZone.jsx         # drag-and-drop upload
-|   |       |-- ResultsPanel.jsx       # diagnosis card + co-pathology chips
-|   |       |-- GradCamViewer.jsx      # heatmap overlay viewer
-|   |       |-- ReportViewer.jsx       # report display with view toggle
-|   |-- package.json
-|   |-- vite.config.js
-|
-|-- cardio_image_384/                  # CXR images (384x384 PNG)
-|   |-- train/positive/ and negative/  # 36,938 images (balanced)
-|   |-- val/positive/ and negative/    # 4,550 images
-|   |-- test/positive/ and negative/   # 4,786 images
-|
-|-- cardiomegaly_dataset/              # CSV files with labels and reports
-|   |-- cardio_train.csv
-|   |-- cardio_val.csv
-|   |-- cardio_test.csv
-|
-|-- ckpt_image_model/                  # classifier checkpoint (best.pth)
-|-- ckpt_report_model/                 # report generator checkpoint (best.pth)
+Component_01/
+│
+├── cxr_transforms.py                       # preprocessing, single source of truth
+├── chexpert_fusion.py                      # text-adjudicated label fusion
+│
+├── Stage1_Report_Target_Cleaning.ipynb     # strip prior-study language
+├── Stage2_Image_Transforms.ipynb           # normalisation experiments
+├── Stage4_Report_Generator.ipynb           # BioBART training
+├── Stage4B_Decoding_Ablation.ipynb         # greedy vs beam search
+├── Stage5_Classifier_Training.ipynb        # ConvNeXt training
+│
+├── stage6_acr.py                           # acquisition reliability  (38 tests)
+├── Stage6_Acquisition_Conditioned_Reliability.ipynb
+├── Stage6B_Validation.ipynb                # four-arm ablation
+│
+├── stage9_fairness.py                      # operating-point analysis (18 tests)
+├── Stage9A_Operating_Point_Fairness.ipynb
+│
+├── stage9b_gradrev.py                      # gradient reversal        (28 tests)
+├── Stage9B_Gradient_Reversal.ipynb
+├── Stage9B_Lambda_Calibration.ipynb
+│
+├── stage10_conditional.py                  # conditional heads        (20 tests)
+├── Stage10A_Feature_Probe.ipynb
+│
+├── MASTER_PLAN.md                          # full research record
+├── RESULTS.md                              # results section
+└── README.md
 ```
+
+Data folders (`stage1_clean/`, `stage3_labels/`, `training_manifest/`) and `checkpoints/` are gitignored — they hold MIMIC-CXR derivatives and model weights.
 
 ---
 
 ## Model Performance
 
-**Image Classifier (Model 1)**
+### Classifier — test set, n = 4,722
 
-- AUC-ROC: 0.9179
-- Accuracy: 84%
-- Positive recall (sensitivity): 89% — catches most cardiomegaly cases
-- Negative precision: 88% — reliable when it says "no cardiomegaly"
-- Architecture: ConvNeXt-Base with ImageNet-22K pretraining
-- Training: 30 epochs, batch size 32, AdamW optimizer, cosine warmup LR
+| Pathology | AUROC |
+|---|---|
+| Pleural Effusion | 0.9289 |
+| **Cardiomegaly** | **0.9189** |
+| Pneumothorax | 0.9141 |
+| Edema | 0.9132 |
+| Consolidation | 0.8167 |
+| Atelectasis | 0.8096 |
+| Pneumonia | 0.7959 |
+| Lung Opacity | 0.7462 |
+| **Mean** | **0.8554** |
 
-**Report Generator (Model 2)**
+Up from **0.8251** on the previous version.
 
-- Best validation loss: 1.34 (cross-entropy)
-- ROUGE-1: 0.293 (word overlap with ground truth)
-- ROUGE-2: 0.102 (phrase overlap)
-- ROUGE-L: 0.175 (sentence structure similarity)
-- Architecture: Frozen ConvNeXt encoder + BART-base decoder
-- Training: 20 epochs, batch size 4 with 4-step gradient accumulation, differential LR
+### Report Generator
+
+| Metric | Value |
+|---|---|
+| ROUGE-L | 0.2918 |
+| Constant-baseline ROUGE-L | 0.2769 |
+| **Margin over baseline** | **+0.0149** |
+| Fabricated prior-study references | **0.0000** |
+| Unique opening sentences (n=100) | 0.4100 *(was 0.1400)* |
+
+**About that margin.** I report ROUGE-L alongside the score that a single fixed report gets when scored against every reference. That constant baseline is **0.2769**, which means most of a raw ROUGE-L score reflects how templated radiology reports are rather than anything the model understood. The honest measure of what the vision pipeline contributes is the **+0.0149** margin, not the 0.2918. This isn't specific to my model — [published work](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0259639) shows encoder-decoder report generators generally struggle to beat unconditioned baselines. I'd rather report it than bury it.
+
+### ⚠️ Comparability
+
+These numbers are **not** directly comparable to published MIMIC-CXR results, for three reasons I checked rather than assumed:
+
+1. **The split is mine, not the official one.** It's patient-disjoint — zero subject, study, or image overlap, verified — but 98.3% of my test images are officially *training* data. Re-running on the official split isn't possible: only 155 official-test films are both available to me and free of my training patients.
+2. **My reference text is cleaned.** Stage 1 removes prior-study language, which shifts the reference distribution. Cleaning alone moved the constant baseline from 0.2481 to 0.2769.
+3. **Different filtering** — frontal-only, cardiomegaly-enriched.
+
+Also, the clinical-efficacy F1 I currently report uses a project-internal extractor, **not CheXbert**. Until CheXbert is run it should not be placed in a table beside published numbers.
+
+---
+
+## Research Contribution — Acquisition Fairness
+
+While auditing the classifier I found something I wasn't looking for.
+
+Chest X-rays come in two projections. **PA** is the standard: the patient stands, the beam travels back-to-front. **AP** is used when the patient is too ill to stand, taken portably at the bedside. AP films magnify the heart, the scapulae overlie the lung fields, and image quality is lower.
+
+The classifier is significantly worse on AP films:
+
+| | AUROC |
+|---|---|
+| PA (standing) | 0.8864 |
+| AP (bedside) | 0.8224 |
+| **Gap** | **0.0639**, 95% CI [0.0491, 0.0790] |
+
+Significant for 7 of 8 pathologies, same direction for all 8. **And AP films come from the sickest patients** — so the model is weakest exactly where it matters most. Pooled evaluation cannot see this at all.
+
+I then tested three ways of fixing it.
+
+```mermaid
+flowchart TD
+    A["AP/PA gap = 0.0639"] --> B["Adjust thresholds<br/>per projection"]
+    A --> C["Adversarial invariance<br/>remove projection info"]
+    A --> D["Conditional heads<br/>exploit projection info"]
+    B --> E["Gap unchanged<br/>proven to 1e-12"]
+    C --> F["Gap -13.3%<br/>cost -0.0789 AUROC"]
+    D --> G["Gap +0.0003<br/>no benefit"]
+    E --> H["The gap is irreducible<br/>at the model level"]
+    F --> H
+    G --> H
+```
+
+**Finding 1 — the standard fairness metric can be gamed.** TPR Disparity, the metric the literature uses for this problem, is defined at a single decision threshold. AUROC is computed over the whole *ranking* of scores, and a threshold is just one cut through that ranking — so changing it per group **cannot reorder any case**. I used that to cut TPR Disparity by **73.3% at exactly zero accuracy cost**, while the real discrimination gap stayed identical to **1e-12**.
+
+For comparison, [Pereira et al. (MIDL 2023)](https://proceedings.mlr.press/v227/pereira24a.html) reduced the same metric by 46.7% using adversarial training that required full retraining and cost 0.91 AUC points.
+
+**Finding 2 — removing projection information doesn't help.** I reimplemented their gradient-reversal method on my own data and drove projection AUC to **0.5000** — complete invariance, better than the 0.61 they report. The gap moved only 0.0639 → 0.0554, at a cost of 0.0789 AUROC.
+
+**Finding 3 — adding projection information doesn't help either.** The opposite strategy, giving the model projection-specific capacity, gained **+0.0003**. Nothing.
+
+**Conclusion:** the AP/PA gap is irreducible at the representation level. It isn't a shortcut the model learned, and it isn't a metric artifact — AP images genuinely carry less usable information. It can't be engineered away downstream. It has to be addressed at acquisition, or by flagging low-reliability reads for human review instead of pretending parity exists.
+
+---
+
+## What Didn't Work
+
+Including this because the failures took as long as the successes and shaped the final design.
+
+| Idea | Outcome |
+|---|---|
+| **Acquisition-Conditioned Reliability** | Looked like a 90% fairness improvement. A proper four-arm control showed it was plain Platt scaling from 1999. Dropped. |
+| **Sentence-Level Evidence Gating** | Four papers already do this, and better. Dropped after a prior-art search. |
+| **Grad-CAM stability score** | Already published in 2021 — and they found Grad-CAM repeatability is poor (SSIM 0.12). Dropped. |
+| **Conditional specialisation** | A cheap linear-probe gate returned +0.0003 before I committed the GPU budget. Cancelled. |
+| **Label noise hypothesis** | I assumed weak co-pathology performance was caused by bad labels. Measuring the ceiling F1 (0.82–0.97 vs model 0.23–0.86) proved it wasn't. |
+
+The pattern in all of these is the same: I assumed a number instead of measuring it. The controls that killed these ideas are in the repository alongside the ones that worked.
 
 ---
 
 ## References
 
-1. Selvaraju, R.R. et al. (2017). "Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization." ICCV 2017.
-2. Liu, Z. et al. (2022). "A ConvNet for the 2020s." CVPR 2022.
-3. Lewis, M. et al. (2020). "BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension." ACL 2020.
-4. Johnson, A.E.W. et al. (2019). "MIMIC-CXR, a De-identified Publicly Available Database of Chest Radiographs with Free-text Reports." Scientific Data, 6(317).
-5. Irvin, J. et al. (2019). "CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels and Expert Comparison." AAAI 2019.
-6. Rajpurkar, P. et al. (2017). "CheXNet: Radiologist-Level Pneumonia Detection on Chest X-Rays with Deep Learning."
-7. van der Velden, B.H.M. et al. (2022). "Explainable Artificial Intelligence (XAI) in Deep Learning-based Medical Image Analysis." Medical Image Analysis, 79, 102470.
+1. Pereira S.C. et al. **Addressing Chest Radiograph Projection Bias in Deep Classification Models.** MIDL 2023, [PMLR 227:1199–1210](https://proceedings.mlr.press/v227/pereira24a.html)
+2. Johnson A.E.W. et al. **MIMIC-CXR-JPG: A large publicly available database of labeled chest radiographs.** [arXiv:1901.07042](https://arxiv.org/pdf/1901.07042)
+3. Irvin J. et al. **CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels.** AAAI 2019, [arXiv:1901.07031](https://arxiv.org/abs/1901.07031)
+4. Liu Z. et al. **A ConvNet for the 2020s (ConvNeXt).** CVPR 2022, [arXiv:2201.03545](https://arxiv.org/abs/2201.03545)
+5. Yuan H. et al. **BioBART: Pretraining and Evaluation of A Biomedical Generative Language Model.** BioNLP 2022, [arXiv:2204.03905](https://arxiv.org/abs/2204.03905)
+6. Selvaraju R.R. et al. **Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization.** ICCV 2017, [arXiv:1610.02391](https://arxiv.org/abs/1610.02391)
+7. Ganin Y., Lempitsky V. **Unsupervised Domain Adaptation by Backpropagation.** ICML 2015, [arXiv:1409.7495](https://arxiv.org/abs/1409.7495)
+8. Hardt M. et al. **Equality of Opportunity in Supervised Learning.** NeurIPS 2016, [arXiv:1610.02413](https://arxiv.org/abs/1610.02413)
+9. Seyyed-Kalantari L. et al. **CheXclusion: Fairness gaps in deep chest X-ray classifiers.** [PSB 2021](https://psb.stanford.edu/psb-online/proceedings/psb21/seyyed-kalantari.pdf)
+10. **Encoder-decoder models for chest X-ray report generation perform no better than unconditioned baselines.** [PLOS One 2021](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0259639)
+11. Arun N. et al. **Assessing the Trustworthiness of Saliency Maps for Localizing Abnormalities in Medical Imaging.** *Radiology: AI* 2021
+12. **The limits of fair medical imaging AI in real-world generalization.** [*Nature Medicine* 2024](https://www.nature.com/articles/s41591-024-03113-4)
 
-**Frameworks and tools:** [PyTorch](https://pytorch.org/), [HuggingFace Transformers](https://huggingface.co/docs/transformers/), [timm](https://github.com/huggingface/pytorch-image-models), [FastAPI](https://fastapi.tiangolo.com/), [React](https://react.dev/), [Vite](https://vitejs.dev/)
-
-**Dataset:** [MIMIC-CXR (PhysioNet)](https://physionet.org/content/mimic-cxr/2.0.0/)
+Full prior-art analysis is in [`MASTER_PLAN.md`](MASTER_PLAN.md); detailed results are in [`RESULTS.md`](RESULTS.md).
 
 ---
 
 ## License
 
-This project was built for academic purposes as a university final-year project. It is released under the MIT License.
+The **code** in this repository is released under the **MIT License**.
 
-**Medical disclaimer:** This is a research prototype. It is not a clinical diagnostic tool and should not be used for making medical decisions. All outputs should be reviewed by qualified medical professionals.
+The **data is not**. MIMIC-CXR is credentialed and governed by the [PhysioNet Credentialed Health Data Use Agreement](https://physionet.org/content/mimic-cxr/view-dua/2.0.0/). No images, reports, or derived data files are distributed here. To reproduce this work you need your own PhysioNet credentialed access and completed CITI training.
+
+Model weights are not distributed either, since they are derived from credentialed data.
+
+---
+
+## ⚕️ Disclaimer
+
+This is a research prototype built for an undergraduate final-year project. It is **not** a medical device, has **not** undergone clinical validation, and must **not** be used for diagnosis or treatment decisions. Every output requires review by a qualified radiologist.
+
+The system is measurably less accurate on AP (bedside) films — the ones taken of the sickest patients. That limitation is reported here rather than hidden.
