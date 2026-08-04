@@ -8,6 +8,59 @@ Each component is an independently built, independently trained, and independent
 
 ---
 
+## Common Workflow Across All Components
+
+Each component ingests a different clinical data type, but all four follow the same underlying pattern: **raw clinical data → modality-specific preprocessing → prediction model → explainability layer → structured clinical output → clinician review via a web interface.**
+
+```mermaid
+flowchart TD
+    subgraph INPUT["Clinical Input Data"]
+        I1["Chest X-ray<br/>(Component 1)"]
+        I2["12-lead ECG<br/>(Component 2)"]
+        I3["Echocardiogram Video<br/>(Component 3)"]
+        I4["Triage Data: vitals, labs,<br/>text, ECG markers<br/>(Component 4)"]
+    end
+
+    subgraph PREP["Preprocessing"]
+        P1["Resize · normalize<br/>384x384 z-score"]
+        P2["Signal normalization<br/>500Hz, 12-lead"]
+        P3["Cardiac-cycle alignment<br/>+ frame sampling"]
+        P4["Multimodal feature fusion<br/>NLP + vitals + labs + ECG"]
+    end
+
+    subgraph MODEL["Prediction Model"]
+        M1["ConvNeXt-Base<br/>multi-label classifier"]
+        M2["1D ResNet<br/>5-class classifier"]
+        M3["R(2+1)D-18<br/>3-head ensemble"]
+        M4["XGBoost<br/>2-stage hierarchical"]
+    end
+
+    subgraph XAI["Explainable AI Layer"]
+        X1["Grad-CAM<br/>heatmap"]
+        X2["Grad-CAM (temporal) +<br/>Integrated Gradients (spatial)"]
+        X3["Grad-CAM + Wall Motion<br/>+ LV Segmentation"]
+        X4["SHAP +<br/>NLP highlighting"]
+    end
+
+    subgraph OUTPUT["Clinical Output"]
+        O1["Pathology probabilities<br/>+ draft report"]
+        O2["ECG diagnosis<br/>+ hallucination-free report"]
+        O3["EF % + severity grade<br/>+ urgent referral flag"]
+        O4["ACS diagnosis + subtype<br/>+ risk score"]
+    end
+
+    REVIEW["Web Interface →<br/>Clinician Review & Verification"]
+
+    I1 --> P1 --> M1 --> X1 --> O1 --> REVIEW
+    I2 --> P2 --> M2 --> X2 --> O2 --> REVIEW
+    I3 --> P3 --> M3 --> X3 --> O3 --> REVIEW
+    I4 --> P4 --> M4 --> X4 --> O4 --> REVIEW
+```
+
+The convergence point is deliberate: regardless of modality or model architecture, no component's output reaches a clinician without an accompanying, verifiable explanation of *why* the model made that call.
+
+---
+
 ## Components at a Glance
 
 | # | Component | Author | Student ID | Input Data | Core Task | XAI Method(s) |
