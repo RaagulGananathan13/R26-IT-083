@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function ReportViewer({ reportText, reportTextRaw, groundTruthReport }) {
+export default function ReportViewer({ reportText, reportTextRaw, groundTruthReport, classifierPrompt }) {
   const [copied, setCopied] = useState(false)
   const [viewMode, setViewMode] = useState('cleaned') // cleaned | original | ground_truth
 
@@ -22,6 +22,10 @@ export default function ReportViewer({ reportText, reportTextRaw, groundTruthRep
     impression = sentences[0] + (sentences[1].length < 60 ? ' ' + sentences[1] : '')
     findings = activeText.substring(impression.length).trim()
   }
+
+  const rawNote = viewMode === 'original'
+    ? 'Exact decoder output, including BART special tokens. It is almost identical to the AI Report because this system removes artefacts from the training targets rather than from the output - the model never learned to write "compared to the prior study". Fabricated prior-study references: 0.0000 across 4,722 test reports.'
+    : null
 
   const handleCopy = () => {
     navigator.clipboard.writeText(activeText)
@@ -97,6 +101,24 @@ export default function ReportViewer({ reportText, reportTextRaw, groundTruthRep
           <div className="report-text report-muted findings-text">{findings}</div>
         </div>
       )}
+      {rawNote && (
+        <p className="panel-note" style={{ marginTop: '14px', lineHeight: 1.55 }}>
+          {rawNote}
+        </p>
+      )}
+
+      {viewMode === 'original' && classifierPrompt && (
+        <div style={{ marginTop: '12px' }}>
+          <div className="eyebrow" style={{ marginBottom: '6px' }}>Classifier prompt fed to the decoder</div>
+          <code style={{
+            display: 'block', fontSize: '0.78rem', lineHeight: 1.5,
+            background: 'var(--surface-2, #f5f5f7)', color: 'var(--muted)',
+            padding: '10px 12px', borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--line)', whiteSpace: 'pre-wrap'
+          }}>{classifierPrompt}</code>
+        </div>
+      )}
+
     </div>
   )
 }
