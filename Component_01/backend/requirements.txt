@@ -1,11 +1,10 @@
-fastapi==0.110.0
-uvicorn==0.29.0
-python-multipart==0.0.9
+fastapi
+uvicorn[standard]
+python-multipart
 torch
 torchvision
-timm
 transformers
-sacremoses
-Pillow
+pillow
+opencv-python
 numpy
-opencv-python-headless
+pandas

@@ -7,6 +7,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [originalImgUrl, setOriginalImgUrl] = useState(null)
+  // Projection drives the operating point. Left blank the backend uses the
+  // global threshold rather than guessing -- guessing PA on a bedside film
+  // would under-call cardiomegaly on the patients least able to tolerate it.
+  const [view, setView] = useState('')
 
   const handleUpload = async (file) => {
     setIsLoading(true)
@@ -19,6 +23,7 @@ function App() {
 
     const formData = new FormData()
     formData.append('file', file)
+    if (view) formData.append('view', view)
 
     try {
       // Proxy in vite.config.js forwards /predict to localhost:8000
@@ -64,11 +69,40 @@ function App() {
               <div className="hero-meta">
                 <span className="pill">ConvNeXt image model</span>
                 <span className="pill">GradCAM explanations</span>
-                <span className="pill">BART - base report text</span>
+                <span className="pill">BioBART report text</span>
+                <span className="pill">Cardiomegaly AUROC 0.9189</span>
               </div>
             </section>
             <section className="content-grid rise-in-1">
-              <UploadZone onUpload={handleUpload} isLoading={isLoading} />
+              <div>
+                <UploadZone onUpload={handleUpload} isLoading={isLoading} />
+
+                {/* Projection selector - applies the per-projection operating point */}
+                <div className="card" style={{ marginTop: '16px', padding: '18px 20px' }}>
+                  <p className="eyebrow" style={{ marginBottom: '12px' }}>Projection</p>
+                  <div className="segmented">
+                    {[
+                      { v: '', label: 'Not specified' },
+                      { v: 'PA', label: 'PA - standing' },
+                      { v: 'AP', label: 'AP - bedside' },
+                    ].map((o) => (
+                      <button
+                        key={o.v}
+                        onClick={() => setView(o.v)}
+                        disabled={isLoading}
+                        className={`segmented-btn ${view === o.v ? 'active' : ''}`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="panel-note" style={{ marginTop: '10px', marginBottom: 0 }}>
+                    AP films magnify the cardiac silhouette, so a different decision
+                    threshold applies - as in clinical practice, where cardiomegaly is
+                    CTR &gt; 0.50 on PA and &gt; 0.55 on AP.
+                  </p>
+                </div>
+              </div>
               <div className="card">
                 <h3 className="card-title">What you receive</h3>
                 <p className="card-subtitle">

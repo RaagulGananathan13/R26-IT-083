@@ -153,7 +153,7 @@ Model 2's vision encoder is loaded from Model 1's trained checkpoint rather than
 - ✅ **Cardiomegaly detection** — AUROC **0.9189**
 - ✅ **7 co-pathologies** in the same forward pass
 - ✅ **Grad-CAM heatmaps** per pathology
-- ✅ **Report generation** with zero fabricated prior-study references
+- ✅ **Report generation** — clinical F1 **0.5937**, zero fabricated prior-study references
 - ✅ **Acquisition fairness audit** — performance reported separately for AP and PA films
 - ✅ **Per-projection operating points** — 73.3% less subgroup disparity at no accuracy cost
 - ✅ **104 unit tests** across four modules, including controls built to falsify my own methods
@@ -202,41 +202,199 @@ Data folders (`stage1_clean/`, `stage3_labels/`, `training_manifest/`) and `chec
 
 ### Classifier — test set, n = 4,722
 
-| Pathology | AUROC |
-|---|---|
-| Pleural Effusion | 0.9289 |
-| **Cardiomegaly** | **0.9189** |
-| Pneumothorax | 0.9141 |
-| Edema | 0.9132 |
-| Consolidation | 0.8167 |
-| Atelectasis | 0.8096 |
-| Pneumonia | 0.7959 |
-| Lung Opacity | 0.7462 |
-| **Mean** | **0.8554** |
+Thresholds fitted on validation, applied to test.
+
+| Pathology | Prev. | **AUROC** | Acc. | **Sens.** | Spec. | PPV |
+|---|---|---|---|---|---|---|
+| **Cardiomegaly** | 50.4% | **0.9189** | 83.2% | **92.3%** | 74.0% | 78.3% |
+| Pleural Effusion | 31.1% | 0.9289 | 86.1% | 81.2% | 88.4% | 75.9% |
+| Pneumothorax | 3.7% | 0.9141 | 95.3% | 54.0% | 96.9% | 40.1% |
+| Edema | 22.6% | 0.9132 | 85.2% | 75.9% | 87.8% | 64.6% |
+| Consolidation | 5.7% | 0.8167 | 89.3% | 38.4% | 92.4% | 23.3% |
+| Atelectasis | 26.6% | 0.8096 | 70.5% | 79.3% | 67.3% | 46.8% |
+| Pneumonia | 8.1% | 0.7959 | 89.4% | 31.1% | 94.5% | 33.4% |
+| Lung Opacity | 23.9% | 0.7462 | 70.3% | 61.6% | 73.1% | 41.8% |
+| **Mean** | | **0.8554** | 83.7% | 64.2% | 84.3% | 50.5% |
 
 Up from **0.8251** on the previous version.
 
-### Report Generator
+#### Cardiomegaly in plain numbers
 
-| Metric | Value |
+```
+correct       : 3,929 of 4,722   (83.2%)
+missed cases  :   184
+false alarms  :   609
+
+of 2,381 patients WITH cardiomegaly    -> caught  2,197  (92.3%)
+of 2,341 patients WITHOUT cardiomegaly -> cleared 1,732  (74.0%)
+
+AUROC 0.9189   95% CI [0.9112, 0.9265]
+```
+
+92.3% sensitivity means it misses roughly 1 case in 13. For a triage tool that's the
+right trade — it over-calls rather than missing disease.
+
+#### ⚠️ Why I don't lead with accuracy
+
+Accuracy of a model that simply always says "no disease":
+
+| Pathology | Model | Always "no" | Gain |
+|---|---|---|---|
+| **Cardiomegaly** | 83.2% | 49.6% | **+33.6** |
+| Pleural Effusion | 86.1% | 68.9% | **+17.2** |
+| Edema | 85.2% | 77.4% | **+7.8** |
+| Pneumothorax | 95.3% | 96.3% | −1.0 |
+| Pneumonia | 89.4% | 91.9% | −2.5 |
+| Atelectasis | 70.5% | 73.4% | −2.9 |
+| Consolidation | 89.3% | 94.3% | −5.0 |
+| Lung Opacity | 70.3% | 76.1% | −5.8 |
+
+**Five of eight pathologies lose to doing nothing, on accuracy.** That's an artefact of
+F1-optimal thresholds on rare diseases — the model deliberately over-calls to catch
+cases. AUROC shows discrimination is genuine. So I report **AUROC and sensitivity**, and
+quote accuracy only next to its baseline.
+
+```
+all 8 labels correct on one X-ray : 34.9%  (1,649 of 4,722)
+average labels correct per X-ray  : 6.69 of 8
+```
+
+---
+
+### The report generator, expressed as accuracy
+
+The metrics further down (ROUGE-L, clinical F1) are the standard ones, but they're hard to
+read without background. So here's the plain question: **of 4,722 test X-rays, how often did
+the generated report reach the same conclusion as the radiologist?**
+
+| | **Classifier** | **Report generator** |
+|---|---|---|
+| **Cardiomegaly accuracy** | **83.2%** (3,929/4,722) | **80.4%** (3,796/4,722) |
+| Sensitivity | 92.3% | 88.8% |
+| Specificity | 74.0% | 71.8% |
+| **Mean accuracy, 8 pathologies** | **83.7%** | **83.3%** |
+
+The report generator is **2.8 points** behind the classifier on cardiomegaly, and within
+**0.4 points** averaged over all eight — despite a much harder job. The classifier emits a
+number; the report generator has to write English that happens to contain the right
+clinical conclusion. Labels are extracted from the generated text with my own extractor,
+which I validated against CheXbert to within **0.002** micro-F1.
+
+Both models favour sensitivity over specificity (92.3%/88.8% vs 74.0%/71.8%). That's
+deliberate — the thresholds were fitted for F1 on a screening task, where a missed
+cardiomegaly costs more than a false alarm that gets reviewed.
+
+> ⚠️ Same caveat as above: this test set is enriched to 50.4% cardiomegaly, so accuracy is
+> meaningful **for cardiomegaly** and misleading for the rarer findings. Read it next to the
+> "always say no" table, never on its own.
+
+---
+
+### ⭐ ROUGE-L doesn't measure what people think it measures
+
+Before the report numbers, here's a result worth its own section. I scored three
+degenerate "reports" against all 4,722 references using the identical pipeline that
+scores my model:
+
+| "Report" | **ROUGE-L** | **Clinical F1** |
+|---|---|---|
+| **A constant string, identical for every patient** | **0.2641** | **0.0000** |
+| A random real report from a *different* patient | 0.1821 | 0.3120 |
+| The patient's own real report | 1.0000 | 1.0000 |
+| my model (Stage 11) | 0.2896 | 0.5937 |
+
+Two things fall out of this:
+
+**A clinically worthless report scores 91% of my model's ROUGE-L.** One fixed paragraph,
+the same for all 4,722 patients, reaches 0.2641 — while identifying **exactly zero**
+findings correctly.
+
+**ROUGE-L and clinical F1 rank in opposite directions.** The constant string beats a real
+report from the wrong patient on ROUGE-L (0.2641 vs 0.1821) but loses catastrophically on
+clinical F1 (0.0000 vs 0.3120). ROUGE-L prefers generic radiology English over a genuine
+report; clinical F1 correctly prefers the opposite.
+
+Radiology reports are so templated — *"the lungs are clear"*, *"no pleural effusion"*,
+*"cardiomediastinal silhouette"* — that you score well just by writing plausible
+radiology English. This matches
+[PLOS One 2021](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0259639),
+which found encoder-decoder report generators do no better than unconditioned baselines.
+
+**So clinical-efficacy F1 is my primary report metric. ROUGE-L is only ever reported
+next to its constant-string control.**
+
+---
+
+### Report Generator — test set, n = 4,722
+
+| Metric | Stage 4 | **Stage 11 (shipped)** | Change |
+|---|---|---|---|
+| **CheXbert micro-F1 (14)** | 0.5783 | **0.5939** | **+0.0157** |
+| CheXbert micro-F1 (5) | 0.6580 | **0.6700** | +0.0120 |
+| Clinical F1 *(internal extractor)* | 0.5799 | 0.5937 | +0.0138 |
+| ROUGE-L | 0.2918 | 0.2896 | −0.0022 |
+| Constant-string control | 0.2641 | 0.2641 | — |
+| **Fabricated prior-study references** | 0.0000 | **0.0000** | ✅ held |
+| Mean words | 36.6 | 39.4 | +2.8 *(reference: 46.9)* |
+
+**Scored with CheXbert**, the labeller the field actually uses — so the clinical number is
+measured the standard way. It also validated my own extractor: the two agree to within
+**0.002** on both models, which means every clinical figure elsewhere in this project
+holds up.
+
+**Cardiomegaly is the strongest of all 14 CheXbert findings — F1 0.8287** (precision
+0.7886, recall 0.8732). Fracture, Pleural Other and Lung Lesion score near zero because
+my classifier covers only 8 pathologies and those aren't among them.
+
+The gain mechanism is visible in the split: recall **+0.0441**, precision −0.0204. Stage
+11 writes longer reports, mentions more findings, catches more and over-calls slightly
+more.
+
+I ship Stage 11: it trades 0.0022 of a metric a worthless constant string nearly matches,
+for 0.0138 of the metric that measures whether the report states the right findings.
+*(The ROUGE-L difference is about one standard error at n=4,722 and isn't established as
+significant.)*
+
+#### What actually caused the gain — the ablation
+
+Stage 11 conditions the decoder on the classifier's predictions via a text prompt. I
+tested whether that was really responsible, by evaluating the same weights twice:
+
+| Configuration | Clinical F1 |
 |---|---|
-| ROUGE-L | 0.2918 |
-| Constant-baseline ROUGE-L | 0.2769 |
-| **Margin over baseline** | **+0.0149** |
-| Fabricated prior-study references | **0.0000** |
-| Unique opening sentences (n=100) | 0.4100 *(was 0.1400)* |
+| Stage 4 (no fine-tuning) | 0.5799 |
+| Stage 11, **prompt removed** | 0.5913 |
+| Stage 11, **prompt present** | 0.5937 |
 
-**About that margin.** I report ROUGE-L alongside the score that a single fixed report gets when scored against every reference. That constant baseline is **0.2769**, which means most of a raw ROUGE-L score reflects how templated radiology reports are rather than anything the model understood. The honest measure of what the vision pipeline contributes is the **+0.0149** margin, not the 0.2918. This isn't specific to my model — [published work](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0259639) shows encoder-decoder report generators generally struggle to beat unconditioned baselines. I'd rather report it than bury it.
+```
+gain from extra fine-tuning : +0.0114   (83%)
+gain from the PROMPT        : +0.0023   (17%, within noise)
+```
+
+Inverting the prompt changed only **18 of 96** reports. **Classifier conditioning did not
+work.** The improvement is real, but it comes from additional fine-tuning — and I report
+it that way.
+
+---
 
 ### ⚠️ Comparability
 
-These numbers are **not** directly comparable to published MIMIC-CXR results, for three reasons I checked rather than assumed:
+These numbers are **not** directly comparable to published MIMIC-CXR results, for three
+reasons I checked rather than assumed:
 
-1. **The split is mine, not the official one.** It's patient-disjoint — zero subject, study, or image overlap, verified — but 98.3% of my test images are officially *training* data. Re-running on the official split isn't possible: only 155 official-test films are both available to me and free of my training patients.
-2. **My reference text is cleaned.** Stage 1 removes prior-study language, which shifts the reference distribution. Cleaning alone moved the constant baseline from 0.2481 to 0.2769.
+1. **The split is mine, not the official one.** Patient-disjoint — zero subject, study or
+   image overlap, verified — but 98.3% of my test images are officially *training* data.
+   Re-running on the official split isn't possible: only 155 official-test films are both
+   available to me and free of my training patients.
+2. **My reference text is cleaned.** Stage 1 removes prior-study language, shifting the
+   reference distribution. Cleaning alone moved the constant baseline from 0.2481 to 0.2769.
 3. **Different filtering** — frontal-only, cardiomegaly-enriched.
 
-Also, the clinical-efficacy F1 I currently report uses a project-internal extractor, **not CheXbert**. Until CheXbert is run it should not be placed in a table beside published numbers.
+**CheXbert doesn't fix this.** It removed the *labeller* mismatch, not the *data*
+mismatch. Published MIMIC-CXR work reports micro-F1-14 around 0.47; I get 0.5939 — but
+that is **not** a win. My test set is cardiomegaly-enriched at 50.4% prevalence, and
+cardiomegaly is my best finding (F1 0.8287). Over-representing your strongest class
+inflates a micro-average. I report the number; I don't claim the comparison.
 
 ---
 
@@ -293,6 +451,7 @@ Including this because the failures took as long as the successes and shaped the
 | **Sentence-Level Evidence Gating** | Four papers already do this, and better. Dropped after a prior-art search. |
 | **Grad-CAM stability score** | Already published in 2021 — and they found Grad-CAM repeatability is poor (SSIM 0.12). Dropped. |
 | **Conditional specialisation** | A cheap linear-probe gate returned +0.0003 before I committed the GPU budget. Cancelled. |
+| **Classifier-conditioned reports** | Measured +0.0736 of headroom, built it, and the ablation showed the prompt contributed +0.0023. The gain was fine-tuning. |
 | **Label noise hypothesis** | I assumed weak co-pathology performance was caused by bad labels. Measuring the ceiling F1 (0.82–0.97 vs model 0.23–0.86) proved it wasn't. |
 
 The pattern in all of these is the same: I assumed a number instead of measuring it. The controls that killed these ideas are in the repository alongside the ones that worked.

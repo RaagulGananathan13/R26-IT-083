@@ -1,0 +1,43 @@
+{
+  "pathologies": [
+    "Cardiomegaly",
+    "Edema",
+    "Pleural_Effusion",
+    "Atelectasis",
+    "Consolidation",
+    "Lung_Opacity",
+    "Pneumonia",
+    "Pneumothorax"
+  ],
+  "global": {
+    "Cardiomegaly": 0.401,
+    "Edema": 0.7677,
+    "Pleural_Effusion": 0.6243,
+    "Atelectasis": 0.3748,
+    "Consolidation": 0.4676,
+    "Lung_Opacity": 0.5808,
+    "Pneumonia": 0.588,
+    "Pneumothorax": 0.3748
+  },
+  "AP": {
+    "Cardiomegaly": 0.4095,
+    "Edema": 0.7677,
+    "Pleural_Effusion": 0.6223,
+    "Atelectasis": 0.4267,
+    "Consolidation": 0.4627,
+    "Lung_Opacity": 0.5784,
+    "Pneumonia": 0.5241,
+    "Pneumothorax": 0.2483
+  },
+  "PA": {
+    "Cardiomegaly": 0.3481,
+    "Edema": 0.7549,
+    "Pleural_Effusion": 0.5134,
+    "Atelectasis": 0.3334,
+    "Consolidation": 0.5658,
+    "Lung_Opacity": 0.4548,
+    "Pneumonia": 0.5974,
+    "Pneumothorax": 0.3748
+  },
+  "note": "Global = F1-optimal on validation. AP/PA = per-projection, the Stage 9A contribution."
+}

@@ -1,19 +1,29 @@
 import GradCamViewer from './GradCamViewer'
 import ReportViewer from './ReportViewer'
+import ReliabilityNotice from './ReliabilityNotice'
+import DeferralNotice from './DeferralNotice'
 
 export default function ResultsPanel({ result, originalImg }) {
   if (!result) return null
 
-  const { prediction, confidence, gradcam_image, report_text, report_text_raw, ground_truth_report, copathologies } = result
+  const { prediction, confidence, gradcam_image, report_text, report_text_raw, ground_truth_report,
+          copathologies, reliability, threshold, threshold_source, classifier_prompt,
+          deferral } = result
   const hasCardiomegaly = prediction === 'Cardiomegaly'
+  const isDeferred = Boolean(deferral?.active && deferral?.defer)
 
   // Format confidence to 1 decimal place
   const confPercent = (confidence * 100).toFixed(1)
 
   const statusText = hasCardiomegaly ? 'Cardiomegaly detected' : 'No cardiomegaly detected'
-  const statusNote = hasCardiomegaly
-    ? 'Review imaging and clinical context for confirmation.'
-    : 'Findings do not indicate cardiomegaly.'
+  // When the case is deferred the prediction is still shown -- a clinician needs
+  // to see what the system thought in order to judge the referral -- but the
+  // note says plainly that it is not actionable.
+  const statusNote = isDeferred
+    ? 'Not actionable — this case falls below the confidence required for this projection.'
+    : hasCardiomegaly
+      ? 'Review imaging and clinical context for confirmation.'
+      : 'Findings do not indicate cardiomegaly.'
 
   // Only show Edema and Pleural Effusion as secondary findings
   const showOnly = ['Edema', 'Pleural Effusion']
@@ -27,7 +37,12 @@ export default function ResultsPanel({ result, originalImg }) {
       <div className="card summary-card rise-in-1">
         <div>
           <p className="eyebrow">Primary Diagnosis</p>
-          <div className={`summary-title ${hasCardiomegaly ? 'tone-danger' : 'tone-ok'}`}>{statusText}</div>
+          <div
+            className={`summary-title ${hasCardiomegaly ? 'tone-danger' : 'tone-ok'}`}
+            style={isDeferred ? { opacity: 0.5 } : undefined}
+          >
+            {statusText}
+          </div>
           <p className="summary-sub">{statusNote}</p>
         </div>
         <div>
@@ -46,6 +61,16 @@ export default function ResultsPanel({ result, originalImg }) {
           </div>
         </div>
       </div>
+
+      {/* Stage 13 selective deferral - renders nothing unless this case is deferred */}
+      <DeferralNotice deferral={deferral} />
+
+      {/* Measured AP/PA reliability - see ReliabilityNotice */}
+      <ReliabilityNotice
+        reliability={reliability}
+        threshold={threshold}
+        thresholdSource={threshold_source}
+      />
 
       {/* Co-pathology findings */}
       {copathologies && copathologies.length > 0 && (
@@ -77,7 +102,7 @@ export default function ResultsPanel({ result, originalImg }) {
 
       <div className="grid-2 rise-in-2">
         <GradCamViewer originalImg={originalImg} heatmapImg={`data:image/png;base64,${gradcam_image}`} />
-        <ReportViewer reportText={report_text} reportTextRaw={report_text_raw} groundTruthReport={ground_truth_report} />
+        <ReportViewer reportText={report_text} reportTextRaw={report_text_raw} groundTruthReport={ground_truth_report} classifierPrompt={classifier_prompt} />
       </div>
     </div>
   )
