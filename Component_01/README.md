@@ -156,7 +156,7 @@ Model 2's vision encoder is loaded from Model 1's trained checkpoint rather than
 - ✅ **Report generation** — clinical F1 **0.5937**, zero fabricated prior-study references
 - ✅ **Acquisition fairness audit** — performance reported separately for AP and PA films
 - ✅ **Per-projection operating points** — 73.3% less subgroup disparity at no accuracy cost
-- ✅ **104 unit tests** across four modules, including controls built to falsify my own methods
+- ✅ **193 unit tests** across eight Python modules (plus per-stage tests inside the notebooks), including controls built to falsify my own methods
 - ✅ **Reproducible** — every stage is a self-contained notebook with a smoke-test mode
 
 ---
@@ -287,6 +287,14 @@ cardiomegaly costs more than a false alarm that gets reviewed.
 > ⚠️ Same caveat as above: this test set is enriched to 50.4% cardiomegaly, so accuracy is
 > meaningful **for cardiomegaly** and misleading for the rarer findings. Read it next to the
 > "always say no" table, never on its own.
+
+---
+
+> **Scope note.** Cardiomegaly is this component's diagnostic target; the other seven
+> pathologies are reported as co-findings. The acquisition-fairness analysis is scoped to
+> cardiomegaly because its 50.4% prevalence supports stable per-group threshold fitting,
+> whereas rare labels do not — pneumothorax (3.73%) measurably *worsened* under per-group
+> fitting. This is a constraint the data imposes, not an omission.
 
 ---
 

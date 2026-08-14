@@ -110,7 +110,7 @@ Component_01/Component_01/
 | `README.md` | Main project document — what it does, how it works, results | ✅ essential |
 | `RESULTS.md` | Every measured number with confidence intervals and references | ✅ essential |
 | `MASTER_PLAN.md` | The research plan, all stages, reference papers | ✅ essential |
-| `NOVELTY_EXPLANATION.md` | The three contributions + five falsified ideas, in plain language | ✅ essential |
+| `NOVELTY_EXPLANATION.md` | The contributions + six falsified ideas, in plain language | ✅ essential |
 | `PANEL_ANSWERS.md` | Scripted answers to likely panel questions | ✅ essential |
 | `PROJECT_STRUCTURE.md` | This file | ✅ |
 
@@ -124,6 +124,8 @@ Component_01/Component_01/
 | `stage11_conditioned.py` | Report generator architecture + `build_prompt()` | ✅ **YES** — imported at inference |
 | `build_review.py` | Extracts the 8 findings from report text | ⚠️ analysis only |
 | `stage13_deferral.py` | ⭐ Contribution 3 — the deferral analysis | ⚠️ analysis only |
+| `stage14_significance.py` | Paired significance tests (McNemar mid-p, Holm) | ⚠️ analysis only |
+| `stage15_interval.py` | ⭐ Acquisition-induced false interval change | ⚠️ analysis only |
 | `chexpert_fusion.py` | Stage 3 label fusion (text-adjudicated) | ❌ already run |
 | `extract_review_cases.py` | Built `review_cases/` | ❌ already run |
 | `extract_cardiomegaly_cases.py` | Built the cardiomegaly folders | ❌ already run |

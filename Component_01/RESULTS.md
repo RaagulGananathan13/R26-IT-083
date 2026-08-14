@@ -19,7 +19,12 @@
 5. **Beating a published fairness result at zero cost** — 73.3% TPR-disparity reduction
    vs the 46.7% reported by Pereira et al. (MIDL 2023), with no retraining and no
    accuracy loss.
-6. **Four rigorously falsified hypotheses**, each killed by a control we built ourselves.
+6. **A clinical safety finding for serial imaging** — when projection switches PA→AP
+   between consecutive studies, the classifier reports spurious cardiac enlargement in
+   **13.5%** of pairs the radiologist recorded as unchanged, against **1.9%** spurious
+   improvement (p = 0.00000 vs same-projection control).
+7. **Six rigorously falsified hypotheses**, each killed by a control we built ourselves —
+   including our own per-projection thresholds failing to fix finding 6.
 
 ---
 
@@ -378,6 +383,31 @@ alone — no anatomy — predicts pathology at AUROC **0.6665–0.7016**.
 
 ---
 
+## 7A.1 · Scope: why the fairness analysis is cardiomegaly-only
+
+**Cardiomegaly is this component's diagnostic target.** The other seven pathologies are
+detected and reported as co-findings, and appear in every classifier table above, but the
+acquisition-fairness work (§7A, §7B) is deliberately scoped to cardiomegaly.
+
+This is a decision the data forces, not a shortcut:
+
+| Reason | Evidence |
+|---|---|
+| Prevalence supports stable per-group threshold fitting | Cardiomegaly 50.4%; Pneumothorax 3.73% |
+| Rare labels produce unstable per-group thresholds | §8.1: Pneumothorax disparity **worsened** (0.1005 → 0.1078) under per-group fitting — too few positives per group |
+| Per-pathology intervals are only non-overlapping for 3 of 8 | §8.1 |
+
+Fitting a projection-conditional decision rule needs enough positives *within each
+projection group* to estimate an operating point that generalises. At 3.73% prevalence,
+split across two groups and a validation fold, that condition is not met. Reporting a
+fairness intervention for pneumothorax would therefore be reporting noise.
+
+§7A results are given for all 8 labels because thresholding is cheap; §7B (deferral) is
+reported for cardiomegaly alone for the same reason, and extending it to the rarer labels
+is listed as future work.
+
+---
+
 ## 7B · ⭐ Stage 13 — projection-conditional selective deferral
 
 **The second mechanism built on the Stage 9A thesis.** Stage 9A showed the
@@ -456,6 +486,94 @@ was tested first and **falsified**: 85.57% vs 86.64% for plain confidence at
 matched coverage. A free baseline beat it. See §9.
 
 Reproduce: `python stage13_deferral.py` (13 self-checks via `--test`).
+
+---
+
+## 7C · ⭐ Stage 15 — acquisition-induced false interval change
+
+**The acquisition axis followed through time.** §7A/§7B treat each radiograph in
+isolation. Real cardiology does not: *"interval increase in cardiac silhouette"* is an
+action trigger — echocardiography, diuresis, escalation.
+
+A patient is moved from PA (standing, radiology department) to AP (portable, bedside)
+**because they have deteriorated**. AP magnifies the cardiac silhouette. So when a model
+compares today's film to a prior, the geometry changed as well as the patient.
+
+### Design
+
+Consecutive study pairs per patient, restricted to pairs where **the radiologist recorded
+no change**. Any movement the model then reports is spurious *by construction* — no
+adjudication of "real" change is required, which is what makes this measurable at all.
+
+> ⚠️ **Ordering provenance.** MIMIC `study_id` is an identifier, not a timestamp: on this
+> split, ordering by it matches true chronology **49.59%** of the time — a coin flip.
+> Ordering comes from `StudyDate`/`StudyTime` in `mimic-cxr-2.0.0-metadata.csv`, joined
+> for **100%** of the 4,722 test images. `stage15_interval.py` asserts the coin-flip
+> property so the error cannot be silently reintroduced.
+
+### Results (n = 1,666 pairs, 692 patients)
+
+| Transition | n | False worsening | False improvement | Asymmetry [95% CI] | Sig |
+|---|---|---|---|---|---|
+| AP→AP (same) | 1035 | 3.0% | 3.8% | −0.77 [−2.07, +0.49] | no |
+| PA→PA (same) | 245 | 4.1% | 6.1% | −2.04 [−5.58, +1.28] | no |
+| **PA→AP (changed)** | 207 | **13.5%** | **1.9%** | **+11.59 [+6.37, +16.92]** | **YES** |
+| AP→PA (changed) | 179 | 3.9% | 9.5% | −5.59 [−11.17, +0.00] | no |
+
+**Same projection is symmetric — that is what random error looks like. Projection change
+is 7:1 directional.**
+
+### Four arms
+
+| Arm | n | Asymmetry [95% CI] | Sig |
+|---|---|---|---|
+| **A** same projection (negative control) | 1280 | −1.02 [−2.23, +0.18] | no |
+| **B** shuffled temporal order (**the null**) | 386 | +1.55 [−2.22, +5.37] | no |
+| **C** PA→AP, true order (**the finding**) | 207 | **+11.59 [+6.37, +16.92]** | **YES** |
+| **D** C + per-projection thresholds (§7A) | 207 | **+8.21 [+2.96, +13.62]** | **YES** |
+
+| Test | Difference [95% CI] | p |
+|---|---|---|
+| Finding vs same-projection control | +12.61 [+7.36, +18.11] | **0.00000** |
+| Finding vs shuffled-order null | +10.05 [+3.65, +16.59] | **0.00150** |
+| Threshold fix vs uncorrected | −3.40 [−5.94, −1.40] | 0.00150 |
+
+### Three findings
+
+**1 · The error is directional, and the null proves it is temporal.** Arm B keeps the same
+patients, images, projections and probabilities, and randomises only *which study came
+first*. That alone collapses the effect from **+11.59 to +1.55** (p = 0.00150). So this is
+not "AP simply scores higher" — the error has a direction in time.
+
+**2 · Same-projection pairs show no asymmetry.** Both controls straddle zero. The artefact
+appears only when the acquisition geometry changes.
+
+**3 · §7A partially corrects it but does not eliminate it.** Per-projection thresholds
+produce a significant reduction (−3.40, p = 0.00150) yet leave **+8.21, still significantly
+above zero**. The artefact is not a constant offset a threshold can absorb: 29% of PA→AP
+pairs move more than 0.10 in probability, while the AP/PA threshold gap is only 0.061.
+**This is the sixth falsified hypothesis (§9) — and it is our own best idea failing.**
+
+### Stricter replication (all 8 findings recorded unchanged)
+
+n = 397 pairs, 271 patients. PA→AP: **10.9%** false worsening vs **0.0%** false improvement,
+asymmetry **+10.91 [+3.64, +20.00]**; vs same-projection control **+9.12 [+1.45, +18.02],
+p = 0.01850**.
+
+> ⚠️ **Based on 55 PA→AP pairs.** Reported as supporting evidence, not as the headline.
+
+### Scope
+
+This measures a failure mode in a capability the shipped system **does not have**: the API
+exposes only `/predict` on a single image, and **0 of 4,722** generated reports contain
+interval-change language (§5). It is a prospective safety finding for the obvious next
+extension, not a defect in what is deployed.
+
+**The deployable consequence:** when projection changes between studies, the correct policy
+is to decline the comparison — exactly what radiologists do when they write *"comparison
+limited by differences in technique."* This is §7B's abstention logic applied to time.
+
+Reproduce: `python stage15_interval.py` (19 self-checks via `--test`).
 
 ---
 
@@ -571,7 +689,7 @@ explicitly adds nothing.
 
 ---
 
-## 9 · The pattern across all five falsified hypotheses
+## 9 · The pattern across all six falsified hypotheses
 
 | # | Hypothesis | Boring explanation that won |
 |---|---|---|
@@ -580,14 +698,17 @@ explicitly adds nothing.
 | 3 | Conditional specialisation | +0.0003 |
 | 4 | Classifier-conditioned generation | +0.0023 — the gain was extra fine-tuning |
 | 5 | Cross-modal agreement as a confidence signal | plain `\|p − τ\|` beat it, 86.64% vs 85.57% at matched coverage |
+| 6 | Per-projection thresholds would fix false interval change | they help (−3.40, p = 0.00150) but leave +8.21 still significant |
 
-> Across five independent interventions, sophisticated methods matched or lost to trivial
+> Across six independent interventions, sophisticated methods matched or lost to trivial
 > baselines — recalibration, threshold adjustment, additional fine-tuning, raw confidence.
+> Hypothesis 6 is the sharpest of them: our own surviving contribution (§7A), applied to a
+> new problem, was measured and found insufficient.
 > Every apparent gain from a "clever" mechanism dissolved under a proper control arm.
 > **Each was caught by a control we built to falsify our own hypothesis**, not by a reviewer.
 >
 > The two mechanisms that *survived* their controls — per-projection thresholds (§7A) and
-> per-projection deferral budgets (§7B) — share a property none of the five have: both
+> per-projection deferral budgets (§7B) — share a property none of the six have: both
 > condition the **decision rule** on acquisition rather than trying to remove acquisition
 > from the **representation**.
 
@@ -656,7 +777,7 @@ explicitly adds nothing.
 | Conditional probe (§8.4) | `stage10_conditional.py` (20 tests) · `Stage10A_Feature_Probe.ipynb` |
 | Preprocessing | `cxr_transforms.py` |
 
-**128 unit tests across five modules**, including tests that recover known injected
+**193 unit tests across eight modules**, including tests that recover known injected
 biases and negative controls designed to falsify our own methods. The Stage 4 and Stage 5
 checkpoints were SHA-256 verified byte-identical before and after **every** experiment.
 

@@ -1,10 +1,48 @@
-fastapi
-uvicorn[standard]
-python-multipart
-torch
-torchvision
-transformers
-pillow
-opencv-python
-numpy
-pandas
+# Component_01 backend -- pinned dependencies
+#
+# Versions are pinned to the exact set the reported results were produced with.
+# Previously this file listed package names only, which meant a fresh install
+# months later could resolve to different majors (transformers 5.x removed
+# `encode_plus`, for one) and silently change behaviour.
+#
+# ---------------------------------------------------------------------------
+# TWO THINGS TO KNOW BEFORE INSTALLING
+# ---------------------------------------------------------------------------
+#
+# 1. torch: this pins the VERSION, not the build. Plain `pip install` gives the
+#    CPU build on Windows, which is what the demo runs on. For a CUDA machine
+#    install torch/torchvision from the PyTorch index FIRST, then this file:
+#
+#        pip install torch==2.11.0 torchvision==0.26.0 \
+#            --index-url https://download.pytorch.org/whl/cu124
+#        pip install -r requirements.txt
+#
+#    Pinning a local build tag such as `2.11.0+cpu` here would force CPU-only
+#    torch onto a GPU machine, so it is deliberately omitted.
+#
+# 2. opencv: this is opencv-python-HEADLESS, not opencv-python. Headless is the
+#    correct package for an API server -- it ships no GUI bindings, which the
+#    backend never calls and which fail to install on headless Linux hosts.
+#    (It is also the build actually resolved in the development environment:
+#    cv2.__version__ reports 4.12.0, matching headless 4.12.0.88.)
+#    Do not install opencv-python alongside it; the two shadow each other.
+#
+# ---------------------------------------------------------------------------
+
+# --- API server ---
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# --- deep learning ---
+torch==2.11.0
+torchvision==0.26.0
+transformers==5.7.0
+
+# --- imaging ---
+pillow==11.1.0
+opencv-python-headless==4.12.0.88
+
+# --- numerics ---
+numpy==2.1.3
+pandas==2.3.1
