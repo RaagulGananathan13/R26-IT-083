@@ -264,12 +264,12 @@ That's now the **fifth** hypothesis of mine that my own experiments have destroy
 
 ---
 
-# ⭐ The five ideas I killed myself
+# ⭐ The six ideas I killed myself
 
 This is the section I am most proud of, and the one most students cannot show.
 
-**Five times I had a clever idea. Five times I built the experiment that could prove it
-was rubbish. Five times it was rubbish. And I wrote all five down instead of hiding them.**
+**Six times I had a clever idea. Six times I built the experiment that could prove it
+was rubbish. Six times it was rubbish. And I wrote all six down instead of hiding them.**
 
 ### Why a "control" is the whole point
 
@@ -292,6 +292,8 @@ was rubbish. Five times it was rubbish. And I wrote all five down instead of hid
 | **3** | Give the AI separate specialist settings for each X-ray type | **A rounding error.** +0.0003. That is zero wearing a disguise |
 | **4** | Let the report-writer see the classifier's answers before writing | **Just training it longer.** +0.0023 — and when I trained the plain version for the same extra time, it caught up. The "clever bit" contributed nothing |
 | **5** | Refer cases where the classifier and the report disagree with each other | **Simply asking "is the AI unsure?"** Mine: 85.57%. The dumb version: **86.64%** |
+| **6** | My own per-projection cut-offs would stop the AI reporting fake heart
+enlargement when the camera changes | **They help a bit, then stop.** They removed 3.40 points of the error and left 8.21 — still real |
 
 ### The pattern I found
 
@@ -299,22 +301,22 @@ Look down that right-hand column. Every single winner is **boring**:
 
 > a 1999 statistics trick · doing nothing · a rounding error · more training time · one subtraction
 
-**Five times, the fancy method lost to something simple.** That is not five failures — that
-is one finding, confirmed five separate ways:
+**Six times, the fancy method lost to something simple.** That is not five failures — that
+is one finding, confirmed six separate ways:
 
 > ### 🔑 In this problem, complicated methods do not beat simple ones. So if you publish a complicated method, you had better have tested it against the simple one — and most papers do not.
 
 ### Why this is my strongest evidence
 
-Anybody can show a graph going up. **Almost nobody hands you the five graphs that went
+Anybody can show a graph going up. **Almost nobody hands you the six graphs that went
 down.**
 
 And here's the thing that ties it together — **the two ideas that survived**
-(Contribution 1 and Contribution 3) survived *the same controls that killed the other five.*
+(Contribution 1 and Contribution 3) survived *the same controls that killed the other six.*
 
 That is why you should believe them.
 
-> **If I were only trying to look good, you would never have heard about any of these five.
+> **If I were only trying to look good, you would never have heard about any of these six.
 > You are hearing about them because I was trying to find out what is true.**
 
 ---
@@ -409,5 +411,5 @@ cardiomegaly-enriched at 50.4% — which inflates any average that includes my b
 ---
 
 *Supporting detail: [`RESULTS.md`](RESULTS.md) · [`MASTER_PLAN.md`](MASTER_PLAN.md)
-Code and 128 unit tests: `stage9_fairness.py`, `stage9b_gradrev.py`, `stage10_conditional.py`,
+Code and 193 unit tests: `stage9_fairness.py`, `stage9b_gradrev.py`, `stage10_conditional.py`,
 `stage6_acr.py`, `stage11_conditioned.py`*
