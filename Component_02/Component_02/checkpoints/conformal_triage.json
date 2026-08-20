@@ -1,0 +1,87 @@
+{
+  "class_names": [
+    "NORM",
+    "MI",
+    "STTC",
+    "CD",
+    "HYP"
+  ],
+  "alpha": {
+    "NORM": 0.2,
+    "MI": 0.05,
+    "STTC": 0.1,
+    "CD": 0.1,
+    "HYP": 0.15
+  },
+  "beta": {
+    "NORM": 0.2,
+    "MI": 0.1,
+    "STTC": 0.15,
+    "CD": 0.15,
+    "HYP": 0.15
+  },
+  "delta": 0.01,
+  "fitted_for": {
+    "model": "resnet_se",
+    "ckpt": "best_model.pt",
+    "filter": true,
+    "seed": 0
+  },
+  "thresholds": {
+    "NORM": {
+      "cls": "NORM",
+      "alpha": 0.2,
+      "beta": 0.2,
+      "lambda_out": 0.19861356953545042,
+      "lambda_in": 0.6944066950668029,
+      "n_pos_cal": 699,
+      "n_neg_cal": 1010,
+      "guarantee_feasible": true,
+      "note": "rule-out and rule-in regions overlap on [0.199, 0.694); the overlap is referred rather than decided"
+    },
+    "MI": {
+      "cls": "MI",
+      "alpha": 0.05,
+      "beta": 0.1,
+      "lambda_out": 0.03823656488445783,
+      "lambda_in": 0.33859442126077344,
+      "n_pos_cal": 283,
+      "n_neg_cal": 1426,
+      "guarantee_feasible": true,
+      "note": ""
+    },
+    "STTC": {
+      "cls": "STTC",
+      "alpha": 0.1,
+      "beta": 0.15,
+      "lambda_out": 0.19335957859326117,
+      "lambda_in": 0.34353482994171297,
+      "n_pos_cal": 455,
+      "n_neg_cal": 1254,
+      "guarantee_feasible": true,
+      "note": ""
+    },
+    "CD": {
+      "cls": "CD",
+      "alpha": 0.1,
+      "beta": 0.15,
+      "lambda_out": 0.11041228637429505,
+      "lambda_in": 0.2792521198747812,
+      "n_pos_cal": 485,
+      "n_neg_cal": 1224,
+      "guarantee_feasible": true,
+      "note": ""
+    },
+    "HYP": {
+      "cls": "HYP",
+      "alpha": 0.15,
+      "beta": 0.15,
+      "lambda_out": 0.050609231807196474,
+      "lambda_in": 0.13908469471595744,
+      "n_pos_cal": 134,
+      "n_neg_cal": 1575,
+      "guarantee_feasible": true,
+      "note": ""
+    }
+  }
+}

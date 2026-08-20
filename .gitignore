@@ -25,6 +25,12 @@ Component_01/Component_01/review_cases/
 Component_02/Component_02/data/
 Component_02/Component_02/csv/
 Component_02/Component_02/reference/
+# NOTE: csv/ is excluded at the *directory* level on purpose. train/test/val.csv
+# carry patient_id, age, sex and report_en. Component_02's own nested .gitignore
+# re-includes `!csv/*.csv`; excluding the directory stops git descending, so that
+# negation can never take effect. norm_stats.json and scp_to_superclass_mapping
+# .json are tracked by an explicit `git add -f` instead — already-tracked files
+# ignore these rules, so no negation pattern is needed.
 
 # EchoNet-Dynamic + CAMUS. The decoded frame cache alone is ~35 GB.
 Component_03/Dilukshan/Dataset/
@@ -36,6 +42,10 @@ Component_04/Component_04/artifacts/data/
 Component_04/Component_4/
 
 # --- trained weights (derived from credentialed data) ------------------------
+# Directory-level on purpose, same reasoning as csv/ above. Component 02's
+# calibrator.json and conformal_triage.json are its frozen decision rule and the
+# ECG adapter refuses to serve without them, so they are tracked via `git add -f`
+# rather than a negation. best_model.pt (6 MB) stays out.
 **/checkpoints/
 Component_03/Dilukshan/training/outputs/
 Component_04/Component_04/artifacts/models/
