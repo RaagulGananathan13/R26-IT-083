@@ -1,0 +1,94 @@
+
+==============================================================================
+  A. SPLIT INTEGRITY
+==============================================================================
+  master=17,221  train=13,801  val=1,709  test=1,711
+  train+val+test = 17,221
+  ECG-ID overlap  train/val=0  train/test=0  val/test=0
+  PATIENT overlap train/val=0  train/test=0  val/test=0
+  Test rows whose patient also appears in TRAIN: 0 / 1711 (0.00%)
+  Val  rows whose patient also appears in TRAIN: 0 / 1709 (0.00%)
+
+  strat_fold distribution per split (PTB-XL official: fold 9=val, fold 10=test):
+    train : {1: 1704, 2: 1720, 3: 1775, 4: 1703, 5: 1705, 6: 1714, 7: 1741, 8: 1739}
+    val   : {9: 1709}
+    test  : {10: 1711}
+
+  Patients in master: 15,174; records: 17,221
+  Patients with >1 ECG: 1,509 (9.9%)  max ECGs/patient: 10
+
+==============================================================================
+  B. LABEL INTEGRITY
+==============================================================================
+  split      NORM      MI    STTC      CD     HYP       n
+  master     7032    2975    4565    4778    1468    17221
+  train      5626    2424    3654    3810    1202    13801
+  val         699     283     455     485     134     1709
+  test        707     268     456     483     132     1711
+
+  Prevalence (%) per split — drift between splits distorts F1 comparisons:
+    train   40.77%  17.56%  26.48%  27.61%   8.71%
+    val     40.90%  16.56%  26.62%  28.38%   7.84%
+    test    41.32%  15.66%  26.65%  28.23%   7.71%
+
+  Rows with ZERO labels : 0  (unlabelable → should have been dropped or kept deliberately)
+  Rows with >1 label    : 2970 (17.2%)
+  Mean labels/record    : 1.209
+  Rows labelled NORM *and* an abnormality: 0 (0.00%)  <-- clinically contradictory ground truth
+
+  'validated' column (PTB-XL: human-validated report):
+    {1: 12849, 0: 4372}
+
+  POS_WEIGHT hardcoded in train scripts: [1.45, 4.69, 2.78, 2.62, 10.48]
+  Recomputed neg/pos ratio on train.csv: [1.45, 4.69, 2.78, 2.62, 10.48]
+
+==============================================================================
+  C. DEMOGRAPHIC INTEGRITY
+==============================================================================
+  age     min=     2.0 max=   300.0 mean=  63.02 std=  33.57 nan=    0
+  height  min=     6.0 max=   209.0 mean= 167.33 std=   8.45 nan=    0
+  weight  min=     5.0 max=   250.0 mean=  70.57 std=  11.83 nan=    0
+
+  age == 300 sentinel rows (PTB-XL anonymises age>89 as 300): 255
+  age  > 89 rows                                            : 255
+  -> These inflate age mean/std used in norm_stats.json (stored std=32.45)
+  Clean age (excl. 300): mean=59.46 std=16.95
+
+  height_missing==1 : 11,667 (67.7%)
+  weight_missing==1 : 9,685 (56.2%)
+  (missing values appear imputed — check for a constant fill value below)
+    height most common values: {174.0: 6529, 160.0: 5724, 165.0: 437}
+    weight most common values: {77.0: 5620, 62.0: 4359, 70.0: 468}
+
+==============================================================================
+  D. SIGNAL CACHE INTEGRITY
+==============================================================================
+  .npy files in cache: 17,221   master rows: 17,221
+  Master ecg_ids with NO cached signal: 0
+  Scanned 17,221 split records
+    OK                    : 17,221
+    Wrong shape           : 0  []
+    ALL-ZERO (download failed, silently zero-filled by prepare_data.py): 0
+      ids: []
+    Contains NaN/Inf      : 0  []
+    >=1 completely flat lead : 1  [(12722, 1)]
+
+  |amplitude| max across records: median=1.899 mV  p99=5.586  max=32.716
+  Records with |amp|>10 mV (likely artefact/saturation): 37
+
+==============================================================================
+  E. NORMALISATION STATS PROVENANCE
+==============================================================================
+  signal_mean (per lead): [-0.00119, -0.00122, -3e-05, 0.0012, -0.00053, -0.0006, -0.00045, -0.00149, -0.00181, -0.00206, -0.00144, -0.00147]
+  signal_std  (per lead): [0.1538, 0.1625, 0.1597, 0.1365, 0.1341, 0.1414, 0.2259, 0.343, 0.3356, 0.299, 0.2735, 0.2411]
+  NOTE: prepare_data.py computes these from a 1000-record TRAIN sample -> no test leakage. OK.
+  NOTE: stats are GLOBAL per-lead, computed over the time axis. Per-record baseline
+        wander / DC offset is therefore NOT removed. No high-pass filter anywhere.
+
+==============================================================================
+  F. DATASET SIZE VS OFFICIAL PTB-XL
+==============================================================================
+  Official PTB-XL v1.0.3 : 21,799 records / 18,869 patients
+  README claims          : 21,837 records
+  Actually used (master) : 17,221 records / 15,174 patients
+  Dropped vs official    : ~4,578 records (21.0%) — most likely records with no superclass label

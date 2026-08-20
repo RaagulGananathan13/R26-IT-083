@@ -1,0 +1,75 @@
+# ============================================================================
+#  Medical data — NEVER commit.
+#  EchoNet-Dynamic and CAMUS are distributed under Research Data Use
+#  Agreements that prohibit redistribution. Obtain them from the official
+#  sources (see README) — do not publish the videos or derived caches.
+# ============================================================================
+Dilukshan/Dataset/
+**/Dataset/
+*.avi
+*.nii
+*.nii.gz
+*.mhd
+*.raw
+
+# Decoded video caches (huge, and derived from the protected data)
+Dilukshan/preprocessing/cache/
+**/cache/
+*.npy
+*.npz
+
+# ============================================================================
+#  Model checkpoints (100s of MB — exceed GitHub limits)
+# ============================================================================
+*.pt
+*.pth
+*.ckpt
+
+# ============================================================================
+#  Run outputs — keep the code, not the artifacts.
+#  Small result JSON/CSV/PNG are re-included below so results stay reviewable.
+# ============================================================================
+Dilukshan/training/outputs/**
+!Dilukshan/training/outputs/
+!Dilukshan/training/outputs/*/
+!Dilukshan/training/outputs/**/test_report.json
+!Dilukshan/training/outputs/**/thresholds.json
+!Dilukshan/training/outputs/**/config.json
+!Dilukshan/training/outputs/**/train_log.csv
+!Dilukshan/training/outputs/**/*.png
+!Dilukshan/training/outputs/ensemble_report.json
+
+# Preprocessing artifacts: keep stats, drop the giant manifests
+Dilukshan/preprocessing/artifacts/manifest.csv
+Dilukshan/preprocessing/artifacts/camus_manifest.csv
+
+# ============================================================================
+#  Python
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ============================================================================
+#  Tooling / OS
+# ============================================================================
+.uv-cache/
+.agents/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
+*.tmp

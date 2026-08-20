@@ -1,0 +1,40 @@
+{
+  "prevalence": {
+    "counts": {
+      "atrial fibrillation": 1225,
+      "atrial flutter": 27,
+      "paced rhythm": 12,
+      "SV tachycardia": 28,
+      "ventricular tachycardia": 30,
+      "atrial ectopy": 617,
+      "ventricular ectopy": 1127
+    },
+    "any": 2455,
+    "n": 17221
+  },
+  "af_behaviour": {
+    "n": 114,
+    "triage": {
+      "PRIORITY": 16,
+      "URGENT": 42,
+      "IMMEDIATE": 54,
+      "ROUTINE": 1,
+      "REPEAT ECG": 1
+    },
+    "norm_ruled_in": 2,
+    "with_guarantee": 113,
+    "refused": 1
+  },
+  "threshold": {
+    "irr": 0.17920692444965153,
+    "fpr": 0.05,
+    "n_val": 1696
+  },
+  "detector": {
+    "sensitivity": 0.4888888888888889,
+    "fpr": 0.047692307692307694,
+    "auroc": 0.9117948717948718,
+    "n": 695,
+    "n_pos": 45
+  }
+}

@@ -1,0 +1,1432 @@
+<title>Component 02 Field Manual</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   Palette and type inherited from the project's own design system
+   (frontend/src/index.css @theme). Slate "ink" neutrals, severity colour used
+   ONLY for severity, flat panels, no radius, no gradients, no emoji.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --ground:#eef2f7; --surface:#ffffff; --surface-2:#f8fafc; --surface-3:#f1f5f9;
+  --ink:#0f172a; --ink-2:#334155; --muted:#64748b; --faint:#94a3b8;
+  --rule:#e2e8f0; --rule-2:#cbd5e1;
+  --crit:#b91c1c; --urgent:#c2410c; --review:#a16207; --clear:#15803d;
+  --crit-wash:#b91c1c14; --review-wash:#a1620714; --clear-wash:#15803d14;
+  --sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"Cascadia Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#060b16; --surface:#0f172a; --surface-2:#111c31; --surface-3:#152135;
+    --ink:#e8eef7; --ink-2:#cbd5e1; --muted:#94a3b8; --faint:#64748b;
+    --rule:#1e293b; --rule-2:#334155;
+    --crit:#f87171; --urgent:#fb923c; --review:#eab308; --clear:#4ade80;
+    --crit-wash:#f8717118; --review-wash:#eab30818; --clear-wash:#4ade8018;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#060b16; --surface:#0f172a; --surface-2:#111c31; --surface-3:#152135;
+  --ink:#e8eef7; --ink-2:#cbd5e1; --muted:#94a3b8; --faint:#64748b;
+  --rule:#1e293b; --rule-2:#334155;
+  --crit:#f87171; --urgent:#fb923c; --review:#eab308; --clear:#4ade80;
+  --crit-wash:#f8717118; --review-wash:#eab30818; --clear-wash:#4ade8018;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}*{animation:none!important;transition:none!important;}}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:13px;line-height:1.55;
+}
+
+/* ── shell ─────────────────────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);gap:0;align-items:start;}
+@media (max-width:1080px){.shell{grid-template-columns:minmax(0,1fr);}}
+
+nav.rail{
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:var(--surface);border-right:1px solid var(--rule);
+  padding:18px 0 32px;
+}
+@media (max-width:1080px){
+  nav.rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);}
+}
+.rail-brand{padding:0 16px 14px;border-bottom:1px solid var(--rule);margin-bottom:10px;}
+.rail-brand b{display:block;font-size:12.5px;letter-spacing:-0.01em;}
+.rail-brand span{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;}
+nav.rail ol{list-style:none;margin:0;padding:0;counter-reset:sec;}
+nav.rail a{
+  display:flex;gap:9px;align-items:baseline;
+  padding:5px 16px;color:var(--ink-2);text-decoration:none;font-size:12px;
+  border-left:2px solid transparent;
+}
+nav.rail a:hover{background:var(--surface-3);color:var(--ink);}
+nav.rail a:focus-visible{outline:2px solid var(--ink);outline-offset:-2px;}
+nav.rail a .n{font-family:var(--mono);font-size:10px;color:var(--faint);min-width:15px;}
+
+main{min-width:0;padding:0 0 80px;}
+.wrap{max-width:1080px;padding:0 28px;}
+@media (max-width:600px){.wrap{padding:0 14px;}}
+
+/* ── masthead ──────────────────────────────────────────────────────────── */
+header.top{
+  background:var(--surface);border-bottom:1px solid var(--rule-2);
+  padding:34px 0 26px;margin-bottom:26px;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:0.13em;color:var(--muted);
+}
+h1{
+  font-size:34px;line-height:1.12;letter-spacing:-0.025em;font-weight:700;
+  margin:10px 0 0;text-wrap:balance;max-width:20ch;
+}
+.dek{margin:12px 0 0;font-size:14.5px;color:var(--ink-2);max-width:66ch;line-height:1.6;}
+.specstrip{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:24px;
+}
+.specstrip div{background:var(--surface);padding:9px 11px;}
+.specstrip dt{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);}
+.specstrip dd{margin:3px 0 0;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;font-weight:600;}
+
+/* ── sections & panels ─────────────────────────────────────────────────── */
+section{scroll-margin-top:14px;margin-bottom:40px;}
+h2{
+  font-size:21px;letter-spacing:-0.02em;font-weight:700;margin:0 0 4px;
+  padding-bottom:8px;border-bottom:2px solid var(--ink);display:flex;
+  align-items:baseline;gap:10px;text-wrap:balance;
+}
+h2 .n{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:600;}
+h3{font-size:15px;letter-spacing:-0.01em;font-weight:700;margin:26px 0 7px;text-wrap:balance;}
+h4{font-size:12.5px;font-weight:700;margin:16px 0 5px;}
+p{margin:0 0 10px;max-width:74ch;}
+.lede{font-size:13.5px;color:var(--ink-2);margin-top:12px;}
+ul,ol.body{margin:0 0 12px;padding-left:19px;max-width:74ch;}
+li{margin-bottom:4px;}
+a{color:inherit;}
+code,.m{font-family:var(--mono);font-size:0.92em;font-variant-numeric:tabular-nums;}
+code{background:var(--surface-3);padding:1px 4px;border:1px solid var(--rule);}
+strong{font-weight:700;}
+
+.panel{background:var(--surface);border:1px solid var(--rule);margin:14px 0;}
+.panel-head{
+  padding:7px 11px;border-bottom:1px solid var(--rule);background:var(--surface-2);
+  font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.09em;color:var(--muted);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.panel-head .rt{font-weight:400;text-transform:none;letter-spacing:0;}
+.panel-body{padding:12px;}
+.panel-body > :last-child{margin-bottom:0;}
+
+/* ── tables ────────────────────────────────────────────────────────────── */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{
+  text-align:left;font-family:var(--mono);font-size:9.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);
+  border-bottom:1px solid var(--rule-2);padding:6px 9px;white-space:nowrap;
+  background:var(--surface-2);position:sticky;top:0;
+}
+td{padding:6px 9px;border-bottom:1px solid var(--rule);vertical-align:top;}
+tbody tr:last-child td{border-bottom:0;}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;}
+td.f{font-family:var(--mono);font-size:11px;white-space:nowrap;}
+tr.macro td{background:var(--surface-3);font-weight:700;border-top:1px solid var(--rule-2);}
+tr.bad td:first-child{box-shadow:inset 3px 0 0 var(--crit);}
+tr.warn td:first-child{box-shadow:inset 3px 0 0 var(--review);}
+tr.ok td:first-child{box-shadow:inset 3px 0 0 var(--clear);}
+caption{caption-side:bottom;text-align:left;padding:8px 9px 0;font-size:11px;color:var(--muted);}
+
+/* ── chips ─────────────────────────────────────────────────────────────── */
+.chip{
+  display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.04em;padding:1px 5px;border:1px solid;
+  white-space:nowrap;
+}
+.c-crit{color:var(--crit);border-color:var(--crit);background:var(--crit-wash);}
+.c-review{color:var(--review);border-color:var(--review);background:var(--review-wash);}
+.c-clear{color:var(--clear);border-color:var(--clear);background:var(--clear-wash);}
+.c-mute{color:var(--muted);border-color:var(--rule-2);}
+
+/* ── callouts ──────────────────────────────────────────────────────────── */
+.note{border-left:3px solid var(--rule-2);padding:9px 0 9px 12px;margin:12px 0;background:var(--surface);}
+.note.crit{border-left-color:var(--crit);background:var(--crit-wash);}
+.note.review{border-left-color:var(--review);background:var(--review-wash);}
+.note.clear{border-left-color:var(--clear);background:var(--clear-wash);}
+.note p:last-child{margin-bottom:0;}
+.note .lbl{
+  font-family:var(--mono);font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.08em;display:block;margin-bottom:3px;
+}
+.note.crit .lbl{color:var(--crit);} .note.review .lbl{color:var(--review);}
+.note.clear .lbl{color:var(--clear);} .note .lbl{color:var(--muted);}
+
+/* ── flow diagram ──────────────────────────────────────────────────────── */
+pre.flow{
+  font-family:var(--mono);font-size:11px;line-height:1.5;margin:0;
+  padding:14px;overflow-x:auto;background:var(--surface-2);color:var(--ink-2);
+  border:1px solid var(--rule);
+}
+pre.flow b{color:var(--ink);font-weight:700;}
+
+/* ── file entries ──────────────────────────────────────────────────────── */
+.files{display:flex;flex-direction:column;gap:0;}
+.file{border-bottom:1px solid var(--rule);padding:12px;}
+.file:last-child{border-bottom:0;}
+.file-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:5px;}
+.file-h .path{font-family:var(--mono);font-size:12.5px;font-weight:700;}
+.file-h .loc{font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums;}
+.file p{margin:0 0 6px;font-size:12.5px;}
+.file dl{margin:6px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:11.5px;}
+.file dt{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap;}
+.file dd{margin:0;color:var(--ink-2);}
+</style>
+
+<div class="shell">
+
+<nav class="rail" aria-label="Contents">
+  <div class="rail-brand">
+    <b>Component 02 Field Manual</b>
+    <span>RP-Venu · Venushan T</span>
+  </div>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span> What the system is</a></li>
+    <li><a href="#s2"><span class="n">02</span> Repository map</a></li>
+    <li><a href="#s3"><span class="n">03</span> The <code style="all:unset;font-family:var(--mono)">src/</code> library</a></li>
+    <li><a href="#s4"><span class="n">04</span> Backend API</a></li>
+    <li><a href="#s5"><span class="n">05</span> Frontend</a></li>
+    <li><a href="#s6"><span class="n">06</span> Training &amp; fitting</a></li>
+    <li><a href="#s7"><span class="n">07</span> Analysis &amp; audit</a></li>
+    <li><a href="#s8"><span class="n">08</span> Data &amp; artefacts</a></li>
+    <li><a href="#s9"><span class="n">09</span> How it fits together</a></li>
+    <li><a href="#s10"><span class="n">10</span> The model, in full</a></li>
+    <li><a href="#s11"><span class="n">11</span> Accuracy</a></li>
+    <li><a href="#s12"><span class="n">12</span> Faults fixed</a></li>
+    <li><a href="#s13"><span class="n">13</span> Faults remaining</a></li>
+    <li><a href="#s14"><span class="n">14</span> Every outcome</a></li>
+    <li><a href="#s15"><span class="n">15</span> Contradictions to resolve</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Complete code, model and results reference</div>
+    <h1>Component 02 Field Manual</h1>
+    <p class="dek">
+      Every file in <span class="m">RP-Venu/Component_02</span> — what it does, why it exists, and how it
+      connects to the rest. Followed by the full model specification, every accuracy
+      figure, every known fault, and the outcome of all eleven experiments in the repository.
+      Figures are read from the shipped artefacts on disk, and the threshold-free
+      metrics were recomputed from <span class="m">checkpoints/*_logits_seed0.npy</span> to confirm them.
+    </p>
+    <dl class="specstrip">
+      <div><dt>Source lines</dt><dd>9,048</dd></div>
+      <div><dt>Python modules</dt><dd>14 + 12</dd></div>
+      <div><dt>Test records</dt><dd>1,711</dd></div>
+      <div><dt>Parameters</dt><dd>1,584,326</dd></div>
+      <div><dt>Macro AUROC</dt><dd>0.9320</dd></div>
+      <div><dt>Macro recall</dt><dd>0.810</dd></div>
+      <div><dt>Macro NPV</dt><dd>0.933</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ════════════════════════════════════════════════════════════ 01 ═══ -->
+<section id="s1">
+  <h2><span class="n">01</span> What the system is</h2>
+
+  <p class="lede">
+    A 12-lead ECG goes in as a WFDB <span class="m">.dat</span> + <span class="m">.hea</span> pair. What comes back
+    is a JSON object containing five calibrated probabilities, a three-way decision
+    per class carrying a proven bound on how often that decision is wrong, an
+    explanation of which leads and which moments drove it, a clinical report that has
+    been machine-checked against those numbers, and a rendered ECG image.
+  </p>
+
+  <p>
+    The five classes are the PTB-XL diagnostic superclasses: <strong>NORM</strong> (normal),
+    <strong>MI</strong> (myocardial infarction), <strong>STTC</strong> (ST/T change),
+    <strong>CD</strong> (conduction disturbance), <strong>HYP</strong> (hypertrophy).
+    They are not native PTB-XL columns — they are derived by mapping SCP-ECG statement
+    codes through <span class="m">csv/scp_to_superclass_mapping.json</span> (44 codes: MI 14, STTC 13,
+    CD 11, HYP 5, NORM 1), keeping only codes with <span class="m">likelihood == 100</span>.
+  </p>
+
+  <p>
+    Three things separate this from an ordinary classifier, and they are the reason
+    most of the code exists:
+  </p>
+
+  <div class="panel">
+    <div class="panel-head">The three design commitments</div>
+    <div class="panel-body">
+      <ol class="body">
+        <li><strong>It is allowed to refuse.</strong> A quality gate runs <em>before</em> the model,
+          so an uninterpretable recording never produces a probability at all.</li>
+        <li><strong>It is allowed to say "I don't know."</strong> Each class lands in one of three
+          zones — <span class="chip c-clear">rule out</span> <span class="chip c-review">refer</span>
+          <span class="chip c-crit">rule in</span> — and the outer two carry a finite-sample
+          conformal bound on their error rate.</li>
+        <li><strong>Its own text is checked before release.</strong> Every sentence traces back to a
+          structured <span class="m">Finding</span>, and a separate verifier blocks the report if the
+          words and the numbers disagree.</li>
+      </ol>
+    </div>
+  </div>
+
+  <p>
+    The research contribution sits on top of that: three audits that ask whether the
+    statistical guarantee <em>survives</em> — when the population is split by age and sex,
+    when two electrodes are swapped, and when the patient's actual disease is not in the
+    label space at all. All three find that it does not, and two of them ship a mitigation.
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 02 ═══ -->
+<section id="s2">
+  <h2><span class="n">02</span> Repository map</h2>
+
+  <p>Top level of <span class="m">RP-Venu/</span>:</p>
+
+  <div class="panel">
+    <div class="panel-head">Repository root</div>
+    <div class="tw"><table>
+      <thead><tr><th>Path</th><th>Role</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="f">Component_02/</td><td>The deliverable. Self-contained; nothing inside reads from outside it on the serving path.</td><td><span class="chip c-clear">current</span></td></tr>
+        <tr><td class="f">_archive/</td><td>The superseded Progress-1 system — <span class="m">app.py</span> (server-rendered Flask), <span class="m">training/</span> (13 scripts), three checkpoint sets, the old documentation. Kept as audit evidence.</td><td><span class="chip c-mute">superseded</span></td></tr>
+        <tr class="warn"><td class="f">README.md</td><td>Describes the <em>archive</em> system: BioBART three-tier reporting, fusion model, macro-F1 0.717, "run <span class="m">python app.py</span>". It has not been updated for Component 02.</td><td><span class="chip c-review">stale</span></td></tr>
+        <tr><td class="f">.env.example</td><td><span class="m">PHYSIONET_USER</span> / <span class="m">PHYSIONET_PASS</span> — credentials moved out of source (audit finding E-1).</td><td><span class="chip c-clear">current</span></td></tr>
+        <tr><td class="f">.gitignore</td><td>Excludes weights, WFDB data and packed memmaps; explicitly whitelists the small JSON/CSV artefacts under the comment "these ARE the reproducibility record".</td><td><span class="chip c-clear">current</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <p>Inside <span class="m">Component_02/</span>:</p>
+
+  <div class="panel">
+    <div class="panel-head">Component 02</div>
+    <div class="tw"><table>
+      <thead><tr><th>Folder</th><th class="n">Files</th><th class="n">Lines</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td class="f">src/</td><td class="n">14</td><td class="n">2,803</td><td>The importable library. This is the system.</td></tr>
+        <tr><td class="f">backend/</td><td class="n">2</td><td class="n">479</td><td>JSON-only Flask API. No HTML, no templates.</td></tr>
+        <tr><td class="f">frontend/</td><td class="n">10</td><td class="n">~800</td><td>React 19 + Vite 6 + Tailwind 4 clinical review UI.</td></tr>
+        <tr><td class="f">train/</td><td class="n">4</td><td class="n">1,092</td><td>Preflight, GPU training, calibration fitting, Colab notebook.</td></tr>
+        <tr><td class="f">analysis/</td><td class="n">2</td><td class="n">491</td><td>Dataset audit and operating-point selection, plus their results.</td></tr>
+        <tr><td class="f">audit/</td><td class="n">11</td><td class="n">1,275</td><td>Regression suite + three contribution experiments; <span class="m">legacy/</span> holds six audits of the archive.</td></tr>
+        <tr><td class="f">checkpoints/</td><td class="n">9</td><td class="n">—</td><td>Weights, calibrator, conformal thresholds, operating point, scope threshold, saved logits and labels.</td></tr>
+        <tr><td class="f">csv/</td><td class="n">6</td><td class="n">—</td><td>Metadata, the official split, normalisation stats, SCP→superclass map.</td></tr>
+        <tr><td class="f">data/</td><td class="n">17,221 ×2</td><td class="n">—</td><td>PTB-XL WFDB records at 500 Hz + the CC-BY licence text.</td></tr>
+        <tr><td class="f">docs/</td><td class="n">5</td><td class="n">1,860</td><td>Panel answers, audit findings, research contribution, Colab guide.</td></tr>
+        <tr><td class="f">reference/</td><td class="n">—</td><td class="n">—</td><td>Superseded checkpoints and legacy documents kept as evidence.</td></tr>
+      </tbody>
+      <caption>Line counts from <span class="m">wc -l</span>; <span class="m">frontend/dist/</span> and <span class="m">node_modules/</span> excluded.</caption>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 03 ═══ -->
+<section id="s3">
+  <h2><span class="n">03</span> The <span class="m" style="font-size:0.8em">src/</span> library — file by file</h2>
+
+  <p class="lede">
+    Fourteen modules, one responsibility each. Everything imports its constants from
+    <span class="m">models.py</span>; everything that needs a file on disk asks <span class="m">paths.py</span>;
+    and <span class="m">pipeline.py</span> is the only thing that runs the stages in order.
+  </p>
+
+  <div class="panel">
+    <div class="panel-head">Foundation</div>
+    <div class="files">
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/models.py</span><span class="loc">238 lines</span></div>
+        <p>Single source of truth for every network architecture. Exists because the archive
+        defined the same ResNet in five separate files, so any edit had to be made five
+        times or inference silently diverged from training (audit finding E-10).</p>
+        <dl>
+          <dt>constants</dt><dd><span class="m">CLASS_NAMES</span>, <span class="m">LEAD_NAMES</span>, <span class="m">NUM_LEADS=12</span>, <span class="m">NUM_CLASSES=5</span>, <span class="m">SIGNAL_LENGTH=5000</span>, <span class="m">SAMPLING_RATE=500</span></dd>
+          <dt>baseline</dt><dd><span class="m">ResidualBlock</span>, <span class="m">ECGResNet</span> — 1,018,501 params, loads the archive checkpoint bit-exactly</dd>
+          <dt>shipped</dt><dd><span class="m">SEBlock</span>, <span class="m">SEResidualBlock</span>, <span class="m">MultiKernelStem</span>, <span class="m">AttentionPool</span>, <span class="m">ECGResNetSE</span> — 1,584,326 params</dd>
+          <dt>loss</dt><dd><span class="m">FocalLoss</span> — its docstring carries a hard constraint: never combine a non-trivial <span class="m">alpha</span> with a balanced sampler</dd>
+          <dt>factory</dt><dd><span class="m">build_model(name)</span> — <span class="m">"resnet"</span> or <span class="m">"resnet_se"</span></dd>
+        </dl>
+        <p style="margin-top:8px;color:var(--muted);font-size:11.5px;">
+          One subtle detail: <span class="m">ResidualBlock.forward</span> uses an out-of-place
+          <span class="m">out + residual</span> rather than the archive's <span class="m">out += residual</span>.
+          An in-place op on a tensor carrying a full-backward hook corrupts Grad-CAM gradients.
+          Numerically identical, functionally not.
+        </p>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/paths.py</span><span class="loc">78 lines</span></div>
+        <p>The only module that knows where data lives. Resolves every asset through one
+        ordered candidate list, which is what lets the folder be handed to someone else and
+        still run.</p>
+        <dl>
+          <dt>order</dt><dd><span class="m">$ECG_DATA_DIR</span> → <span class="m">csv/</span> → <span class="m">data/</span> → <span class="m">assets/</span> → <span class="m">../_archive/data/</span></dd>
+          <dt>api</dt><dd><span class="m">find</span> (or None), <span class="m">require</span> (or exit with the list it searched), <span class="m">signals_cache</span>, <span class="m">describe</span></dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/signals.py</span><span class="loc">70 lines</span></div>
+        <p>Loads one test-set ECG by id. Prefers the derived <span class="m">signals_cache/&lt;id&gt;.npy</span>
+        (240 KB/record, 3.9 GB total) but falls back to reading the original WFDB record
+        (120 KB/record, 1.93 GB total). Shipping the WFDB halves the deliverable and hands on
+        authoritative data rather than a derived artefact; the ~4 ms read cost is negligible
+        against a ~6 s analysis.</p>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/__init__.py</span><span class="loc">23 lines</span></div>
+        <p>Package exports — the public surface another component would import.
+        <span class="m">__version__ = "0.2.0"</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Gate — everything that can stop a record before the model sees it</div>
+    <div class="files">
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/quality.py</span><span class="loc">314 lines</span></div>
+        <p>The gate, and the fix for the single most dangerous defect in the archive (C-1):
+        an all-zero signal produced "MI 0.691, STTC 0.602 → consistent with myocardial
+        infarction". Nothing reaches the model now without passing these checks, and a
+        record that fails is <strong>refused, not diagnosed</strong>.</p>
+        <dl>
+          <dt>order</dt><dd>shape → duration → finite → flat leads → units/gain → amplitude → noise → rhythm → electrodes → scope → SQI</dd>
+          <dt>bounds</dt><dd>duration 5–60 s · <span class="m">|x|</span> ≤ 20 mV · p95 <span class="m">|x|</span> ∈ [0.15, 6.0] mV · ≤ 2 flat leads · HR 25–250 bpm · ≥ 3 QRS</dd>
+          <dt>units</dt><dd><span class="m">detect_and_fix_units</span> accepts <em>only</em> powers of 1000 (µV, V, nV) and only when the rescaled amplitude lands comfortably inside the band. An arbitrary factor that happens to fit is a gain <em>fault</em> and is refused, not silently corrected.</dd>
+          <dt>peaks</dt><dd><span class="m">detect_r_peaks</span> — Pan-Tompkins-style: 5–15 Hz band-pass, differentiate, square, 120 ms moving-average integrate, <span class="m">find_peaks</span> with a 250 ms refractory (240 bpm ceiling). No external dependency.</dd>
+          <dt>sqi</dt><dd>1 − (0.20 × flat + 0.08 × noisy + 0.15 if gain corrected + 0.10 if no HR), clipped to [0,1]</dd>
+        </dl>
+        <p style="margin-top:8px;color:var(--muted);font-size:11.5px;">
+          The check order is load-bearing and documented in the source. Flat-lead detection
+          uses a <em>relative</em> criterion and runs <em>before</em> unit inference — dead leads
+          drag the amplitude percentile down, so running the unit check first made a record with
+          eight disconnected leads look like a gain error instead.
+        </p>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/electrodes.py</span><span class="loc">183 lines</span></div>
+        <p>Limb-electrode reversal screening. Physiology, not machine learning. A reversed
+        recording is perfectly clean — correct amplitude, no noise, no flat leads — so no
+        signal-quality metric can see it, yet the waveform is a mathematically transformed
+        version of the truth.</p>
+        <dl>
+          <dt>maths</dt><dd>Limb reversals are <em>exact</em> linear maps because the augmented leads are derived. Precordial leads are unaffected: Wilson's central terminal <span class="m">(RA+LA+LL)/3</span> is invariant under a limb swap.</dd>
+          <dt>RA/LA</dt><dd>I → −I, II ↔ III, aVR ↔ aVL, aVF unchanged</dd>
+          <dt>RA/LL</dt><dd>I → −III, II → −II, III → −I, aVR ↔ aVF, aVL unchanged</dd>
+          <dt>LA/LL</dt><dd>I ↔ II, III → −III, aVL ↔ aVF, <strong>aVR unchanged</strong> — which is why this one is undetectable by polarity rules</dd>
+          <dt>detect</dt><dd>aVR polarity &gt; 0.15 <em>and</em> lead-I polarity &lt; −0.10 → RA/LA · aVR &gt; 0.30 alone → unspecified limb problem · aVF &lt; −0.35 with non-negative aVR → RA/LL</dd>
+          <dt>policy</dt><dd>Raises suspicion, never asserts. Does not touch <span class="m">acceptable</span> or <span class="m">sqi</span> — a 4.5 % false-positive rate makes automatic refusal the wrong default. It suspends the guarantee instead.</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/scope.py</span><span class="loc">145 lines</span></div>
+        <p>Detects disease <em>outside</em> the label space. The model has no output unit for
+        atrial fibrillation, so when one walks in the network does not abstain — softmax has
+        no "none of the above". It redistributes the evidence across the five classes it does
+        have and the report prints a statistical guarantee next to it.</p>
+        <dl>
+          <dt>features</dt><dd><span class="m">cv</span> (coefficient of variation of RR), <span class="m">rmssd</span>, <span class="m">pnn50</span>, <span class="m">irr</span> = median <span class="m">|ΔRR|</span> ÷ median RR</dd>
+          <dt>gate</dt><dd>needs ≥ 5 R-peaks and ≥ 4 usable RR intervals in the 24–240 bpm window; otherwise returns "in scope, too few beats to assess"</dd>
+          <dt>threshold</dt><dd><span class="m">irr &gt; 0.1792</span> (from <span class="m">checkpoints/scope.json</span>; module fallback 0.179) → out of scope</dd>
+          <dt>cost</dt><dd>Free — the pipeline already detects R-peaks to compute heart rate.</dd>
+        </dl>
+        <p style="margin-top:8px;color:var(--muted);font-size:11.5px;">
+          Note the deliberate coupling: every detail sentence this module emits also carries
+          the disclaimer wording, so <span class="m">verify.py</span> can distinguish an admission
+          of ignorance from a hallucinated diagnosis. Without that, the safety verifier would
+          flag the system for admitting its own limits.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Signal &amp; probability</div>
+    <div class="files">
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/preprocess.py</span><span class="loc">139 lines</span></div>
+        <p>Deterministic conditioning, shared by training and serving — the module header says
+        plainly: import it, do not reimplement it. Fixes E-5 (the archive resampled <em>any</em>
+        length to 5000 samples with no sampling-rate check, compressing a 30 s strip 3× and
+        distorting heart rate silently) and the total absence of filtering.</p>
+        <dl>
+          <dt>chain</dt><dd>resample by <em>rate</em> → high-pass 0.5 Hz (Butterworth 3) → low-pass 40 Hz (Butterworth 4) → 50 Hz notch (Q = 30) → centre-crop or zero-pad to 5000 → normalise</dd>
+          <dt>filters</dt><dd>all zero-phase <span class="m">filtfilt</span>; follows the AHA/ACC diagnostic-ECG recommendation</dd>
+          <dt>normalise</dt><dd>per-record median removal (robust DC offset) <em>then</em> global per-lead mean/std from <span class="m">norm_stats.json</span></dd>
+          <dt>augment</dt><dd>noise σ0.05 @50 % · scale 0.9–1.1 @50 % · time roll ±250 @30 % · 1–2 lead dropout @25 % · baseline wander @20 %</dd>
+        </dl>
+        <p style="margin-top:8px;color:var(--muted);font-size:11.5px;">
+          The scale band is narrow on purpose. Hypertrophy is diagnosed from QRS
+          <em>amplitude</em> (Sokolow-Lyon, Cornell), and the audit measured the classifier as
+          highly gain-sensitive (×10 → HYP 0.998). Wide scale augmentation would teach it to
+          ignore exactly the evidence HYP depends on.
+        </p>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/calibration.py</span><span class="loc">129 lines</span></div>
+        <p>Per-class temperature scaling (Guo et al., ICML 2017), fitted by LBFGS on the
+        validation fold only. Fixes C-6: the archive applied <span class="m">WeightedRandomSampler</span>
+        oversampling <em>and</em> focal-loss alpha weights together, correcting class imbalance
+        twice, so the sigmoid outputs were not posterior probabilities — yet the UI printed
+        them to a clinician as "probability %". HYP was predicted at 4.14× its prevalence.</p>
+        <dl>
+          <dt>form</dt><dd><span class="m">p = σ(z / T_c + b_c)</span> — one temperature and one bias per class</dd>
+          <dt>property</dt><dd>Monotone, so AUROC and the conformal bounds are untouched. Only the numbers shown to a human become honest.</dd>
+          <dt>provenance</dt><dd><span class="m">save(..., fitted_for=)</span> records which model these belong to. A calibrator paired with a different model produces nonsense while everything still "runs" — it happened twice during development.</dd>
+          <dt>metrics</dt><dd><span class="m">expected_calibration_error</span> (10 bins), <span class="m">calibration_report</span> (ECE, Brier, mean p, prevalence, over-prediction ratio, macro ECE)</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/conformal.py</span><span class="loc">360 lines</span></div>
+        <p>Research contribution 1. Replaces a single F1-tuned threshold with a <em>pair</em> of
+        conformal thresholds per class and an abstention zone between them. The archive's F1
+        threshold missed 29.5 % of infarctions and reported them as normal with no indication
+        anything was uncertain.</p>
+        <pre class="flow">score &lt; λ_out          → <b>RULE OUT</b>   guaranteed miss rate ≤ α
+λ_out ≤ score &lt; λ_in   → <b>REFER</b>      defer to a cardiologist
+score ≥ λ_in           → <b>RULE IN</b>    guaranteed false-alarm rate ≤ β</pre>
+        <dl>
+          <dt>theory</dt><dd>One-sided split conformal. Conditioning on <span class="m">Y_k = 1</span> keeps exchangeability inside the positive subset, so <span class="m">P(S_{n+1} &lt; S_(m)) ≤ m/(n+1)</span>. The bound holds for <em>any</em> model — a weak one simply defers more often.</dd>
+          <dt>PAC</dt><dd><span class="m">_pac_order_statistic(n, α, δ)</span> — the coverage of the k-th order statistic is <span class="m">Beta(k, n−k+1)</span>, so it takes the largest k with <span class="m">P(Beta ≤ α) ≥ 1−δ</span>. Strictly more conservative than the marginal <span class="m">⌊α(n+1)⌋</span>, and it is what makes the guarantee survive a <em>single</em> realisation. Falls back to the marginal bound if SciPy is unavailable.</dd>
+          <dt>infeasible</dt><dd>When <span class="m">m &lt; 1</span> it returns <span class="m">−inf</span> and says so — "this class can never be ruled out" — rather than silently pretending.</dd>
+          <dt>overlap</dt><dd>If <span class="m">λ_out &gt; λ_in</span> the two zones overlap and a score would satisfy both bounds at once. The only safe resolution is to refer the entire overlap; the code swaps the two and records a note. This happens for NORM in the shipped model.</dd>
+          <dt>presets</dt><dd><span class="m">safety</span> (shipped) / <span class="m">balanced</span> / <span class="m">throughput</span> — described in the source as the system's clinical <em>policy</em>, "meant to be argued about, not hidden"</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Explanation, report, gate</div>
+    <div class="files">
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/xai.py</span><span class="loc">297 lines</span></div>
+        <p>Grad-CAM, signed integrated gradients, and the mapping from lead attributions onto
+        coronary territories — which is what turns XAI into <em>report content</em> rather than a
+        picture beside the report.</p>
+        <dl>
+          <dt>C-5 fix</dt><dd>The archive kept <em>one</em> module-level Grad-CAM object storing activations and gradients as instance state, under Flask's threaded server. Four concurrent calls were tested; three returned corrupted heatmaps. Hooks are now created and removed inside a per-call context manager, and a <span class="m">WeakKeyDictionary</span> of per-model <span class="m">RLock</span>s serialises the 60 ms critical section.</dd>
+          <dt>7.4 fix</dt><dd>The archive applied <span class="m">.abs()</span> before summing attributions over time, discarding sign — a lead <em>arguing against</em> the diagnosis was shown to the clinician as "important". Sign is now preserved and reported separately from magnitude.</dd>
+          <dt>IG</dt><dd><span class="m">steps = 64</span> — the audit measured completeness error 1.3 % at 30 steps and 0.2 % at 100; 64 is the knee. Ranking is stable (Spearman 0.999 vs 200 steps).</dd>
+          <dt>localise</dt><dd>Only <em>positive</em> attribution counts, and each territory's share is normalised by its lead count so five-lead anterolateral is not favoured over two-lead septal. Requires ≥ 1.35× the uniform baseline before it will name a territory at all.</dd>
+          <dt>territories</dt><dd>anterior V1–V4 (LAD) · septal V1–V2 (proximal LAD) · lateral I/aVL/V5/V6 (LCx) · anterolateral V4–V6/I/aVL · inferior II/III/aVF (RCA)</dd>
+          <dt>evaluation</dt><dd><span class="m">deletion_insertion_auc</span> vs a random-order baseline, and <span class="m">qrs_alignment</span> — the fraction of Grad-CAM mass inside a ±60 ms window around each R-peak</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/report.py</span><span class="loc">365 lines</span></div>
+        <p>Grounded report generation. Every sentence is emitted from a <span class="m">Finding</span>
+        object and every <span class="m">Finding</span> carries the evidence that produced it, so
+        nothing can be written that is not traceable to a measurement, a conformal decision, or
+        an attribution.</p>
+        <dl>
+          <dt>zones → language</dt><dd>The conformal zone chooses the <em>modality</em> of the sentence. Rule-in asserts; refer says "Possible X (calibrated probability N %) … the system does not decide it".</dd>
+          <dt>C-4 fix</dt><dd>NORM is structurally mutually exclusive with any ruled-in abnormality — if an abnormality is ruled in, NORM is demoted to <span class="m">REFER</span> before any text is generated. The archive emitted both sentences in the same paragraph for 99 of 1,711 records.</dd>
+          <dt>triage</dt><dd>MI ruled in → <span class="chip c-crit">IMMEDIATE</span> · MI referred → <span class="chip c-crit" style="color:var(--urgent);border-color:var(--urgent);background:transparent">URGENT</span> · CD/STTC ruled in → <span class="chip c-review">PRIORITY</span> · nothing crossing → <span class="chip c-review">PRIORITY</span> · NORM ruled in → <span class="chip c-clear">ROUTINE</span> · gate failed → <span class="chip c-mute">REPEAT ECG</span></dd>
+          <dt>guarantees</dt><dd>Emitted per ruled-out class — but <strong>suppressed entirely</strong> if the electrodes are suspect or the rhythm is out of scope, replaced by an explicit withdrawal sentence.</dd>
+          <dt>refusal path</dt><dd>Returns "ECG NOT INTERPRETED", no probabilities, and the reason: "a diagnosis derived from an uninterpretable signal is worse than no diagnosis".</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/verify.py</span><span class="loc">265 lines</span></div>
+        <p>The safety gate. Fixes C-3. The archive claimed its BioBART tier "cannot hallucinate
+        because it never sees the raw ECG" — a claim that confuses two things. Not seeing the
+        signal prevents inventing <em>evidence</em>; it does not stop a seq2seq model adding,
+        dropping or negating a <em>finding</em> while rephrasing. Measured on 1,711 records, it
+        dropped a clinical concept in 103 and inserted "atrial fibrillation" in 42.</p>
+        <dl>
+          <dt>checks</dt><dd>1 no invented diagnosis · 2 no NORM + abnormality contradiction · 3 overclaiming language · 4 mandatory disclaimer and triage tier · 5 every ruled-in finding actually appears · 6 referred classes marked uncertain</dd>
+          <dt>negation</dt><dd><span class="m">_negated()</span> is <em>directional within a clause</em>. A fixed character window was too short ("RULED OUT: normal ECG, ST/T change …" put the negator far back); a whole-clause scan was too coarse ("meets criteria for a normal study; no abnormality crossed…" put a negator <em>after</em> the term). Only preceding text inside the clause counts.</dd>
+          <dt>allow-list</dt><dd><span class="m">SCOPE_DISCLAIMERS</span> — contexts where naming an out-of-scope diagnosis is the <em>opposite</em> of hallucinating it. Without it the scope warning would be rejected as a hallucination.</dd>
+          <dt>paraphrase</dt><dd><span class="m">verify_paraphrase</span> enforces bidirectional containment — may not add a class the source didn't assert, may not drop one it did. Any future language layer must pass through it. <span class="m">safe_paraphrase</span> returns the template text on failure: degraded fluency, never degraded safety.</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">src/pipeline.py</span><span class="loc">197 lines</span></div>
+        <p>The single inference entry point. Nothing may bypass this order.</p>
+        <pre class="flow"> 1 <b>quality gate</b>    qc.assess(signal_raw, fs)  →  if not acceptable: RETURN refused report
+ 2 <b>preprocess</b>      pp.prepare(...)            →  (12, 5000) normalised
+ 3 <b>classify</b>        model(x)                   →  5 raw logits
+ 4 <b>calibrate</b>       calibrator.predict_proba   →  5 honest probabilities
+ 5 <b>conformal</b>       triage.zones_one(cal)      →  rule_out / refer / rule_in per class
+ 6 <b>explain</b>         explain(...) × max 3       →  Grad-CAM + signed IG + territory
+ 7 <b>report</b>          build_report(...)          →  grounded text + guarantees
+ 8 <b>verify</b>          verify_report(rep)         →  if failed: WITHHOLD text, triage = REPEAT ECG</pre>
+        <dl>
+          <dt>provenance</dt><dd><span class="m">from_checkpoint</span> warns loudly if the calibrator or conformal thresholds were fitted for a different model or a different filter setting.</dd>
+          <dt>XAI budget</dt><dd>Explanations are computed only for classes actually being reported (rule-in or refer, excluding NORM), capped at three. If none qualify it explains the argmax class.</dd>
+          <dt>threading</dt><dd>No mutable module-level state and no shared XAI object (audit C-5).</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 04 ═══ -->
+<section id="s4">
+  <h2><span class="n">04</span> Backend — <span class="m" style="font-size:0.8em">backend/server.py</span></h2>
+
+  <p class="lede">
+    479 lines. Serves data only — no HTML, no templates — so any client can consume it.
+    The React app in <span class="m">frontend/</span> is one such client.
+  </p>
+
+  <h3>Startup is a safety check</h3>
+  <p>
+    <span class="m">_startup()</span> builds the pipeline and then <strong>refuses to start</strong> if the
+    calibrator or the conformal thresholds were fitted for a different model or a different
+    filter setting. The old app defaulted to the archive checkpoint while the shipped
+    calibrator belonged to the retrained model — a pairing that silently produces invalid
+    probabilities and void guarantees while everything appears to work.
+    <span class="m">ECG_ALLOW_MISMATCH=1</span> downgrades it to a warning, and the error message
+    prints the exact <span class="m">fit_calibration.py</span> command that fixes it.
+  </p>
+
+  <h3>Endpoints</h3>
+  <div class="panel">
+    <div class="panel-head">JSON API <span class="rt">default bind 127.0.0.1:5000</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Method</th><th>Route</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td class="f">GET</td><td class="f">/api/health</td><td>Model name, checkpoint, whether calibration and conformal are loaded, PAC δ, class list, per-class thresholds and calibration counts, test-set size, whether browsing is enabled, the disclaimer.</td></tr>
+        <tr><td class="f">GET</td><td class="f">/api/patients/&lt;class&gt;</td><td>Browse the bundled test fold, filtered by superclass, with optional <span class="m">?q=</span> substring search over id and reference report. Capped at 500 rows.</td></tr>
+        <tr><td class="f">POST</td><td class="f">/api/analyze/&lt;ecg_id&gt;</td><td>Analyse a bundled record. Additionally returns <span class="m">referenceReport</span>, <span class="m">groundTruth</span> and patient age/sex — labelled in the UI as "dataset ground truth, not shown in deployment".</td></tr>
+        <tr><td class="f">POST</td><td class="f">/api/demo</td><td>Random record from the test fold.</td></tr>
+        <tr><td class="f">POST</td><td class="f">/api/predict</td><td><strong>The integration point.</strong> <span class="m">multipart/form-data</span> with <span class="m">dat_file</span> + <span class="m">hea_file</span>. Validates extensions, requires a shared base name, sanitises with <span class="m">secure_filename</span>, reads via <span class="m">wfdb.rdrecord</span> inside a <span class="m">TemporaryDirectory</span>, rejects anything that is not 12-lead, and reorders leads to the standard order if the header names them out of order (with a warning).</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="note clear">
+    <span class="lbl">Resolved open question</span>
+    <p>The write-up flags as unknown whether <span class="m">/api/predict</span> persists uploaded files.
+    It does not — the files are written inside a <span class="m">tempfile.TemporaryDirectory()</span>
+    context and the directory is deleted when the block exits, before the signal is analysed.
+    Nothing is retained on disk.</p>
+  </div>
+
+  <h3>Four response fields a caller must respect</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Field</th><th>When true</th><th>Required caller behaviour</th></tr></thead>
+      <tbody>
+        <tr class="bad"><td class="f">refused</td><td>quality gate failed</td><td>No probabilities are returned. <strong>Do not treat as normal.</strong> Show <span class="m">quality.errors</span> and ask for a repeat ECG.</td></tr>
+        <tr class="bad"><td class="f">verification.passed = false</td><td>generated text failed the safety check</td><td>Text was withheld. Do not display <span class="m">reportText</span> as a report.</td></tr>
+        <tr class="warn"><td class="f">electrode.suspected</td><td>limb reversal suspected</td><td>Probabilities still valid to show, but <strong>the statistical guarantees do not apply</strong>. Prompt for a repeat.</td></tr>
+        <tr class="warn"><td class="f">scope.outOfScope</td><td>irregularly irregular R-R</td><td>Guarantees withheld and an arrhythmia has <strong>not</strong> been excluded. Do not present the five-class result as complete.</td></tr>
+      </tbody>
+      <caption>Documented in the README as a contract, but nothing enforces it at the protocol level — a downstream integrator that ignores these presents an unsafe result as a clean one.</caption>
+    </table></div>
+  </div>
+
+  <h3>ECG rendering</h3>
+  <p>
+    <span class="m">render_ecg()</span> draws on standard ECG paper rather than plotting a curve:
+    25 mm/s, 10 mm/mV, 3×4 lead layout plus a full-duration lead-II rhythm strip, a 1 mV /
+    200 ms calibration pulse, fine 0.04 s × 0.1 mV and bold 0.20 s × 0.5 mV grids, and a
+    dark-theme variant selected by <span class="m">?theme=dark</span>. The Grad-CAM overlay is drawn as a
+    thin band <em>beneath</em> each row, never over the trace — a wash across the waveform
+    obscures the exact morphology a reader needs. Returned as a base64 PNG in <span class="m">ecgImage</span>.
+    This is also the slowest step in the request.
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 05 ═══ -->
+<section id="s5">
+  <h2><span class="n">05</span> Frontend — React clinical review UI</h2>
+
+  <p class="lede">
+    Ten source files. Its own design brief, stated in <span class="m">index.css</span>: read as clinical
+    review software, not a dashboard. Light by default; colour carries meaning only; numbers
+    monospace, tabular, right-aligned; dense over airy; no emoji, no gradients, no decorative
+    shadows; the ECG trace is the primary artefact and gets the most space.
+  </p>
+
+  <div class="panel">
+    <div class="panel-head">frontend/src</div>
+    <div class="tw"><table>
+      <thead><tr><th>File</th><th class="n">Lines</th><th>Responsibility</th></tr></thead>
+      <tbody>
+        <tr><td class="f">main.jsx</td><td class="n">10</td><td>React 19 root mount in StrictMode.</td></tr>
+        <tr><td class="f">App.jsx</td><td class="n">152</td><td>All state: health, selected class, patient list, active result, busy/error flags, theme. One <span class="m">run()</span> helper wraps every analysis call. Composes the layout.</td></tr>
+        <tr><td class="f">api.js</td><td class="n">36</td><td>Five thin fetch wrappers. Appends <span class="m">?theme=</span> from the current DOM class so the server renders the ECG to match. Turns non-JSON responses into "Is the backend running?".</td></tr>
+        <tr><td class="f">index.css</td><td class="n">78</td><td>The design system: <span class="m">ink-50…950</span> slate scale, four severity colours (<span class="m">crit</span> #b91c1c, <span class="m">urgent</span> #c2410c, <span class="m">review</span> #a16207, <span class="m">clear</span> #15803d), <span class="m">.panel</span> / <span class="m">.panel-head</span> / <span class="m">.num</span> / <span class="m">.tag</span> / <span class="m">.kv</span> primitives.</td></tr>
+        <tr><td class="f">components/ui.jsx</td><td class="n">65</td><td><span class="m">ZONE</span> and <span class="m">TRIAGE</span> lookup tables, <span class="m">Panel</span>, <span class="m">Tag</span>, <span class="m">Spinner</span>, <span class="m">Empty</span>.</td></tr>
+        <tr><td class="f">components/Worklist.jsx</td><td class="n">149</td><td>Left rail. Class filter with live counts, id/report search, dense study rows, random-study button, and a drag-and-drop <span class="m">.dat</span> + <span class="m">.hea</span> importer.</td></tr>
+        <tr><td class="f">components/PatientBanner.jsx</td><td class="n">85</td><td>Sticky identification band with a severity spine coloured by triage tier — so a reviewer can never be looking at the wrong patient's data.</td></tr>
+        <tr><td class="f">components/EcgViewer.jsx</td><td class="n">51</td><td>The trace, first and largest. Fit-width / full-size toggle, PNG download, peak-attention timestamps.</td></tr>
+        <tr><td class="f">components/Interpretation.jsx</td><td class="n">227</td><td>Three exports. <span class="m">DecisionTable</span> renders each class as a bar showing where the probability sits <em>between</em> λ_out and λ_in — that position is the decision. <span class="m">Measurements</span> shows rate, complexes, duration, SQI, usable leads, gain, and honest "not measured" rows for intervals and axis, plus the scope and electrode warning blocks. <span class="m">LeadEvidence</span> is a signed diverging bar chart — red supports, green argues against.</td></tr>
+        <tr><td class="f">components/ReportCard.jsx</td><td class="n">155</td><td>Structured / plain-text toggle. Shows the withheld-report banner when verification fails, then interpretation with per-finding evidence lines, excluded classes, statistical basis, limitations, and the dataset reference report in a visually separated block.</td></tr>
+        <tr><td class="f">vite.config.js</td><td class="n">18</td><td>Dev server on 5173, proxies <span class="m">/api</span> → <span class="m">127.0.0.1:5000</span> so the browser never sees a cross-origin request.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 06 ═══ -->
+<section id="s6">
+  <h2><span class="n">06</span> Training &amp; fitting</h2>
+
+  <div class="panel">
+    <div class="panel-head">train/</div>
+    <div class="files">
+      <div class="file">
+        <div class="file-h"><span class="path">train/preflight.py</span><span class="loc">232 lines</span></div>
+        <p>Run before training. Every check corresponds to a way a paid Colab run silently
+        wastes compute units: wrong paths crash at minute four, missing packed data falls back
+        to per-file reads at 6× the time, too-large batch OOMs at epoch one, no GPU attached
+        trains for eight hours, a small disk crashes at the checkpoint write, a corrupt memmap
+        trains on garbage undetected.</p>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">train/train_gpu.py</span><span class="loc">528 lines</span></div>
+        <p>The classifier trainer, written around a one-GPU-hour budget.</p>
+        <dl>
+          <dt>pack</dt><dd><span class="m">--pack</span> converts 17,221 per-record <span class="m">.npy</span> files into three float16 memmaps. Refuses to proceed if any cached signal is missing — the archive's silent zero-fill bug (E-4) is exactly how corrupt records enter training.</dd>
+          <dt>imbalance</dt><dd>Balanced sampler <strong>XOR</strong> focal alpha, never both (C-6).</dd>
+          <dt>resilience</dt><dd><span class="m">--resume</span> restores optimizer, scheduler, EMA and RNG state · CUDA OOM halves the batch and rebuilds OneCycleLR rather than dying · NaN guard stops a diverged run · <span class="m">--max-minutes</span> hard wall-clock budget · atomic checkpoint writes · SIGINT finishes the epoch and saves</dd>
+          <dt>workers</dt><dd><span class="m">_worker_init</span> gives every DataLoader worker its own RNG stream. Without it all workers produce identical augmentations every epoch, making augmentation a no-op after epoch 1.</dd>
+          <dt>outputs</dt><dd><span class="m">best_model.pt</span>, <span class="m">last.pt</span>, and — critically — <span class="m">val_logits_seed0.npy</span>, <span class="m">test_logits_seed0.npy</span>, <span class="m">val_labels.npy</span>, <span class="m">test_labels.npy</span>, so calibration needs no second inference pass</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">train/fit_calibration.py</span><span class="loc">332 lines</span></div>
+        <p>Turns the trained checkpoint into the deployed system. No GPU, ~3 minutes on CPU.
+        Fits the temperature calibrator and the conformal thresholds on <strong>fold 9 only</strong>,
+        then verifies both on fold 10.</p>
+        <dl>
+          <dt>writes</dt><dd><span class="m">checkpoints/calibrator.json</span>, <span class="m">checkpoints/conformal_triage.json</span>, <span class="m">audit/results/07_conformal_eval.txt/.json</span></dd>
+          <dt>guard</dt><dd>Refuses to run if the packed data's filter flag disagrees with <span class="m">--filter</span>. Feeding filtered data to a model trained unfiltered shifted macro-ECE from 0.183 to 0.209 <em>silently</em> before this check existed. <span class="m">ECG_NO_PACKED=1</span> is the escape hatch — and re-opens the hole.</dd>
+        </dl>
+      </div>
+
+      <div class="file">
+        <div class="file-h"><span class="path">train/Component02_Colab.ipynb</span><span class="loc">notebook</span></div>
+        <p>The Colab entry point described in <span class="m">docs/COLAB_GUIDE.md</span>. Its organising
+        principle: do the slow, boring part on your laptop; do only the GPU part on Colab.
+        Reading 17,221 small files from Drive would dominate training time — you would pay GPU
+        rates to wait on network I/O.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 07 ═══ -->
+<section id="s7">
+  <h2><span class="n">07</span> Analysis &amp; audit scripts</h2>
+
+  <div class="panel">
+    <div class="panel-head">analysis/ — reads only bundled assets, never ../_archive</div>
+    <div class="files">
+      <div class="file">
+        <div class="file-h"><span class="path">analysis/01_dataset_deep_audit.py</span><span class="loc">265 lines</span></div>
+        <p>Answers every dataset question a panel can ask, with evidence: provenance, split
+        integrity (patient leakage, fold assignment, duplicates), label structure (prevalence,
+        co-occurrence, NORM exclusivity), signal integrity, demographics (the age-300 sentinel,
+        imputation artefacts), and a dedicated section measuring <em>why</em> hypertrophy is the
+        hardest class.</p>
+      </div>
+      <div class="file">
+        <div class="file-h"><span class="path">analysis/02_operating_point.py</span><span class="loc">226 lines</span></div>
+        <p>Selects and certifies the shipped operating point. Per class it takes the highest
+        threshold whose <em>validation</em> recall clears a sensitivity floor, then reports the full
+        confusion profile on the untouched test fold. Three policies are printed side by side:
+        default 0.5, F1-optimal, and recall-first (shipped). Fold 10 is scored once and never
+        used to select anything.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">audit/ — current suite</div>
+    <div class="files">
+      <div class="file">
+        <div class="file-h"><span class="path">audit/08_verify_fixes.py</span><span class="loc">215 lines</span></div>
+        <p>The regression suite. Re-runs the exact adversarial inputs that broke the archive and
+        shows the new behaviour side by side. 26 checks; run it after any change.</p>
+      </div>
+      <div class="file">
+        <div class="file-h"><span class="path">audit/10_conditional_validity.py</span><span class="loc">264 lines</span></div>
+        <p><strong>Contribution experiment 1.</strong> A conformal guarantee is marginal — it holds on
+        average over the whole distribution. A clinician does not treat "the whole distribution".
+        Section A measures the realised miss rate inside each sex and age subgroup and refits
+        Mondrian (group-conditional) thresholds as the repair. Section B tests whether the
+        quality gate itself is label-dependent, which would break exchangeability and void the
+        guarantee via the system's own safety mechanism.</p>
+      </div>
+      <div class="file">
+        <div class="file-h"><span class="path">audit/11_significance.py</span><span class="loc">244 lines</span></div>
+        <p>Closes the "isn't 33 % of 66 patients just chance?" question three independent ways:
+        Wilson intervals on every subgroup rate, exact one-sided binomial tests with Holm
+        correction across all 23 cells, and a calibration-draw bootstrap that resamples fold 9,
+        refits the threshold, and re-measures on fold 10 — the conformal analogue of a
+        multi-seed run.</p>
+      </div>
+      <div class="file">
+        <div class="file-h"><span class="path">audit/12_electrode_reversal.py</span><span class="loc">304 lines</span></div>
+        <p><strong>Contribution experiment 2.</strong> Prior work on lead reversal detects it and measures
+        accuracy loss under it. Neither asks what it does to a statistical <em>guarantee</em>. Six
+        stages: is it visible to the gate, how many diagnoses change, does the guarantee survive,
+        can a physiology detector catch it, does refusing detections restore validity, and what
+        detection sensitivity would actually be enough at realistic reversal prevalence.</p>
+      </div>
+      <div class="file">
+        <div class="file-h"><span class="path">audit/13_out_of_scope.py</span><span class="loc">248 lines</span></div>
+        <p><strong>Contribution experiment 3.</strong> Measures how much disease in PTB-XL the five-class
+        label space cannot express, what the system reports for atrial fibrillation, how many of
+        those reports carry a guarantee, and whether a validation-fitted rhythm check can withhold
+        it. Also fits and saves <span class="m">checkpoints/scope.json</span>.</p>
+        <div class="note review" style="margin-top:10px">
+          <span class="lbl">A defect found and fixed inside this script</span>
+          <p>The shipped threshold must not depend on <span class="m">--n</span>. Fitting it on a subsample made a
+          smaller run silently degrade the deployed system — a <span class="m">--n 400</span> run pushed sensitivity
+          from 71 % to 28 %. The threshold is now always fitted on the full validation fold;
+          <span class="m">--n</span> only limits the test-side evaluation.</p>
+        </div>
+      </div>
+      <div class="file">
+        <div class="file-h"><span class="path">audit/legacy/</span><span class="loc">6 scripts</span></div>
+        <p><span class="m">01_data_audit</span>, <span class="m">02_model_audit</span>, <span class="m">03_report_audit</span>,
+        <span class="m">05_xai_audit</span>, <span class="m">06_leakage_audit</span>, <span class="m">09_verify_transfer</span> —
+        audits of the superseded system. They require <span class="m">../_archive</span> to run, which is
+        why they are quarantined here.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 08 ═══ -->
+<section id="s8">
+  <h2><span class="n">08</span> Data &amp; shipped artefacts</h2>
+
+  <h3>Dataset</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Property</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Source</td><td>PTB-XL v1.0.3 (PhysioNet), CC-BY 4.0 — redistribution permitted with attribution</td></tr>
+        <tr><td>Format</td><td>WFDB <span class="m">.dat</span> + <span class="m">.hea</span>, 12-lead, 500 Hz, 10 s</td></tr>
+        <tr><td>Official size</td><td class="n">21,799 records / 18,869 patients</td></tr>
+        <tr class="warn"><td>Used here</td><td class="n">17,221 records / 15,174 patients — 4,578 dropped (21.0 %)</td></tr>
+        <tr><td>Drop rule</td><td>Only SCP codes with <span class="m">likelihood == 100</span> retained</td></tr>
+        <tr><td>Split</td><td>Official <span class="m">strat_fold</span>: 1–8 train / 9 val / 10 test — patient-disjoint, 0 overlap on all three pairs</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Split &amp; prevalence</div>
+    <div class="tw"><table>
+      <thead><tr><th>Split</th><th class="n">Records</th><th class="n">Patients</th><th class="n">NORM</th><th class="n">MI</th><th class="n">STTC</th><th class="n">CD</th><th class="n">HYP</th></tr></thead>
+      <tbody>
+        <tr><td>train (1–8)</td><td class="n">13,801</td><td class="n">12,109</td><td class="n">40.77 %</td><td class="n">17.56 %</td><td class="n">26.48 %</td><td class="n">27.61 %</td><td class="n">8.71 %</td></tr>
+        <tr><td>val (9)</td><td class="n">1,709</td><td class="n">1,550</td><td class="n">40.90 %</td><td class="n">16.56 %</td><td class="n">26.62 %</td><td class="n">28.38 %</td><td class="n">7.84 %</td></tr>
+        <tr><td>test (10)</td><td class="n">1,711</td><td class="n">1,515</td><td class="n">41.32 %</td><td class="n">15.66 %</td><td class="n">26.65 %</td><td class="n">28.23 %</td><td class="n">7.71 %</td></tr>
+      </tbody>
+      <caption>Prevalence drift under 1.5 pp across folds — no split-induced bias. 17.2 % of records carry more than one label; mean 1.209 labels/record; 0 records carry NORM together with an abnormality.</caption>
+    </table></div>
+  </div>
+
+  <h3>Shipped artefacts in <span class="m">checkpoints/</span></h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>File</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td class="f">best_model.pt</td><td>Weights + <span class="m">epoch 13</span>, <span class="m">best_auroc 0.940342</span> (validation), <span class="m">model_name resnet_se</span>, full training args, <span class="m">ema False</span></td></tr>
+        <tr><td class="f">calibrator.json</td><td>Five temperatures, five biases, <span class="m">fitted_for</span> provenance block</td></tr>
+        <tr><td class="f">conformal_triage.json</td><td>α, β, δ = 0.01, λ_out, λ_in, calibration counts and feasibility per class</td></tr>
+        <tr><td class="f">operating_point.json</td><td>Policy <span class="m">recall_first</span>, floor 0.80, report floor 0.75, five thresholds, and the full test confusion matrix per class</td></tr>
+        <tr><td class="f">scope.json</td><td><span class="m">irr_threshold 0.17920692444965153</span>, <span class="m">fpr_budget 0.05</span>, fitted on val fold 9, <span class="m">n_val 1696</span></td></tr>
+        <tr><td class="f">val/test_logits_seed0.npy<br>val/test_labels.npy</td><td>Saved model outputs — every downstream fit and audit reuses these instead of re-running inference. They are also what made the metrics in §11 independently verifiable.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 09 ═══ -->
+<section id="s9">
+  <h2><span class="n">09</span> How it all fits together</h2>
+
+  <p class="lede">There are two flows through this repository, and they meet only at
+  <span class="m">checkpoints/</span>.</p>
+
+  <h3>Offline — build the artefacts</h3>
+  <pre class="flow">csv/*.csv + signals_cache/            <b>metadata + 17,221 signals</b>
+    │
+    ├─ train_gpu.py --pack ─────────► data/{train,val,test}_X.npy   float16 memmaps
+    │                                 (band-pass + normalise baked in)
+    │
+    ├─ train_gpu.py ────────────────► checkpoints/best_model.pt
+    │        40-epoch OneCycle              val/test_logits_seed0.npy
+    │        AdamW · focal · AMP            val/test_labels.npy
+    │
+    ├─ fit_calibration.py ──────────► checkpoints/calibrator.json
+    │        fold 9 only                    checkpoints/conformal_triage.json
+    │                                       audit/results/07_conformal_eval.*
+    │
+    ├─ analysis/02_operating_point ─► checkpoints/operating_point.json
+    │
+    └─ audit/13_out_of_scope ───────► checkpoints/scope.json</pre>
+
+  <p style="margin-top:14px">
+    Every threshold in the system — decision thresholds, conformal λ, the rhythm-scope
+    <span class="m">irr</span> cut-off — is fitted on <strong>fold 9 and only fold 9</strong>.
+    Fold 10 is scored once, for reporting. That discipline is what makes the numbers in §11 honest.
+  </p>
+
+  <h3>Online — serve one request</h3>
+  <pre class="flow">browser  ─ drag .dat/.hea ─►  <b>Worklist.jsx</b>
+                                   │ api.js  POST /api/predict?theme=…
+                            Vite proxy :5173 → :5000
+                                   ▼
+                              <b>server.py</b>  predict()
+                                   │ secure_filename · TemporaryDirectory · wfdb.rdrecord
+                                   │ 12-lead check · lead reorder
+                                   ▼
+                        <b>ECGPipeline.analyse()</b>   ◄── the eight stages, §03
+                                   │
+                    ┌──────────────┴──────────────┐
+                    ▼                             ▼
+          quality gate FAILS              gate PASSES
+                    │                             │
+          refused report, no             preprocess → classify → calibrate
+          probabilities at all           → conformal → XAI → report → verify
+                    │                             │
+                    └──────────────┬──────────────┘
+                                   ▼
+                        server.py  analyse() wrapper
+                        + scope/electrode blocks
+                        + render_ecg() → base64 PNG
+                                   ▼
+                              JSON response
+                                   ▼
+              <b>App.jsx</b> → PatientBanner · EcgViewer · DecisionTable
+                        · Measurements · ReportCard · LeadEvidence</pre>
+
+  <h3>Dependency shape</h3>
+  <div class="panel">
+    <div class="panel-body">
+      <ul style="margin-bottom:0">
+        <li><span class="m">models.py</span> is the root — every other module imports its constants from there, which is what keeps training and serving in agreement.</li>
+        <li><span class="m">paths.py</span> is the only module that touches the filesystem layout, so the folder can be relocated or shipped without <span class="m">data/</span> and still work through the upload path.</li>
+        <li><span class="m">pipeline.py</span> is the only orchestrator. <span class="m">server.py</span>, <span class="m">08_verify_fixes.py</span> and <span class="m">13_out_of_scope.py</span> all go through it, so a change to the stage order changes every consumer at once.</li>
+        <li><span class="m">quality.py</span> imports <span class="m">electrodes</span> and <span class="m">scope</span> lazily inside <span class="m">try/except</span> — those checks are advisory and must never be able to break the gate itself.</li>
+        <li><span class="m">verify.py</span> imports from <span class="m">report.py</span>, not the reverse. The generator does not know what the checker will accept, which is the point.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 10 ═══ -->
+<section id="s10">
+  <h2><span class="n">10</span> The model, in full</h2>
+
+  <h3>Architecture — <span class="m">ECGResNetSE</span></h3>
+  <div class="panel">
+    <div class="panel-head">Forward pass <span class="rt">shapes verified by running the model</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Stage</th><th>Operation</th><th class="n">Output</th></tr></thead>
+      <tbody>
+        <tr><td>input</td><td>normalised, band-passed 12-lead signal</td><td class="n">(12, 5000)</td></tr>
+        <tr><td><span class="m">MultiKernelStem</span></td><td>three parallel Conv1d, kernels 7 / 15 / 31, stride 2 → concat → BN → ReLU. Short and long receptive fields because P/QRS and T/ST live at different scales.</td><td class="n">(64, 2500)</td></tr>
+        <tr><td>block 1</td><td><span class="m">SEResidualBlock</span> 64→64, k = 11, stride 2, dropout 0.1</td><td class="n">(64, 1250)</td></tr>
+        <tr><td>block 2</td><td><span class="m">SEResidualBlock</span> 64→128, k = 7, stride 2, dropout 0.1</td><td class="n">(128, 625)</td></tr>
+        <tr><td>block 3</td><td><span class="m">SEResidualBlock</span> 128→256, k = 5, stride 2, dropout 0.2</td><td class="n">(256, 313)</td></tr>
+        <tr><td>block 4</td><td><span class="m">SEResidualBlock</span> 256→320, k = 3, stride 2, dropout 0.2 — this is <span class="m">cam_layer</span>, where Grad-CAM hooks attach</td><td class="n">(320, 157)</td></tr>
+        <tr><td><span class="m">AttentionPool</span></td><td>Conv1d(320→1, k = 1) → softmax over time → weighted sum. Global average pooling throws away <em>when</em> something happened; this keeps it.</td><td class="n">(320,)</td></tr>
+        <tr><td>head</td><td>Linear 320→256 → BN → ReLU → Dropout 0.3 → Linear 256→5</td><td class="n">(5,)</td></tr>
+        <tr class="macro"><td>output</td><td>five <strong>independent</strong> sigmoid logits — multi-label, not softmax. A patient can carry more than one superclass.</td><td class="n">(5,)</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <p>
+    Inside each <span class="m">SEResidualBlock</span>: Conv → BN → ReLU → Dropout → Conv → BN →
+    squeeze-excitation → add projection skip → ReLU. The SE block averages over time, passes
+    through <span class="m">Linear(C → C/8) → ReLU → Linear(C/8 → C) → sigmoid</span>, and gates the
+    channels — letting the network re-weight leads and filters per record.
+  </p>
+
+  <div class="panel">
+    <div class="panel-head">Parameter counts <span class="rt">measured, not quoted</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Model</th><th class="n">Parameters</th><th class="n">BN buffers</th><th class="n">state_dict total</th></tr></thead>
+      <tbody>
+        <tr><td class="f">ECGResNet (baseline)</td><td class="n">1,018,501</td><td class="n">4,109</td><td class="n">1,022,610</td></tr>
+        <tr class="macro"><td class="f">ECGResNetSE (shipped)</td><td class="n">1,584,326</td><td class="n">5,262</td><td class="n">1,589,588</td></tr>
+      </tbody>
+      <caption>The two numbers differ because <span class="m">state_dict</span> includes BatchNorm running statistics, which are buffers rather than learnable parameters.</caption>
+    </table></div>
+  </div>
+
+  <h3>Training configuration — read from the shipped checkpoint</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Setting</th><th class="n">Value</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Optimiser</td><td class="n">AdamW</td><td>lr 3e-3, weight decay 1e-2</td></tr>
+        <tr><td>Schedule</td><td class="n">OneCycleLR</td><td>pct_start 0.25, div_factor 20, final_div_factor 200</td></tr>
+        <tr><td>Loss</td><td class="n">FocalLoss</td><td>γ = 2.0, label smoothing 0.02, <span class="m">alpha = None</span></td></tr>
+        <tr><td>Imbalance</td><td class="n">sampler</td><td><span class="m">WeightedRandomSampler</span> ON, focal alpha OFF — never both</td></tr>
+        <tr><td>Precision</td><td class="n">bf16 AMP</td><td>grad clip 1.0</td></tr>
+        <tr><td>Batch / epochs</td><td class="n">128 / 40</td><td>patience 0 — early stopping is disabled on purpose, because OneCycle's annealing tail is where the model consolidates</td></tr>
+        <tr><td>Seed</td><td class="n">0</td><td>the only seed whose checkpoint exists on disk</td></tr>
+        <tr class="warn"><td>Budget</td><td class="n">60 min</td><td>CLI default is 75; the shipped run used 60</td></tr>
+        <tr class="macro"><td>Best epoch</td><td class="n">13</td><td>val macro-AUROC 0.940342 — EMA weights were evaluated and <em>not</em> kept</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>The safety layer's shipped parameters</h3>
+  <div class="panel">
+    <div class="panel-head">Calibrator · conformal triage · operating point · scope</div>
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">T</th><th class="n">bias</th><th class="n">α</th><th class="n">β</th><th class="n">λ_out</th><th class="n">λ_in</th><th class="n">n pos cal</th><th class="n">decision thr</th></tr></thead>
+      <tbody>
+        <tr><td>NORM</td><td class="n">0.4279</td><td class="n">+0.3028</td><td class="n">0.20</td><td class="n">0.20</td><td class="n">0.1986</td><td class="n">0.6944</td><td class="n">699</td><td class="n">0.7240</td></tr>
+        <tr><td>MI</td><td class="n">0.5939</td><td class="n">−1.0544</td><td class="n">0.05</td><td class="n">0.10</td><td class="n">0.0382</td><td class="n">0.3386</td><td class="n">283</td><td class="n">0.2560</td></tr>
+        <tr><td>STTC</td><td class="n">0.5479</td><td class="n">+0.2045</td><td class="n">0.10</td><td class="n">0.15</td><td class="n">0.1934</td><td class="n">0.3435</td><td class="n">455</td><td class="n">0.3755</td></tr>
+        <tr><td>CD</td><td class="n">0.5593</td><td class="n">+0.2181</td><td class="n">0.10</td><td class="n">0.15</td><td class="n">0.1104</td><td class="n">0.2793</td><td class="n">485</td><td class="n">0.3395</td></tr>
+        <tr><td>HYP</td><td class="n">0.6271</td><td class="n">−0.9508</td><td class="n">0.15</td><td class="n">0.15</td><td class="n">0.0506</td><td class="n">0.1391</td><td class="n">134</td><td class="n">0.0925</td></tr>
+      </tbody>
+      <caption>PAC δ = 0.01 · preset <span class="m">safety</span> · all five classes feasible · NORM carries a note that its rule-out and rule-in regions overlap on [0.199, 0.694) and the overlap is referred rather than decided. Rhythm-scope <span class="m">irr</span> threshold 0.1792 at a 5 % false-positive budget.</caption>
+    </table></div>
+  </div>
+
+  <p>
+    The α values are the system's clinical policy, not a tuning artefact. MI gets the tightest
+    miss budget because a missed infarction kills; NORM gets the loosest because "missing NORM"
+    only costs an unnecessary review. δ = 0.01 rather than the code's 0.05 default because at
+    0.05 two of five guarantees failed on the test realisation — CD 0.106 vs 0.10 and
+    HYP 0.152 vs 0.15.
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 11 ═══ -->
+<section id="s11">
+  <h2><span class="n">11</span> Accuracy — every figure</h2>
+
+  <h3>Threshold-free discrimination, recomputed from the shipped logits</h3>
+  <div class="panel">
+    <div class="panel-head">seed 0 · <span class="rt">recomputed from checkpoints/*_logits_seed0.npy</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">prev</th><th class="n">val AUROC</th><th class="n">val AUPRC</th><th class="n">test AUROC</th><th class="n">test AUPRC</th><th class="n">test F1@0.5</th></tr></thead>
+      <tbody>
+        <tr><td>NORM</td><td class="n">41.3 %</td><td class="n">0.9694</td><td class="n">0.9564</td><td class="n">0.9574</td><td class="n">0.9253</td><td class="n">0.8647</td></tr>
+        <tr><td>MI</td><td class="n">15.7 %</td><td class="n">0.9464</td><td class="n">0.8027</td><td class="n">0.9487</td><td class="n">0.7833</td><td class="n">0.6915</td></tr>
+        <tr><td>STTC</td><td class="n">26.7 %</td><td class="n">0.9319</td><td class="n">0.8199</td><td class="n">0.9315</td><td class="n">0.8280</td><td class="n">0.7420</td></tr>
+        <tr><td>CD</td><td class="n">28.2 %</td><td class="n">0.9334</td><td class="n">0.8792</td><td class="n">0.9141</td><td class="n">0.8646</td><td class="n">0.7557</td></tr>
+        <tr class="warn"><td>HYP</td><td class="n">7.7 %</td><td class="n">0.9206</td><td class="n">0.5633</td><td class="n">0.9085</td><td class="n">0.5842</td><td class="n">0.5348</td></tr>
+        <tr class="macro"><td>MACRO</td><td class="n">—</td><td class="n">0.9403</td><td class="n">0.8043</td><td class="n">0.9320</td><td class="n">0.7971</td><td class="n">0.7177</td></tr>
+      </tbody>
+      <caption>Val macro-AUROC 0.9403 matches <span class="m">best_auroc</span> in the checkpoint exactly. Test macro-AUROC 0.9320 matches the seed-0 value quoted in <span class="m">docs/RESEARCH_CONTRIBUTION.md</span> (0.9320 / 0.9374 / 0.9335 across three seeds), which independently corroborates the 0.9343 ± 0.0028 headline even though the other two seeds' artefacts are not on disk.</caption>
+    </table></div>
+  </div>
+
+  <div class="note review">
+    <span class="lbl">Read AUPRC, not AUROC, for HYP</span>
+    <p>HYP AUROC 0.909 reads as strong and is misleading at 7.7 % prevalence. Its AUPRC is
+    <strong>0.584</strong>. That is still a real improvement — the audited baseline scored 0.5405 —
+    and it sits above the ≈0.54 published norm for this class on PTB-XL, but it is the number
+    to quote.</p>
+  </div>
+
+  <h3>Shipped operating point — recall-first, test fold 10 (n = 1,711)</h3>
+  <div class="panel">
+    <div class="panel-head">Thresholds selected on validation only <span class="rt">checkpoints/operating_point.json</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">Acc</th><th class="n">Recall</th><th class="n">Spec</th><th class="n">NPV</th><th class="n">Prec</th><th class="n">F1</th><th class="n">TP</th><th class="n">FP</th><th class="n">FN</th><th class="n">TN</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td>NORM</td><td class="n">0.883</td><td class="n">0.796</td><td class="n">0.943</td><td class="n">0.868</td><td class="n">0.908</td><td class="n">0.849</td><td class="n">563</td><td class="n">57</td><td class="n">144</td><td class="n">947</td></tr>
+        <tr class="ok"><td>MI</td><td class="n">0.884</td><td class="n">0.836</td><td class="n">0.893</td><td class="n"><strong>0.967</strong></td><td class="n">0.591</td><td class="n">0.692</td><td class="n">224</td><td class="n">155</td><td class="n">44</td><td class="n">1288</td></tr>
+        <tr class="ok"><td>STTC</td><td class="n">0.868</td><td class="n">0.803</td><td class="n">0.892</td><td class="n">0.926</td><td class="n">0.729</td><td class="n">0.764</td><td class="n">366</td><td class="n">136</td><td class="n">90</td><td class="n">1119</td></tr>
+        <tr class="ok"><td>CD</td><td class="n">0.869</td><td class="n">0.805</td><td class="n">0.894</td><td class="n">0.921</td><td class="n">0.750</td><td class="n">0.776</td><td class="n">389</td><td class="n">130</td><td class="n">94</td><td class="n">1098</td></tr>
+        <tr class="warn"><td>HYP</td><td class="n">0.817</td><td class="n">0.811</td><td class="n">0.818</td><td class="n"><strong>0.981</strong></td><td class="n">0.271</td><td class="n">0.406</td><td class="n">107</td><td class="n">288</td><td class="n">25</td><td class="n">1291</td></tr>
+        <tr class="macro"><td>MACRO</td><td class="n">0.864</td><td class="n">0.810</td><td class="n">0.888</td><td class="n">0.933</td><td class="n">0.650</td><td class="n">0.698</td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"></td></tr>
+      </tbody>
+      <caption>Every class clears both clinical targets: accuracy ≥ 0.75 and recall ≥ 0.75.</caption>
+    </table></div>
+  </div>
+
+  <h3>What the recall-first choice costs — three policies on the same fold</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Policy</th><th class="n">Acc</th><th class="n">Recall</th><th class="n">Spec</th><th class="n">Prec</th><th class="n">NPV</th><th class="n">F1</th><th class="n">BAcc</th></tr></thead>
+      <tbody>
+        <tr><td>A · default 0.5</td><td class="n">0.901</td><td class="n">0.668</td><td class="n">0.944</td><td class="n">0.800</td><td class="n">0.922</td><td class="n">0.714</td><td class="n">0.806</td></tr>
+        <tr><td>B · F1-optimal</td><td class="n">0.889</td><td class="n">0.760</td><td class="n">0.917</td><td class="n">0.702</td><td class="n">0.932</td><td class="n"><strong>0.724</strong></td><td class="n">0.839</td></tr>
+        <tr class="macro"><td>C · recall-first (shipped)</td><td class="n">0.864</td><td class="n"><strong>0.810</strong></td><td class="n">0.888</td><td class="n">0.650</td><td class="n"><strong>0.933</strong></td><td class="n">0.698</td><td class="n">0.849</td></tr>
+      </tbody>
+      <caption>Per-class cost of B → C: HYP recall +0.159 for precision −0.145; MI +0.104 for −0.094; CD +0.087 for −0.091. Recall is bought with precision — for a rule-out system that is the correct trade, because a false alarm costs a review and a false negative can cost a life.</caption>
+    </table></div>
+  </div>
+
+  <h3>Calibration — before and after temperature scaling</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">ECE before</th><th class="n">ECE after</th><th class="n">over-prediction before</th><th class="n">after</th></tr></thead>
+      <tbody>
+        <tr><td>NORM</td><td class="n">0.1027</td><td class="n">0.0160</td><td class="n">0.94×</td><td class="n">1.01×</td></tr>
+        <tr><td>MI</td><td class="n">0.1138</td><td class="n">0.0153</td><td class="n">1.72×</td><td class="n">1.04×</td></tr>
+        <tr><td>STTC</td><td class="n">0.0751</td><td class="n">0.0183</td><td class="n">1.05×</td><td class="n">0.98×</td></tr>
+        <tr><td>CD</td><td class="n">0.0794</td><td class="n">0.0265</td><td class="n">1.08×</td><td class="n">0.98×</td></tr>
+        <tr class="ok"><td>HYP</td><td class="n">0.1032</td><td class="n">0.0150</td><td class="n">2.31×</td><td class="n">1.01×</td></tr>
+        <tr class="macro"><td>MACRO</td><td class="n">0.0948</td><td class="n">0.0182</td><td class="n"></td><td class="n"></td></tr>
+      </tbody>
+      <caption>A 5.2× reduction in macro ECE. Because temperature scaling is monotone, AUROC and the conformal bounds are unchanged — only the numbers shown to a human become honest. The archive's equivalent figures were far worse: macro ECE 0.183 with HYP over-predicted 4.14×.</caption>
+    </table></div>
+  </div>
+
+  <h3>Conformal triage on the unseen test fold</h3>
+  <div class="panel">
+    <div class="panel-head">Do the promises hold? <span class="rt">audit/results/07_conformal_eval.txt</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">α</th><th class="n">miss</th><th>held</th><th class="n">β</th><th class="n">false alarm</th><th>held</th><th class="n">rule out</th><th class="n">refer</th><th class="n">rule in</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td>NORM</td><td class="n">0.20</td><td class="n">0.033</td><td><span class="chip c-clear">yes</span></td><td class="n">0.20</td><td class="n">0.062</td><td><span class="chip c-clear">yes</span></td><td class="n">48.1 %</td><td class="n">14.8 %</td><td class="n">37.1 %</td></tr>
+        <tr class="ok"><td>MI</td><td class="n">0.05</td><td class="n">0.015</td><td><span class="chip c-clear">yes</span></td><td class="n">0.10</td><td class="n">0.071</td><td><span class="chip c-clear">yes</span></td><td class="n">57.6 %</td><td class="n">24.1 %</td><td class="n">18.3 %</td></tr>
+        <tr class="ok"><td>STTC</td><td class="n">0.10</td><td class="n">0.092</td><td><span class="chip c-clear">yes</span></td><td class="n">0.15</td><td class="n">0.124</td><td><span class="chip c-clear">yes</span></td><td class="n">60.9 %</td><td class="n">7.9 %</td><td class="n">31.2 %</td></tr>
+        <tr class="ok"><td>CD</td><td class="n">0.10</td><td class="n">0.099</td><td><span class="chip c-clear">yes</span></td><td class="n">0.15</td><td class="n">0.138</td><td><span class="chip c-clear">yes</span></td><td class="n">54.6 %</td><td class="n">11.8 %</td><td class="n">33.5 %</td></tr>
+        <tr class="ok"><td>HYP</td><td class="n">0.15</td><td class="n">0.121</td><td><span class="chip c-clear">yes</span></td><td class="n">0.15</td><td class="n">0.128</td><td><span class="chip c-clear">yes</span></td><td class="n">69.9 %</td><td class="n">12.3 %</td><td class="n">17.8 %</td></tr>
+      </tbody>
+      <caption>All ten guarantees hold marginally. CD at 0.099 against a promised 0.10 is the narrowest margin in the table.</caption>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Clinical escape rate — true positives that were ruled out and never reached a human</div>
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">this system</th><th class="n">archive baseline FN rate</th><th class="n">reduction</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td>NORM</td><td class="n">3.3 %</td><td class="n">7.4 %</td><td class="n">−4.1 pp</td></tr>
+        <tr class="ok"><td>MI</td><td class="n">1.5 %</td><td class="n">29.5 %</td><td class="n"><strong>−28.0 pp</strong></td></tr>
+        <tr class="ok"><td>STTC</td><td class="n">9.2 %</td><td class="n">14.2 %</td><td class="n">−5.0 pp</td></tr>
+        <tr class="ok"><td>CD</td><td class="n">9.9 %</td><td class="n">21.9 %</td><td class="n">−12.0 pp</td></tr>
+        <tr class="ok"><td>HYP</td><td class="n">12.1 %</td><td class="n">39.4 %</td><td class="n">−27.3 pp</td></tr>
+      </tbody>
+      <caption>The baseline had no referral option, so every false negative escaped. Here: 49.1 % of patients are handled autonomously (no class deferred) at 70.5 % exact-match accuracy on that subset (n = 840), against 62.1 % exact-match over <em>all</em> patients for the baseline. 50.9 % are referred.</caption>
+    </table></div>
+  </div>
+
+  <h3>Against the baseline architecture</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Model</th><th class="n">params</th><th class="n">macro AUROC</th><th class="n">macro AUPRC</th><th class="n">macro F1</th></tr></thead>
+      <tbody>
+        <tr><td>ECGResNet (baseline, 1 seed)</td><td class="n">1,018,501</td><td class="n">0.9297</td><td class="n">0.7864</td><td class="n">0.7172 [0.6971, 0.7365]</td></tr>
+        <tr class="macro"><td>ECGResNetSE (3 seeds, as reported)</td><td class="n">1,584,326</td><td class="n">0.9343 ± 0.0028</td><td class="n">0.8001 ± 0.0029</td><td class="n">—</td></tr>
+        <tr class="warn"><td>Δ</td><td class="n"></td><td class="n">+0.0046 · 1.6σ</td><td class="n">+0.0137 · 4.7σ</td><td class="n"></td></tr>
+      </tbody>
+      <caption>The repo's own honest reading, which should be preserved in any write-up: the AUROC gain is <strong>within run-to-run noise</strong> and must not be claimed. Only the AUPRC gain is real (t = 8.2, p ≈ 0.015). The comparison is also asymmetric — 3 seeds against a 1-seed point estimate.</caption>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 12 ═══ -->
+<section id="s12">
+  <h2><span class="n">12</span> Faults found and fixed</h2>
+
+  <p class="lede">
+    Twelve defects were found in the previous system. All are closed, and
+    <span class="m">audit/08_verify_fixes.py</span> re-runs the exact inputs that broke it:
+    <strong>26 passed, 0 failed</strong>.
+  </p>
+
+  <div class="panel">
+    <div class="panel-head">Critical defects</div>
+    <div class="tw"><table>
+      <thead><tr><th>ID</th><th>What the archive did</th><th>Fix</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td class="f">C-1</td><td>Flatline → "MI 0.691, consistent with myocardial infarction". Gaussian noise → "MI 0.629, CD 0.657". Microvolt file → "STTC 1.000, HYP 1.000". Inverted ECG → "MI 0.818".</td><td><span class="m">src/quality.py</span> refuses uninterpretable records before the model runs</td><td>8 adversarial inputs, all handled correctly</td></tr>
+        <tr class="ok"><td class="f">C-2</td><td>The fusion model consumed <span class="m">report_en</span> — the very text the labels were derived from. Report text <em>alone</em> reached macro-AUROC 0.8872 vs 0.9567 for the full model.</td><td>Model withdrawn; the ECG-only model is the deliverable</td><td>4-arm ablation in <span class="m">06_leakage_audit</span></td></tr>
+        <tr class="ok"><td class="f">C-3</td><td>The BioBART tier was an identity function 80.5 % of the time, corrupted text in 56.9 % of cases, dropped a clinical concept in 103 records, and invented "atrial fibrillation" in 42.</td><td>BioBART removed entirely; <span class="m">src/verify.py</span> gates all text</td><td>200/200 reports verified</td></tr>
+        <tr class="ok"><td class="f">C-4</td><td>99 of 1,711 reports asserted a normal ECG <em>and</em> an abnormality in the same paragraph.</td><td>Structurally impossible in <span class="m">src/report.py</span> — NORM is demoted before text generation</td><td>0 contradictions in 200 records</td></tr>
+        <tr class="ok"><td class="f">C-5</td><td>One shared Grad-CAM object under a threaded server. 3 of 4 concurrent calls returned corrupted heatmaps.</td><td>Per-call hooks + per-model <span class="m">RLock</span></td><td>4 concurrent calls match the sequential result exactly</td></tr>
+        <tr class="ok"><td class="f">C-6</td><td>Oversampling <em>and</em> focal alpha applied together. HYP predicted at 4.14× its prevalence; macro ECE 0.183.</td><td>Sampler XOR alpha, plus post-hoc temperature scaling</td><td>macro ECE 0.0948 → 0.0182; HYP 2.31× → 1.01×</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Engineering defects</div>
+    <div class="tw"><table>
+      <thead><tr><th>ID</th><th>Defect</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td class="f">E-1</td><td>PhysioNet password in plaintext in source</td><td>Moved to <span class="m">PHYSIONET_USER</span> / <span class="m">PHYSIONET_PASS</span>; <span class="m">.gitignore</span> blocks <span class="m">.env</span>, <span class="m">*credential*</span>, <span class="m">*secret*</span>, <span class="m">*.pem</span>, <span class="m">*.key</span></td></tr>
+        <tr class="ok"><td class="f">E-2</td><td>Repository rooted at the home directory</td><td>RP-Venu is its own repository</td></tr>
+        <tr class="ok"><td class="f">E-3</td><td>No upload sanitisation — path traversal via filename</td><td><span class="m">secure_filename</span>, extension checks, base-name match, 25 MB cap</td></tr>
+        <tr class="ok"><td class="f">E-4</td><td>Failed downloads silently zero-filled into training data</td><td><span class="m">pack()</span> refuses to build on any missing record</td></tr>
+        <tr class="ok"><td class="f">E-5</td><td>Any-length signal resampled to 5000 samples, distorting heart rate</td><td>Resample by <em>rate</em>; centre-crop or pad by <em>length</em>; duration outside 5–60 s refused</td></tr>
+        <tr class="ok"><td class="f">E-9</td><td>Server bound to all interfaces by default</td><td>Binds 127.0.0.1 unless <span class="m">HOST</span> is set explicitly</td></tr>
+        <tr class="ok"><td class="f">E-10</td><td>The same ResNet defined in five files</td><td><span class="m">src/models.py</span> is the single source of truth</td></tr>
+        <tr class="ok"><td class="f">7.4</td><td>Lead saliency took <span class="m">abs()</span> before summing, so a lead arguing <em>against</em> the diagnosis displayed as "important"</td><td>Sign preserved; signed and magnitude reported separately</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 13 ═══ -->
+<section id="s13">
+  <h2><span class="n">13</span> Faults that remain</h2>
+
+  <p class="lede">
+    These are stated in the repository's own limitations sections and in the audit results.
+    Ordered by how much they matter for a patient.
+  </p>
+
+  <h3>Clinical</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Fault</th><th>Measured</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr class="bad"><td><strong>The label space is blind to arrhythmia.</strong> There is no output unit for atrial fibrillation — the most common serious rhythm disorder, associated with roughly one ischaemic stroke in four.</td><td>14.3 % of PTB-XL records carry a documented finding the five classes cannot express. 113 of 114 test-fold AF/flutter recordings received a statistical guarantee; 2 were reported as normal.</td><td><span class="chip c-review">partly mitigated</span></td></tr>
+        <tr class="bad"><td><strong>The rhythm-scope gate catches under half.</strong> It flags irregular rhythms only.</td><td>48.9 % sensitivity at 4.8 % FPR (AUROC 0.912). Misses 53 of 114, including ECG 15796 — the very case reported as normal. Paced rhythms, monomorphic VT, Brugada and long QT keep a regular beat and stay invisible.</td><td><span class="chip c-crit">open</span></td></tr>
+        <tr class="bad"><td><strong>The guarantee is not conditionally valid.</strong> It holds on average and fails inside specific subgroups.</td><td>CD in patients under 50: promised ≤ 10 % missed, delivered <strong>33.3 %</strong>. NORM in patients over 70: promised ≤ 20 %, delivered <strong>33.0 %</strong>. Both survive Holm correction and 100 % of 2,000 bootstrap calibration draws.</td><td><span class="chip c-review">Mondrian repair implemented, not shipped</span></td></tr>
+        <tr class="bad"><td><strong>Electrode reversal voids the guarantee silently.</strong> A miswired recording is clean, passes every quality metric, and changes the diagnosis.</td><td>Up to 87 % of diagnoses flip. 7 guarantees voided. The detector reaches 65.5 % / 60.5 % sensitivity on RA/LA and RA/LL, 4.0 % on LA/LL, at a 4.5 % false-positive rate. Refusing detected reversals restored <strong>0 of 7</strong>.</td><td><span class="chip c-review">warning shipped, not repaired</span></td></tr>
+        <tr class="warn"><td><strong>Hypertrophy generates a heavy referral burden.</strong></td><td>288 false positives against 107 true positives — precision 0.271. Bought deliberately for recall 0.811 and NPV 0.981.</td><td><span class="chip c-review">by design</span></td></tr>
+        <tr class="warn"><td><strong>No intervals, no axis.</strong> PR, QRS, QT and QRS axis are not measured — things a cardiologist reads routinely. Surfaced honestly in the UI as literal "not measured" rows.</td><td>—</td><td><span class="chip c-crit">open</span></td></tr>
+        <tr class="warn"><td><strong>Territory localisation is unvalidated.</strong> The lead-group → coronary-artery map is a heuristic. It agreed with the cardiologist's own report on the one worked example (record 271, "anteroseptal"), which is an anecdote, not evidence.</td><td>—</td><td><span class="chip c-crit">open</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>Generalisation</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Fault</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr class="bad"><td>No external validation</td><td>Single German cohort, 1989–1996. Nothing is known about performance on any other population. This is the limitation most likely to be raised first.</td></tr>
+        <tr class="bad"><td>Results not comparable to published benchmarks</td><td>The <span class="m">likelihood == 100</span> filter dropped 21 % of PTB-XL — precisely the ambiguous cases. The task here is <em>easier</em> than the standard benchmark, and the repository says so explicitly rather than hiding it.</td></tr>
+        <tr class="warn"><td>50 Hz notch is hard-coded</td><td><span class="m">NOTCH_HZ = 50.0</span> because PTB-XL is German. A 60 Hz recording from the US or Japan would be filtered incorrectly.</td></tr>
+        <tr class="warn"><td>Quality gate is near-inert on PTB-XL</td><td>Median SQI 1.000 across the dataset, 0 records below 1.0. The gate only earns its place in deployment, so its value is argued rather than demonstrated on this data.</td></tr>
+        <tr class="warn"><td>Fairness axes are limited to age and sex</td><td>Race, ethnicity, socioeconomic status and geography are not in PTB-XL and cannot be audited. No audit by device, recording site, comorbidity, or signal-quality band either.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>Engineering &amp; reproducibility</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Fault</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr class="bad"><td>No tests, no CI</td><td>Zero test files, no <span class="m">pytest</span> config, no workflow. <span class="m">08_verify_fixes.py</span> is a script, not a test suite, and emits no machine-readable pass/fail alongside its text output.</td></tr>
+        <tr class="bad"><td>No dependency pinning</td><td><span class="m">requirements.txt</span> uses only <span class="m">&gt;=</span>. No lockfile, no <span class="m">pyproject.toml</span>, no Docker image. A future resolve may not reproduce these numbers. Capture <span class="m">pip freeze</span> now.</td></tr>
+        <tr class="bad"><td>Everything downstream of training is single-seed</td><td>Calibration, conformal thresholds, the operating point and all three contribution audits use seed 0 only.</td></tr>
+        <tr class="warn"><td>Latency ~6 s per analysis</td><td>The classifier itself is ~20 ms. Matplotlib rendering and 64-step integrated gradients dominate.</td></tr>
+        <tr class="warn"><td>The frontend has no test coverage</td><td>No test file, no runner.</td></tr>
+        <tr class="warn"><td>No figure assets exist</td><td>A recursive search for <span class="m">*.png / *.svg / *.pdf</span> returns nothing. Every paper figure must be drawn from scratch — but the <span class="m">.json</span> result files hold the underlying numbers, so plotting scripts can be written without re-running any experiment.</td></tr>
+        <tr class="warn"><td>Git history</td><td>At the time of this reading the working tree is untracked with no commits — no version history, no attribution record, no rollback point for ~2 GB of work.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 14 ═══ -->
+<section id="s14">
+  <h2><span class="n">14</span> Every outcome, by experiment</h2>
+
+  <h3>Contribution 1 — does the guarantee hold inside subgroups?</h3>
+  <div class="panel">
+    <div class="panel-head">Marginal thresholds, miss rate measured per subgroup <span class="rt">10_conditional_validity.txt</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Class</th><th class="n">α</th><th class="n">overall</th><th class="n">male</th><th class="n">female</th><th class="n">&lt;50</th><th class="n">50–69</th><th class="n">≥70</th></tr></thead>
+      <tbody>
+        <tr><td>NORM</td><td class="n">0.20</td><td class="n">0.190</td><td class="n">0.158</td><td class="n">0.225</td><td class="n">0.103</td><td class="n">0.228</td><td class="n" style="color:var(--crit);font-weight:700">0.330</td></tr>
+        <tr><td>MI</td><td class="n">0.05</td><td class="n">0.015</td><td class="n">0.020</td><td class="n">0.008</td><td class="n">0.000</td><td class="n">0.011</td><td class="n">0.019</td></tr>
+        <tr><td>STTC</td><td class="n">0.10</td><td class="n">0.092</td><td class="n">0.103</td><td class="n">0.083</td><td class="n">0.128</td><td class="n">0.080</td><td class="n">0.093</td></tr>
+        <tr><td>CD</td><td class="n">0.10</td><td class="n">0.099</td><td class="n">0.085</td><td class="n">0.117</td><td class="n" style="color:var(--crit);font-weight:700">0.333</td><td class="n">0.099</td><td class="n">0.042</td></tr>
+        <tr><td>HYP</td><td class="n">0.15</td><td class="n">0.121</td><td class="n">0.182</td><td class="n">0.061</td><td class="n">0.444</td><td class="n">0.159</td><td class="n">0.066</td></tr>
+      </tbody>
+      <caption>9 subgroup violations at n ≥ 15. Mondrian (group-conditional) calibration held in <strong>22 of 23</strong> cells versus <strong>14 of 23</strong> for marginal — but STTC in under-50s had only 42 calibration positives and the PAC bound became infeasible, returning λ = −∞: that class can never be ruled out in a young patient. Conditional validity costs data, and the groups needing it most have the least.</caption>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Which violations are real? <span class="rt">11_significance.txt · 23 cells tested</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Cell</th><th class="n">promised</th><th class="n">observed</th><th class="n">95 % CI</th><th class="n">exact p</th><th class="n">Holm p</th><th class="n">P(violate)</th></tr></thead>
+      <tbody>
+        <tr class="bad"><td>CD · age &lt; 50</td><td class="n">≤ 0.10</td><td class="n">0.333 (22/66)</td><td class="n">[0.232, 0.453]</td><td class="n">2.23e−07</td><td class="n">5.14e−06</td><td class="n">100 %</td></tr>
+        <tr class="bad"><td>NORM · age ≥ 70</td><td class="n">≤ 0.20</td><td class="n">0.330 (34/103)</td><td class="n">[0.247, 0.426]</td><td class="n">1.32e−03</td><td class="n">2.91e−02</td><td class="n">100 %</td></tr>
+      </tbody>
+      <caption>Both confidence intervals lie <em>entirely</em> above the promised bound. The seven other apparent excesses did not survive multiple-testing correction and are reported as noise — saying so is part of the result. The overall CD figure, 9.9 % and comfortably inside its bound, gives no hint that a third of under-50 patients with conduction disturbance are missed. Clinically this is the worst possible group: conduction disturbance under 50 can mean Brugada syndrome or ARVC.</caption>
+    </table></div>
+  </div>
+
+  <div class="note clear">
+    <span class="lbl">Section B — is the quality gate label-dependent?</span>
+    <p>Tested because if sick patients have worse signals, the gate removes a label-dependent
+    subset and the system's own safety mechanism voids its own guarantee. Result: mean SQI is
+    1.0000 for both positive and negative cases in all five classes, 0 of 5 classes differ
+    significantly. Under simulated deployment corruption (a disconnected lead plus an EMG burst
+    on a random 25 %), 581 of 600 records are still accepted and the largest prevalence shift is
+    +0.0050. <strong>Small but non-zero</strong> — the correct fix is to calibrate <em>through</em> the
+    same gate.</p>
+  </div>
+
+  <h3>Contribution 2 — electrode reversal</h3>
+  <div class="panel">
+    <div class="panel-head">Six findings <span class="rt">12_electrode_reversal.txt</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+      <tbody>
+        <tr><td>1 · Is reversal visible to the quality gate?</td><td><strong>No.</strong> 198/200, 198/200, 198/200 and 197/200 records accepted under correct placement, RA/LA, RA/LL and LA/LL respectively. This is the premise of the whole finding.</td></tr>
+        <tr class="bad"><td>2 · How many diagnoses change?</td><td>Any label flips in <strong>86.0 %</strong> (RA/LA), <strong>87.0 %</strong> (RA/LL) and 43.5 % (LA/LL). MI specifically flips in 54.5 % / 57.5 % / 22.5 %.</td></tr>
+        <tr class="bad"><td>3 · Does the guarantee survive?</td><td><strong>7 violations introduced.</strong> NORM under RA/LA: promised ≤ 20 %, observed <strong>98.8 %</strong>. NORM under RA/LL: <strong>100 %</strong>. STTC under RA/LA: 62.0 % against ≤ 10 %. HYP under RA/LL: 53.3 % against ≤ 15 %.</td></tr>
+        <tr class="warn"><td>4 · Can physiology catch it?</td><td>Partly. 65.5 % on RA/LA, 60.5 % on RA/LL, <strong>4.0 % on LA/LL</strong> (which leaves aVR unchanged and is essentially undetectable this way), at a 4.5 % false-positive rate.</td></tr>
+        <tr class="bad"><td>5 · Does refusing detections restore validity?</td><td><strong>0 of 7.</strong> The 30–40 % of reversed records that slip through are enough to keep every bound void.</td></tr>
+        <tr><td>6 · What detection would be enough?</td><td>Mostly <strong>0 %</strong> — and that is the finding. At a realistic 0.4–4 % reversal prevalence the <em>population</em>-level guarantee survives, so a hospital auditing across all its ECGs would see nothing wrong. For the individual patient whose electrodes were swapped, the promise is void and nothing tells anyone. Three cells read "impossible": STTC's miss rate on <em>correctly</em> placed ECGs in this subsample is already 12.0 % against a promised 10 %, so no acquisition check can rescue it — that cell needs recalibration.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="note">
+    <span class="lbl">The unification the repository draws</span>
+    <p>One principle, two demonstrations. Marginal validity holds across the whole population
+    but fails within a patient subgroup (age); it holds across all recordings but fails within a
+    mis-acquired one. A conformal guarantee averaged over a population says nothing about the
+    patient in front of you. The remedy is the same in both cases — condition the guarantee on
+    what actually varies: by patient stratum (Mondrian) and by verified acquisition.</p>
+  </div>
+
+  <h3>Contribution 3 — disease outside the label space</h3>
+  <div class="panel">
+    <div class="panel-head">13_out_of_scope.txt</div>
+    <div class="tw"><table>
+      <thead><tr><th>Finding</th><th class="n">Value</th></tr></thead>
+      <tbody>
+        <tr><td>Atrial fibrillation in the dataset</td><td class="n">1,225 · 7.11 %</td></tr>
+        <tr><td>Ventricular ectopy</td><td class="n">1,127 · 6.54 %</td></tr>
+        <tr><td>Atrial ectopy</td><td class="n">617 · 3.58 %</td></tr>
+        <tr><td>Flutter / paced / SVT / VT</td><td class="n">27 · 12 · 28 · 30</td></tr>
+        <tr class="bad"><td><strong>Any out-of-scope finding</strong></td><td class="n"><strong>2,455 · 14.26 %</strong></td></tr>
+        <tr><td>AF or flutter in the test fold</td><td class="n">114</td></tr>
+        <tr class="bad"><td>… carrying a statistical guarantee</td><td class="n"><strong>113 / 114</strong></td></tr>
+        <tr class="bad"><td>… reported as NORMAL</td><td class="n">2 — ECG 15796 (ROUTINE, 4 guarantees attached) and ECG 18266 (URGENT, 3 guarantees)</td></tr>
+        <tr><td>Rhythm check: sensitivity / FPR / AUROC</td><td class="n">48.9 % / 4.8 % / 0.912</td></tr>
+        <tr><td>Cost of withholding</td><td class="n">53 of 695 records (7.6 %) lose the guarantee — 22 genuinely out of scope, 31 over-caution</td></tr>
+      </tbody>
+      <caption>Not one of those 113 guarantees concerns atrial fibrillation, because no guarantee about atrial fibrillation exists. The system certifies what it can measure while being blind to the finding that will cause the stroke. Withholding does <em>not</em> reduce diagnostic output — the classifier still reports its five classes. What is withheld is the <em>claim</em>, because that claim was never true for these records. Every paper using the five PTB-XL superclasses inherits this failure; none report it, because the benchmark only scores the five classes it defined.</caption>
+    </table></div>
+  </div>
+
+  <h3>Regression suite &amp; dataset integrity</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Experiment</th><th>Headline outcome</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td class="f">08_verify_fixes</td><td><strong>26 passed, 0 failed.</strong> All 9 adversarial inputs handled; NORM/abnormality contradiction structurally impossible; hallucinated and finding-dropping paraphrases both rejected while a faithful one is accepted; 4 concurrent Grad-CAM calls match; macro ECE 0.0948 → 0.0182; every report contains heart rate, triage, quality, guarantee, limitations and disclaimer. 100 % of 200 test reports pass verification with zero contradictions, and 175 <em>distinct</em> reports were produced across 200 patients — against 63 distinct across 1,711 for the archive.</td></tr>
+        <tr class="ok"><td class="f">01_dataset_deep_audit</td><td><strong>PASS.</strong> Patient-disjoint official split, 0 leakage on all three pairs, 0 duplicate ids, prevalence drift under 1.5 pp, 0 records with zero labels, 0 records labelled NORM together with an abnormality. Signals: 0 wrong shape, 0 NaN/Inf, 0 fully flat leads in the scanned sample, 1 saturated. Median SQI 1.000. Declared caveats: the 21 % <span class="m">likelihood==100</span> drop, the age-300 sentinel (255 records, PTB-XL anonymises age &gt; 89), and constant-imputed height/weight.</td></tr>
+        <tr><td class="f">01_dataset_deep_audit §6</td><td><strong>Why HYP is hard</strong>, measured four ways: scarcity (1,468 positives, 8.5 %, only 132 in test); entanglement (63.8 % of HYP also carry STTC, 35.7 % also CD, 0 % are NORM); voltage <em>is</em> amplitude, and any amplitude normalisation destroys the evidence; and label noise — ECG criteria for LVH have known low sensitivity against echocardiography, so the label is a proxy.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>Audits of the superseded system — kept as the "before"</h3>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Audit</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td class="f">02_model_audit</td><td>Every published figure reproduced to four decimals (Δ +0.0000) — the archive's reported numbers were <em>honest</em>, which is worth saying plainly. Macro AUROC 0.9297, AUPRC 0.7864, F1 0.7172. Threshold optimism only +0.0106. Batch-size sensitivity 1.2e−07, 0 decision flips. Patient leakage 0/1711. But: six degenerate inputs all produced confident diagnoses, and 99 of 1,711 reports contained the NORM/abnormality contradiction.</td></tr>
+        <tr class="bad"><td class="f">06_leakage_audit</td><td>Four-arm ablation. Full fusion 0.9567 · text zeroed 0.9072 · signal zeroed 0.8904 · <strong>report text alone 0.8872</strong>. The cardiologist's free-text report by itself nearly matched the full model — the labels were derived from that same text. Model withdrawn.</td></tr>
+        <tr><td class="f">03_report_audit</td><td>Tier 3 byte-identical to Tier 2 in 23.6 % of records, a leading-character truncation in 56.9 %, genuinely rewritten in 19.5 %. Dropped concepts in 103 records, added none. 63 distinct reports for 1,711 patients (cardiologists wrote 1,055). Heart rate, rhythm, intervals, axis, triage, localisation, uncertainty and signal quality appeared in <strong>0 of 1,711</strong> reports.</td></tr>
+        <tr><td class="f">04_runtime_audit</td><td>26.3 s cold start, 1,567 MB RSS. Single-ECG latency 11.77 s: matplotlib 5.22 s, BioBART 2.55 s, legacy free generation 1.49 s (documented as "ablation only" yet executed on every request), IG 1.83 s, classifier 0.02 s. No lead-order check, no sampling-rate check, no quality check, no filename sanitisation. Grad-CAM race confirmed.</td></tr>
+        <tr class="warn"><td class="f">05_xai_audit</td><td>Grad-CAM is faithful: deletion AUC 0.3933 vs random 0.5368; insertion 0.5751 vs 0.5039. Adebayo model-randomisation check passes (Spearman 0.163 against a random head). IG ranking stable — Spearman 0.999 between 30 and 200 steps, top-1 lead agreement 19/20. <strong>But this audit ran against the archive</strong> (it references <span class="m">app.py</span> and steps = 30; the current <span class="m">src/xai.py</span> ships steps = 64), and its 35.6 % completeness figure is a known ill-conditioned measurement. Re-run before quoting any XAI number.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>Risk–coverage — how much can safely be ruled out at each budget</h3>
+  <div class="panel">
+    <div class="panel-head">MI, the class that matters most <span class="rt">07_conformal_eval.txt</span></div>
+    <div class="tw"><table>
+      <thead><tr><th class="n">α</th><th class="n">λ_out</th><th class="n">ruled out</th><th class="n">observed miss</th></tr></thead>
+      <tbody>
+        <tr><td class="n">0.01</td><td class="n">0.0113</td><td class="n">43.7 %</td><td class="n">0.4 %</td></tr>
+        <tr><td class="n">0.02</td><td class="n">0.0320</td><td class="n">55.7 %</td><td class="n">1.1 %</td></tr>
+        <tr class="macro"><td class="n">0.05</td><td class="n">0.0730</td><td class="n">64.9 %</td><td class="n">3.7 %</td></tr>
+        <tr><td class="n">0.10</td><td class="n">0.1268</td><td class="n">70.8 %</td><td class="n">7.5 %</td></tr>
+        <tr><td class="n">0.20</td><td class="n">0.2988</td><td class="n">79.9 %</td><td class="n">19.4 %</td></tr>
+        <tr><td class="n">0.30</td><td class="n">0.4536</td><td class="n">84.9 %</td><td class="n">30.2 %</td></tr>
+      </tbody>
+      <caption>The full curve exists for all five classes. This is the deliverable a clinician can actually reason about — not "F1 = 0.69" but "at a 5 % miss budget I can safely clear 65 % of patients". Note the shipped α = 0.05 row.</caption>
+    </table></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ 15 ═══ -->
+<section id="s15">
+  <h2><span class="n">15</span> Contradictions to resolve before writing</h2>
+
+  <p class="lede">
+    Places where two files in the repository disagree. None invalidate the work; all of them
+    would be found by a reviewer.
+  </p>
+
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Conflict</th><th>Where</th><th>Resolution</th></tr></thead>
+      <tbody>
+        <tr class="bad"><td><strong>Electrode-reversal sample size: 200 vs 600.</strong> The on-disk results file is an n = 200 run (198/200, 197/200), while <span class="m">docs/PANEL_ANSWERS.md</span> reports n = 600 (589/600, 587/600) — and the results file's own <em>summary</em> block says "7 of 600 records", contradicting its own header. Sensitivities also differ: 65.5 %/60.5 % on disk vs "~70 %/~61 %" in the README, and the diagnosis-flip and miss-rate tables differ throughout.</td><td class="f">12_electrode_reversal.txt vs PANEL_ANSWERS.md vs README.md</td><td>Re-run at <span class="m">--n 600</span> and regenerate every quoted number, or restate the docs at n = 200. The script's default is already 600.</td></tr>
+        <tr class="bad"><td><strong>XAI audit is stale.</strong> It references <span class="m">app.py</span> and steps = 30; no <span class="m">app.py</span> exists in Component_02 and <span class="m">src/xai.py</span> ships steps = 64. Its 35.6 % completeness figure is a known ill-conditioned measurement whose true median is ≈1.3 % at 30 steps.</td><td class="f">05_xai_audit.txt vs src/xai.py</td><td>Re-run against <span class="m">src/xai.py</span> before quoting any XAI number.</td></tr>
+        <tr class="warn"><td><strong>PAC δ default: 0.05 vs 0.01.</strong> Code defaults are 0.05 (<span class="m">ConformalTriage.__init__</span>, <span class="m">fit_calibration --delta</span>); the shipped artefact and every audit script use 0.01.</td><td class="f">src/conformal.py vs conformal_triage.json</td><td>The shipped artefact is authoritative. Update the code defaults to match so a rerun reproduces the shipped system.</td></tr>
+        <tr class="warn"><td><strong>Validation set size: 1,709 vs 1,696.</strong></td><td class="f">csv/val.csv vs checkpoints/scope.json</td><td>Most likely the 13 records where <span class="m">rr_features</span> returned <span class="m">None</span> for too few R-peaks. Confirm and state it.</td></tr>
+        <tr class="warn"><td><strong>Training budget: 75 vs 60 minutes.</strong> CLI default vs the value recorded in the shipped checkpoint's args.</td><td class="f">train_gpu.py vs best_model.pt</td><td>Quote 60 — that is what actually ran.</td></tr>
+        <tr class="warn"><td><strong>Validation 0.9403 vs test 0.9343.</strong> Not a contradiction — different splits — but trivially misquoted.</td><td class="f">best_model.pt vs README.md</td><td>State the split explicitly wherever either number appears.</td></tr>
+        <tr class="warn"><td><strong>The 3-seed headline has no results artefact.</strong> 0.9343 ± 0.0028 appears only as prose in four files; only seed 0's checkpoint is on disk.</td><td class="f">README.md, PANEL_ANSWERS.md, CONTRIBUTION_FINAL.md, RESEARCH_CONTRIBUTION.md</td><td>Partly mitigated: seed 0 recomputes to <strong>0.9320</strong> here, matching the per-seed list exactly. Re-run seeds 1 and 2 capturing stdout to <span class="m">audit/results/</span>, or drop the ± claim. Highest-priority item.</td></tr>
+        <tr class="warn"><td><strong>Folder size understated.</strong> The README says <span class="m">data/</span> is 1.93 GB and the total ≈2.0 GB; the packed training memmaps add roughly another 2 GB that it does not count. <span class="m">.gitignore</span> is the only file that gets this right.</td><td class="f">README.md vs .gitignore</td><td>Correct the README and note the memmaps are regenerable via <span class="m">train_gpu.py --pack</span>.</td></tr>
+        <tr class="warn"><td><strong>"All four verified standalone"</strong> — but seven commands are listed above that line.</td><td class="f">README.md</td><td>Stale count; say seven.</td></tr>
+        <tr class="warn"><td><strong>The top-level README describes the superseded system</strong> — BioBART three-tier reporting, the fusion model as a headline feature, macro-F1 0.717, and "cd _archive && python app.py" as the quick start.</td><td class="f">/README.md</td><td>Rewrite it to point at Component_02, or mark it explicitly as the Progress-1 record.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="note clear">
+    <span class="lbl">One question this reading closed</span>
+    <p><span class="m">POST /api/predict</span> does <strong>not</strong> persist uploaded files. They are written
+    into a <span class="m">tempfile.TemporaryDirectory()</span> and removed when the block exits, before
+    analysis begins. The write-up listed this as unresolved.</p>
+  </div>
+</section>
+
+<footer style="border-top:1px solid var(--rule-2);padding-top:16px;margin-top:44px;color:var(--muted);font-size:11.5px;">
+  <p style="max-width:74ch">
+    Compiled by reading every source file in <span class="m">Component_02/</span> plus the top-level
+    repository. Every number is traceable to a named file on disk; the threshold-free metrics in
+    §11 were recomputed from <span class="m">checkpoints/val_logits_seed0.npy</span> and
+    <span class="m">test_logits_seed0.npy</span>, and the parameter counts and tensor shapes in §10 by
+    instantiating the models. Nothing here was estimated or supplied from outside the repository.
+  </p>
+  <p style="margin-bottom:0"><strong>AI-generated decision support. NOT a medical device and NOT a diagnosis.</strong>
+  Every report the system produces requires review by a qualified clinician.</p>
+</footer>
+
+</div>
+</main>
+</div>

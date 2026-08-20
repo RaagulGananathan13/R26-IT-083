@@ -1,0 +1,102 @@
+
+==============================================================================
+  0. SETUP
+==============================================================================
+  calibration fold 9 : 1709   test fold 10 : 1711
+  PAC delta = 0.01;  alpha = {'NORM': 0.2, 'MI': 0.05, 'STTC': 0.1, 'CD': 0.1, 'HYP': 0.15}
+
+==============================================================================
+  A. DOES THE MARGINAL GUARANTEE HOLD WITHIN PATIENT SUBGROUPS?
+==============================================================================
+  Thresholds are fitted MARGINALLY on all of fold 9 (the standard approach),
+  then the realised miss rate is measured inside each subgroup of fold 10.
+
+  class   alpha  overall |      male    female       <50     50-69      >=70
+  ------------------------------------------------------------------------------
+  NORM     0.20    0.190 |  0.158(373)  0.225(334)  0.103(301)  0.228(303)  0.330(103)
+  MI       0.05    0.015 |  0.020(150)  0.008(118)  0.000( 11)  0.011( 87)  0.019(161)
+  STTC     0.10    0.092 |  0.103(203)  0.083(253)  0.128( 39)  0.080(174)  0.093(227)
+  CD       0.10    0.099 |  0.085(260)  0.117(223)  0.333( 66)  0.099(161)  0.042(240)
+  HYP      0.15    0.121 |  0.182( 66)  0.061( 66)  0.444(  9)  0.159( 44)  0.066( 76)
+
+  Subgroup violations of the promised bound (n>=15): 9
+    CD    age=<50        promised <=0.10  observed 0.333  (n=66 positives)  excess +0.233
+    NORM  age=>=70       promised <=0.20  observed 0.330  (n=103 positives)  excess +0.130
+    HYP   sex=male       promised <=0.15  observed 0.182  (n=66 positives)  excess +0.032
+    STTC  age=<50        promised <=0.10  observed 0.128  (n=39 positives)  excess +0.028
+    NORM  age=50-69      promised <=0.20  observed 0.228  (n=303 positives)  excess +0.028
+    NORM  sex=female     promised <=0.20  observed 0.225  (n=334 positives)  excess +0.025
+    CD    sex=female     promised <=0.10  observed 0.117  (n=223 positives)  excess +0.017
+    HYP   age=50-69      promised <=0.15  observed 0.159  (n=44 positives)  excess +0.009
+    STTC  sex=male       promised <=0.10  observed 0.103  (n=203 positives)  excess +0.003
+
+  MONDRIAN (group-conditional) CALIBRATION — one threshold per subgroup:
+  class  group           n_cal   lambda    miss   held
+  ----------------------------------------------------------
+  NORM   sex=male          358   0.6762   0.153   True
+  NORM   sex=female        341   0.6605   0.207  False
+  NORM   age=<50           319   0.8214   0.156   True
+  NORM   age=50-69         300   0.5922   0.185   True
+  NORM   age=>=70           79   0.0765   0.019   True
+  MI     sex=male          158   0.0428   0.020   True
+  MI     sex=female        125   0.0080   0.000   True
+  MI     age=50-69         114   0.0080   0.011   True
+  MI     age=>=70          144   0.0113   0.000   True
+  STTC   sex=male          213   0.0519   0.025   True
+  STTC   sex=female        242   0.2215   0.083   True
+  STTC   age=<50            42     -inf   0.000   True
+  STTC   age=50-69         194   0.0943   0.046   True
+  STTC   age=>=70          209   0.1377   0.075   True
+  CD     sex=male          259   0.1104   0.085   True
+  CD     sex=female        226   0.0597   0.085   True
+  CD     age=<50            57   0.0137   0.061   True
+  CD     age=50-69         155   0.0637   0.075   True
+  CD     age=>=70          246   0.0784   0.037   True
+  HYP    sex=male           81   0.0278   0.121   True
+  HYP    sex=female         53   0.0694   0.091   True
+  HYP    age=50-69          52   0.0345   0.114   True
+  HYP    age=>=70           70   0.0494   0.066   True
+
+  Mondrian held in 22/23 class-group cells (96%) vs marginal 14/23
+  NOTE: per-group calibration sets are small (see n_cal). Where n_cal is
+  below ~1/alpha the PAC bound is infeasible and the cell is skipped —
+  that data-hunger is itself a finding: subgroup validity is not free.
+
+==============================================================================
+  B. IS THE QUALITY GATE LABEL-DEPENDENT? (does it remove sick patients?)
+==============================================================================
+  If SQI is independent of diagnosis, gating is a random filter and
+  exchangeability survives. If sick patients have worse signals, the gate
+  removes a label-dependent subset and the conformal guarantee is void.
+
+  n = 600 test records
+  class   mean SQI (pos)  mean SQI (neg)    delta   noisy leads pos/neg
+  ----------------------------------------------------------------------
+  NORM            1.0000          1.0000  +0.0000       0.00/0.00      
+  MI              1.0000          1.0000  +0.0000       0.00/0.00      
+  STTC            1.0000          1.0000  +0.0000       0.00/0.00      
+  CD              1.0000          1.0000  +0.0000       0.00/0.00      
+  HYP             1.0000          1.0000  +0.0000       0.00/0.00      
+
+  Mann-Whitney U on SQI, positive vs negative:
+
+  Under realistic deployment corruption (one disconnected lead + an EMG
+  burst applied to a random 25% of records):
+    accepted 581/600 (96.8%)
+    class   prevalence all  prevalence kept    shift
+    NORM            0.4150           0.4200  +0.0050
+    MI              0.1617           0.1583  -0.0033
+    STTC            0.2633           0.2616  -0.0017
+    CD              0.2883           0.2874  -0.0009
+    HYP             0.0733           0.0740  +0.0007
+
+  Any non-zero shift means the gated test set is NOT exchangeable with the
+  ungated calibration set. The fix is to calibrate THROUGH the same gate.
+
+==============================================================================
+  SUMMARY
+==============================================================================
+  Subgroup violations of the marginal bound : 9
+  Mondrian cells that held                  : 22/23
+  Classes whose SQI differs significantly   : 0/5
+  Max label shift induced by the gate       : 0.0050

@@ -1,0 +1,100 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Component 02 — XAI-Based ECG Abnormality Detection & Cardiac Risk Reporting
+#  Scoped .gitignore. Works whether this folder is its own repo or nested.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── Secrets ────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credential*
+*secret*
+
+# ── Model weights ──────────────────────────────────────────────────────────
+# Too large for git. Distribute via Drive/releases.
+# best_model.pt is ~6 MB and last.pt ~25 MB.
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# ── Large arrays & bundled dataset ─────────────────────────────────────────
+# `data/` holds the PTB-XL recordings (1.9 GB) and packed training memmaps
+# (2 GB). Ship them by file transfer, never through git.
+data/*
+!data/DATASET_LICENSE.txt
+*.npy
+*.npz
+*.h5
+*.hdf5
+
+# ── Reference copies of the superseded system (evidence, not runtime) ──────
+reference/**/*.pt
+reference/audit_dump/*.txt
+
+# ── Raw signal data (never commit PTB-XL: 20+ GB, restricted redistribution)
+*.dat
+*.hea
+*.mat
+signals_cache/
+raw_signals/
+records100/
+records500/
+
+# ── KEEP these small artefacts — they ARE the reproducibility record ───────
+!checkpoints/calibrator.json
+!checkpoints/conformal_triage.json
+!checkpoints/history_*.json
+!csv/*.csv
+!csv/norm_stats.json
+!audit/results/*.json
+!audit/results/*.txt
+
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Node / frontend ────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/build/
+.npm/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+
+# ── Training / experiment output ───────────────────────────────────────────
+runs/
+wandb/
+lightning_logs/
+tensorboard/
+*.log
+predictions/*.png
+evaluation_results/
+
+# ── OS / editor ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~

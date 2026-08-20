@@ -1,0 +1,89 @@
+{
+  "H0": {
+    "horizon_h": 0,
+    "n_rows": 203016,
+    "n_features": 218,
+    "rdm_enabled": true,
+    "modality_counts": {
+      "ecg": 52,
+      "text": 40,
+      "vitals": 38,
+      "labs": 26,
+      "medications": 16,
+      "demographics": 16,
+      "history": 16,
+      "interaction": 14
+    },
+    "cohort_size": 98273,
+    "label_counts": {
+      "No_ACS": 197636,
+      "UA": 739,
+      "NSTEMI": 3700,
+      "STEMI": 941
+    },
+    "cohort_label_counts": {
+      "No_ACS": 93277,
+      "UA": 731,
+      "NSTEMI": 3369,
+      "STEMI": 896
+    }
+  },
+  "H6": {
+    "horizon_h": 6,
+    "n_rows": 203016,
+    "n_features": 218,
+    "rdm_enabled": true,
+    "modality_counts": {
+      "ecg": 52,
+      "text": 40,
+      "vitals": 38,
+      "labs": 26,
+      "medications": 16,
+      "demographics": 16,
+      "history": 16,
+      "interaction": 14
+    },
+    "cohort_size": 98273,
+    "label_counts": {
+      "No_ACS": 197636,
+      "UA": 739,
+      "NSTEMI": 3700,
+      "STEMI": 941
+    },
+    "cohort_label_counts": {
+      "No_ACS": 93277,
+      "UA": 731,
+      "NSTEMI": 3369,
+      "STEMI": 896
+    }
+  },
+  "H24": {
+    "horizon_h": 24,
+    "n_rows": 203016,
+    "n_features": 218,
+    "rdm_enabled": true,
+    "modality_counts": {
+      "ecg": 52,
+      "text": 40,
+      "vitals": 38,
+      "labs": 26,
+      "medications": 16,
+      "demographics": 16,
+      "history": 16,
+      "interaction": 14
+    },
+    "cohort_size": 98273,
+    "label_counts": {
+      "No_ACS": 197636,
+      "UA": 739,
+      "NSTEMI": 3700,
+      "STEMI": 941
+    },
+    "cohort_label_counts": {
+      "No_ACS": 93277,
+      "UA": 731,
+      "NSTEMI": 3369,
+      "STEMI": 896
+    }
+  }
+}

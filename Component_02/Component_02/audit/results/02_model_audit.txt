@@ -1,0 +1,107 @@
+
+==============================================================================
+  0. CHECKPOINT PROVENANCE
+==============================================================================
+  checkpoint keys      : ['epoch', 'model_state', 'best_auroc', 'optimal_thresholds']
+  best epoch           : 7
+  best val macro-AUROC : 0.9371
+  stored thresholds    : [0.5007, 0.5568, 0.5771, 0.4811, 0.6457]
+  params               : 1,018,501
+
+  Running inference on test set (batch=32) ...
+  Running inference on val set (batch=32) ...
+
+==============================================================================
+  1. REPRODUCTION OF PUBLISHED TEST METRICS
+==============================================================================
+  Class    prev    AUROC    AUPRC   F1@0.5   F1@thr  claimedF1   delta
+  ------------------------------------------------------------------------
+  NORM    41.3%   0.9571   0.9310   0.8728   0.8728     0.8728 +0.0000
+  MI      15.7%   0.9397   0.7745   0.6851   0.6860     0.6860 +0.0000
+  STTC    26.7%   0.9321   0.8246   0.7215   0.7750     0.7750 +0.0000
+  CD      28.2%   0.9146   0.8614   0.7643   0.7586     0.7586 +0.0000
+  HYP      7.7%   0.9050   0.5405   0.3992   0.4938     0.4938 +0.0000
+  ------------------------------------------------------------------------
+  MACRO           0.9297   0.7864   0.6886   0.7172     0.7172 +0.0000
+
+  NOTE: AUPRC (macro 0.7864) is the honest headline for
+        imbalanced multi-label data; AUROC (0.9297) flatters it.
+
+==============================================================================
+  2. THRESHOLD OPTIMISM (is the reported F1 tuned on the test set?)
+==============================================================================
+  thresholds fit on VAL  (shipped): [0.501, 0.557, 0.577, 0.481, 0.646]
+  thresholds fit on TEST (oracle) : [0.513, 0.569, 0.595, 0.546, 0.69]
+  macro-F1 with val thresholds  : 0.7172   <-- honest
+  macro-F1 with test thresholds : 0.7278   <-- optimistic/leaky
+  optimism gap                  : +0.0106
+
+==============================================================================
+  3. BOOTSTRAP 95% CONFIDENCE INTERVALS (1000 resamples)
+==============================================================================
+  metric          point                 95% CI    width
+  ------------------------------------------------------
+  NORM           0.8728 [  0.8550,   0.8904]   0.0354
+  MI             0.6860 [  0.6406,   0.7288]   0.0882
+  STTC           0.7750 [  0.7462,   0.8040]   0.0578
+  CD             0.7586 [  0.7282,   0.7882]   0.0600
+  HYP            0.4938 [  0.4240,   0.5568]   0.1328
+  macro_f1       0.7172 [  0.6971,   0.7365]   0.0394
+  macro_auroc    0.9297 [  0.9222,   0.9369]   0.0147
+
+  HYP has the widest CI — only ~132 positives in the test set. Any HYP claim
+  in the thesis must be reported with this interval, not as a point estimate.
+
+==============================================================================
+  4. CALIBRATION (do the probabilities mean anything clinically?)
+==============================================================================
+  Class     Brier      ECE   mean_p     prev   ratio
+  --------------------------------------------------
+  NORM     0.0994   0.1296   0.4466   0.4132    1.08x
+  MI       0.0933   0.1555   0.2981   0.1566    1.90x
+  STTC     0.1471   0.2135   0.4606   0.2665    1.73x
+  CD       0.1240   0.1761   0.4027   0.2823    1.43x
+  HYP      0.1243   0.2423   0.3195   0.0771    4.14x
+
+  ratio >1 means the model systematically over-predicts that class.
+  Cause: WeightedRandomSampler oversampling AND focal-loss alpha weights were
+  applied together, so sigmoid outputs are NOT posterior probabilities.
+  The report engine prints these as '% confidence' to a nurse -> misleading.
+
+==============================================================================
+  5. BATCHNORM / BATCH-SIZE SENSITIVITY (train-time batch=32 vs app batch=1)
+==============================================================================
+  max |prob(batch=1) - prob(batch=32)| over 200 records: 1.192e-07
+  mean abs diff: 1.745e-08
+  decision flips caused by batching: 0
+
+==============================================================================
+  6. FAILURE-MODE SANITY CHECKS
+==============================================================================
+  input                     NORM      MI    STTC      CD     HYP   detected
+  ------------------------------------------------------------------
+  ALL-ZERO (flatline)      0.029   0.691   0.602   0.425   0.551   ['MI', 'STTC']
+  pure Gaussian noise      0.036   0.629   0.462   0.657   0.171   ['MI', 'CD']
+  constant 0.5 mV          0.293   0.032   0.560   0.567   0.069   ['CD']
+  real ECG                 0.802   0.149   0.220   0.255   0.106   ['NORM']
+  real ECG x10 (gain err)   0.005   0.235   0.636   0.032   0.998   ['STTC', 'HYP']
+  real ECG inverted        0.042   0.818   0.239   0.755   0.542   ['MI', 'CD']
+
+  A flatline / noise input MUST NOT yield a confident diagnosis. There is no
+  signal-quality gate anywhere in app.py -> whatever is uploaded gets a report.
+
+==============================================================================
+  7. PATIENT-LEAKAGE IMPACT ON TEST METRICS
+==============================================================================
+  test records whose patient is also in train: 0 / 1711
+  (subset too small or empty for a meaningful comparison)
+
+==============================================================================
+  8. REPORT-LAYER CONTRADICTION RATE
+==============================================================================
+  test records where NOTHING crosses threshold  : 15 (0.9%)  -> report says 'inconclusive'
+  test records where NORM *and* an abnormality  : 99 (5.8%)
+     -> report_templates.py emits BOTH sentences, producing e.g.
+        'The ECG is within normal limits ... consistent with myocardial infarction.'
+        There is no mutual-exclusion rule between NORM and the 4 abnormal classes.
+  Grad-CAM target class == argmax(prob): 98% of records

@@ -1,0 +1,57 @@
+{
+  "folds": {
+    "train": {
+      "n": 142111,
+      "n_patients": 52274,
+      "labels": {
+        "No_ACS": 138345,
+        "UA": 517,
+        "NSTEMI": 2590,
+        "STEMI": 659
+      }
+    },
+    "val": {
+      "n": 30453,
+      "n_patients": 27559,
+      "labels": {
+        "No_ACS": 29646,
+        "UA": 111,
+        "NSTEMI": 555,
+        "STEMI": 141
+      }
+    },
+    "test": {
+      "n": 30452,
+      "n_patients": 27558,
+      "labels": {
+        "No_ACS": 29645,
+        "UA": 111,
+        "NSTEMI": 555,
+        "STEMI": 141
+      }
+    }
+  },
+  "patient_overlap": 0,
+  "hadm_overlap": 0,
+  "max_proportion_drift": 5.016946165934712e-06,
+  "cohort_folds": {
+    "train": {
+      "No_ACS": 67829,
+      "UA": 512,
+      "NSTEMI": 2335,
+      "STEMI": 625
+    },
+    "val": {
+      "No_ACS": 12662,
+      "UA": 109,
+      "NSTEMI": 518,
+      "STEMI": 134
+    },
+    "test": {
+      "No_ACS": 12786,
+      "UA": 110,
+      "NSTEMI": 516,
+      "STEMI": 137
+    }
+  }
+}

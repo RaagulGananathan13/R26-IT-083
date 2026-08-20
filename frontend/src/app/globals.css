@@ -1,0 +1,223 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design language carried over from Component 01's console (Raagul), so the
+  integrated product reads as one system rather than four bolted together:
+  a warm paper ground, a single teal accent, Fraunces for display and Manrope
+  for text, generous radii and soft shadows.
+
+  Extended here in one direction only — the reliability verdict. Component 01
+  had a single reliability notice; the integrated console spans four components
+  whose honesty mechanisms differ, so the verdict gets its own reserved palette
+  and is the only thing on a page allowed to use saturated colour.
+*/
+:root {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo,
+    Consolas, monospace;
+
+  --bg: 247 246 242;
+  --surface: 255 255 255;
+  --surface-2: 241 245 249;
+  --ink: 15 23 42;
+  --ink-muted: 107 114 128;
+  --ink-faint: 148 163 184;
+  --line: 226 232 240;
+
+  --accent: 15 118 110;
+  --accent-strong: 11 92 86;
+
+  --verdict-actionable: 15 118 110;
+  --verdict-caution: 180 94 0;
+  --verdict-deferred: 109 40 217;
+  --verdict-withheld: 180 35 24;
+  --verdict-unavailable: 107 114 128;
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06), 0 1px 1px rgb(15 23 42 / 0.04);
+  --shadow-md: 0 12px 30px rgb(15 23 42 / 0.10);
+}
+
+.dark {
+  --bg: 12 15 23;
+  --surface: 20 26 38;
+  --surface-2: 30 38 52;
+  --ink: 236 241 247;
+  --ink-muted: 154 165 181;
+  --ink-faint: 110 122 139;
+  --line: 44 55 72;
+
+  --accent: 45 212 191;
+  --accent-strong: 94 234 212;
+
+  --verdict-actionable: 45 212 191;
+  --verdict-caution: 251 176 64;
+  --verdict-deferred: 167 139 250;
+  --verdict-withheld: 248 113 113;
+  --verdict-unavailable: 154 165 181;
+
+  --shadow-md: 0 14px 34px rgb(0 0 0 / 0.45);
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    @apply bg-bg text-ink antialiased;
+    min-height: 100vh;
+  }
+  /* The paper wash. Fixed, behind everything, so scrolling does not drag it. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(800px 480px at 8% -10%, rgb(var(--surface)) 0%, rgb(var(--surface) / 0) 70%),
+      radial-gradient(720px 540px at 100% 0%, rgb(var(--accent) / 0.10) 0%, rgb(var(--accent) / 0) 65%),
+      linear-gradient(180deg, rgb(var(--bg)) 0%, rgb(var(--surface-2)) 100%);
+  }
+  .tabular,
+  table td,
+  table th {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: rgb(var(--accent));
+    --tw-ring-offset-color: rgb(var(--bg));
+  }
+  ::selection {
+    background: rgb(var(--accent) / 0.18);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+    box-shadow: var(--shadow-md);
+  }
+  .card-flat {
+    @apply rounded-xl border border-line bg-surface;
+    box-shadow: var(--shadow-sm);
+  }
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    @apply font-semibold uppercase text-ink-faint;
+  }
+  .display {
+    font-family: var(--font-display);
+    @apply font-semibold tracking-tight;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-xs text-ink;
+    background: rgb(var(--surface) / 0.8);
+  }
+  /* Segmented control, as in Component 01's Grad-CAM and projection pickers. */
+  .segmented {
+    @apply inline-flex rounded-lg border border-line p-0.5;
+    background: rgb(var(--surface-2) / 0.7);
+  }
+  .segmented-btn {
+    @apply rounded-md px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors;
+  }
+  .segmented-btn:hover {
+    @apply text-ink;
+  }
+  .segmented-btn.active {
+    @apply bg-surface text-ink;
+    box-shadow: var(--shadow-sm);
+  }
+  .meter {
+    @apply h-2 overflow-hidden rounded-full bg-surface-2;
+  }
+  .meter-fill {
+    @apply block h-full rounded-full;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .image-frame {
+    @apply relative overflow-hidden rounded-xl border border-line bg-black;
+    aspect-ratio: 1 / 1;
+  }
+  .image-frame img {
+    @apply absolute inset-0 h-full w-full object-contain;
+  }
+}
+
+@layer utilities {
+  /* Findings a component declined to stand behind: visible, but pushed back so
+     they cannot be mistaken for an answer. */
+  .not-actionable {
+    @apply opacity-45 saturate-[0.35];
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--ink-faint) / 0.4) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--ink-faint) / 0.35);
+    border-radius: 999px;
+  }
+  .rise-in {
+    animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .rise-in-1 {
+    animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) 70ms both;
+  }
+  .rise-in-2 {
+    animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) 140ms both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in,
+  .rise-in-1,
+  .rise-in-2 {
+    animation: none;
+  }
+  .meter-fill {
+    transition: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body::before {
+    display: none;
+  }
+  body {
+    background: #fff;
+  }
+  .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}

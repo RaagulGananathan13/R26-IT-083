@@ -1,0 +1,27 @@
+# Component 02 — pinned to what the audit was run against.
+#
+# NOTE on your current environment: you have flask 2.3.2 with werkzeug 3.1.3.
+# That pair is incompatible — flask's test client crashes on
+# `werkzeug.__version__`. Serving works, but the test client does not.
+# Upgrade flask (below) before writing any Flask tests.
+
+torch>=2.1
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+scikit-learn>=1.3
+
+flask>=3.0            # NOT 2.3.x with werkzeug 3.x
+flask-cors>=4.0       # backend/server.py serves the React client cross-origin
+werkzeug>=3.0
+wfdb>=4.1
+matplotlib>=3.7
+
+# Optional — only needed to re-run the archive's report-generation audit.
+# The Component-02 pipeline deliberately has no LLM dependency.
+# transformers>=4.40
+# rouge-score>=0.1.2
+# nltk>=3.8
+
+tqdm>=4.65
+psutil>=5.9           # runtime audit only

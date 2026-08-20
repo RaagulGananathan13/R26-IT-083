@@ -1,0 +1,77 @@
+
+==============================================================================
+  0. SETUP
+==============================================================================
+  seed 0 · PAC delta = 0.01 · 500 bootstrap resamples
+  calibration fold 9 (n=1709)   test fold 10 (n=1711)
+  Thresholds fitted MARGINALLY, as standard practice; subgroup miss rates
+  then measured on the untouched test fold.
+
+==============================================================================
+  A + B. CONFIDENCE INTERVALS AND EXACT TESTS
+==============================================================================
+  class group          alpha    miss/n   rate            95% CI         p   p(Holm)  verdict
+  ------------------------------------------------------------------------------------------------
+  CD    age=<50         0.10     22/66  0.333    [0.232, 0.453]  2.23e-07  5.14e-06  VIOLATED (CI clears bound)
+  NORM  age=>=70        0.20    34/103  0.330    [0.247, 0.426]  1.32e-03  2.91e-02  VIOLATED (CI clears bound)
+  NORM  sex=male        0.20    59/373  0.158    [0.125, 0.199]  9.84e-01  1.00e+00  within bound
+  NORM  sex=female      0.20    75/334  0.225    [0.183, 0.272]  1.46e-01  1.00e+00  above bound, n.s.
+  NORM  age=<50         0.20    31/301  0.103    [0.074, 0.142]  1.00e+00  1.00e+00  within bound
+  NORM  age=50-69       0.20    69/303  0.228    [0.184, 0.278]  1.29e-01  1.00e+00  above bound, n.s.
+  MI    sex=male        0.05     3/150  0.020    [0.007, 0.057]  9.82e-01  1.00e+00  within bound
+  MI    sex=female      0.05     1/118  0.008    [0.001, 0.046]  9.98e-01  1.00e+00  within bound
+  MI    age=50-69       0.05      1/87  0.011    [0.002, 0.062]  9.88e-01  1.00e+00  within bound
+  MI    age=>=70        0.05     3/161  0.019    [0.006, 0.053]  9.88e-01  1.00e+00  within bound
+  STTC  sex=male        0.10    21/203  0.103    [0.069, 0.153]  4.69e-01  1.00e+00  above bound, n.s.
+  STTC  sex=female      0.10    21/253  0.083    [0.055, 0.124]  8.43e-01  1.00e+00  within bound
+  STTC  age=<50         0.10      5/39  0.128    [0.056, 0.267]  3.50e-01  1.00e+00  above bound, n.s.
+  STTC  age=50-69       0.10    14/174  0.080    [0.049, 0.131]  8.38e-01  1.00e+00  within bound
+  STTC  age=>=70        0.10    21/227  0.093    [0.061, 0.137]  6.79e-01  1.00e+00  within bound
+  CD    sex=male        0.10    22/260  0.085    [0.057, 0.125]  8.23e-01  1.00e+00  within bound
+  CD    sex=female      0.10    26/223  0.117    [0.081, 0.165]  2.33e-01  1.00e+00  above bound, n.s.
+  CD    age=50-69       0.10    16/161  0.099    [0.062, 0.155]  5.49e-01  1.00e+00  within bound
+  CD    age=>=70        0.10    10/240  0.042    [0.023, 0.075]  1.00e+00  1.00e+00  within bound
+  HYP   sex=male        0.15     12/66  0.182    [0.107, 0.291]  2.81e-01  1.00e+00  above bound, n.s.
+  HYP   sex=female      0.15      4/66  0.061    [0.024, 0.146]  9.93e-01  1.00e+00  within bound
+  HYP   age=50-69       0.15      7/44  0.159    [0.079, 0.294]  4.97e-01  1.00e+00  above bound, n.s.
+  HYP   age=>=70        0.15      5/76  0.066    [0.028, 0.145]  9.93e-01  1.00e+00  within bound
+
+  Cells tested                                : 23
+  Statistically significant after Holm (<0.05): 2
+    CD / age=<50: promised <= 0.10, observed 0.333 (95% CI 0.232-0.453), p_Holm = 5.14e-06
+    NORM / age=>=70: promised <= 0.20, observed 0.330 (95% CI 0.247-0.426), p_Holm = 2.91e-02
+
+==============================================================================
+  C. CALIBRATION-DRAW BOOTSTRAP
+==============================================================================
+  The threshold depends on WHICH patients landed in fold 9. Resample the
+  calibration set, refit the conformal threshold, re-measure on fold 10.
+  If the violation survives, it is not an artefact of one calibration draw.
+
+  class group          alpha  median miss    2.5%   97.5%  P(violate)
+  --------------------------------------------------------------------
+  NORM  age=>=70        0.20        0.330   0.282   0.369     100.0%
+  CD    age=<50         0.10        0.333   0.303   0.333     100.0%
+
+  P(violate) is the fraction of calibration draws in which the promised bound
+  is exceeded. A value near 1.0 means the violation is structural, not luck.
+
+==============================================================================
+  VERDICT
+==============================================================================
+  2 subgroup violation(s) survive BOTH a Holm-corrected exact
+  test and a Wilson interval that clears the promised bound:
+
+    NORM in age=>=70
+      promised    <= 20% missed
+      observed       33.0%  (34/103 positives)
+      95% CI         [24.7%, 42.6%]  -- entirely above the bound
+      exact p        1.32e-03   Holm-adjusted 2.91e-02
+      bootstrap      violated in 100% of 500 calibration draws
+
+    CD in age=<50
+      promised    <= 10% missed
+      observed       33.3%  (22/66 positives)
+      95% CI         [23.2%, 45.3%]  -- entirely above the bound
+      exact p        2.23e-07   Holm-adjusted 5.14e-06
+      bootstrap      violated in 100% of 500 calibration draws

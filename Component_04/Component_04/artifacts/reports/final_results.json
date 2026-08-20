@@ -1,0 +1,375 @@
+{
+  "horizon": 24,
+  "floor": 0.75,
+  "stage1": {
+    "FULL ED": {
+      "balanced_accuracy": 0.8891849713555888,
+      "accuracy": 0.9602653356101406,
+      "macro_f1": 0.749937971289258,
+      "weighted_f1": 0.9671185976243201,
+      "confusion_matrix": [
+        [
+          28585,
+          1060
+        ],
+        [
+          150,
+          657
+        ]
+      ],
+      "min_recall": 0.8141263940520446,
+      "min_f1": 0.5206022187004754,
+      "auroc": 0.9688494144777638,
+      "auprc": 0.6455051017570773,
+      "threshold": 0.0909,
+      "val_f1": 0.5049465769687376,
+      "npv": 0.9947798851574735,
+      "ppv": 0.38264414676761793,
+      "sensitivity": 0.8141263940520446,
+      "specificity": 0.9642435486591331,
+      "n": 30452,
+      "prevalence": 0.026500722448443453,
+      "missed": 150,
+      "false_alarms": 1060,
+      "per_class": {
+        "No_ACS": {
+          "recall": 0.9642435486591331,
+          "precision": 0.9947798851574735,
+          "f1": 0.9792737238780405,
+          "support": 29645,
+          "correct": 28585,
+          "specificity": 0.8141263940520446
+        },
+        "ACS": {
+          "recall": 0.8141263940520446,
+          "precision": 0.38264414676761793,
+          "f1": 0.5206022187004754,
+          "support": 807,
+          "correct": 657,
+          "specificity": 0.9642435486591331
+        }
+      }
+    },
+    "IUP (screening cohort)": {
+      "balanced_accuracy": 0.8758279503364079,
+      "accuracy": 0.9319506974684478,
+      "macro_f1": 0.7682841803045399,
+      "weighted_f1": 0.9410919906023941,
+      "confusion_matrix": [
+        [
+          12007,
+          779
+        ],
+        [
+          143,
+          620
+        ]
+      ],
+      "min_recall": 0.8125819134993447,
+      "min_f1": 0.5735430157261795,
+      "auroc": 0.9560368083620293,
+      "auprc": 0.6921146087961506,
+      "threshold": 0.1024,
+      "val_f1": 0.561819043107532,
+      "npv": 0.9882304526748971,
+      "ppv": 0.4431736954967834,
+      "sensitivity": 0.8125819134993447,
+      "specificity": 0.939073987173471,
+      "n": 13549,
+      "prevalence": 0.05631411912318252,
+      "missed": 143,
+      "false_alarms": 779,
+      "per_class": {
+        "No_ACS": {
+          "recall": 0.939073987173471,
+          "precision": 0.9882304526748971,
+          "f1": 0.9630253448829003,
+          "support": 12786,
+          "correct": 12007,
+          "specificity": 0.8125819134993447
+        },
+        "ACS": {
+          "recall": 0.8125819134993447,
+          "precision": 0.4431736954967834,
+          "f1": 0.5735430157261795,
+          "support": 763,
+          "correct": 620,
+          "specificity": 0.939073987173471
+        }
+      }
+    },
+    "AWC (biomarker ordered)": {
+      "balanced_accuracy": 0.8115207608173252,
+      "accuracy": 0.8044596912521441,
+      "macro_f1": 0.7927937602363329,
+      "weighted_f1": 0.8085076287612448,
+      "confusion_matrix": [
+        [
+          911,
+          243
+        ],
+        [
+          99,
+          496
+        ]
+      ],
+      "min_recall": 0.7894280762564991,
+      "min_f1": 0.7436281859070465,
+      "auroc": 0.884951866361796,
+      "auprc": 0.7971855558064016,
+      "threshold": 0.3077,
+      "val_f1": 0.7350157728706624,
+      "npv": 0.901980198019802,
+      "ppv": 0.6711772665764547,
+      "sensitivity": 0.8336134453781513,
+      "specificity": 0.7894280762564991,
+      "n": 1749,
+      "prevalence": 0.3401943967981704,
+      "missed": 99,
+      "false_alarms": 243,
+      "per_class": {
+        "No_ACS": {
+          "recall": 0.7894280762564991,
+          "precision": 0.901980198019802,
+          "f1": 0.8419593345656192,
+          "support": 1154,
+          "correct": 911,
+          "specificity": 0.8336134453781513
+        },
+        "ACS": {
+          "recall": 0.8336134453781513,
+          "precision": 0.6711772665764547,
+          "f1": 0.7436281859070465,
+          "support": 595,
+          "correct": 496,
+          "specificity": 0.7894280762564991
+        }
+      }
+    }
+  },
+  "stage2": {
+    "balanced_accuracy": 0.7753286557649144,
+    "accuracy": 0.781127129750983,
+    "macro_f1": 0.7447657362016683,
+    "weighted_f1": 0.7897828417833105,
+    "confusion_matrix": [
+      [
+        88,
+        14,
+        8
+      ],
+      [
+        24,
+        407,
+        85
+      ],
+      [
+        2,
+        34,
+        101
+      ]
+    ],
+    "per_class": {
+      "UA": {
+        "recall": 0.8,
+        "precision": 0.7719298245614035,
+        "f1": 0.7857142857142857,
+        "support": 110,
+        "correct": 88,
+        "specificity": 0.9601837672281777
+      },
+      "NSTEMI": {
+        "recall": 0.7887596899224806,
+        "precision": 0.8945054945054945,
+        "f1": 0.8383110195674562,
+        "support": 516,
+        "correct": 407,
+        "specificity": 0.805668016194332
+      },
+      "STEMI": {
+        "recall": 0.7372262773722628,
+        "precision": 0.520618556701031,
+        "f1": 0.6102719033232629,
+        "support": 137,
+        "correct": 101,
+        "specificity": 0.8514376996805112
+      }
+    },
+    "min_recall": 0.7372262773722628,
+    "min_f1": 0.6102719033232629,
+    "auroc_ovr_macro": 0.896464981568532,
+    "auprc_macro": 0.8163452491662037,
+    "auprc_per_class": {
+      "UA": 0.8329307117421562,
+      "NSTEMI": 0.9153222221954248,
+      "STEMI": 0.70078281356103
+    }
+  },
+  "stage2_ci": {
+    "UA_recall": {
+      "mean": 0.7996795723591337,
+      "lo": 0.710250637213254,
+      "hi": 0.8750297619047619
+    },
+    "UA_f1": {
+      "mean": 0.7844520934439235,
+      "lo": 0.7150823515790083,
+      "hi": 0.8449754206844393
+    },
+    "UA_precision": {
+      "mean": 0.7711770787133878,
+      "lo": 0.6990683608021434,
+      "hi": 0.8480184873949579
+    },
+    "NSTEMI_recall": {
+      "mean": 0.7891264148341105,
+      "lo": 0.7562755946264507,
+      "hi": 0.8215720474236206
+    },
+    "NSTEMI_f1": {
+      "mean": 0.8384302039910824,
+      "lo": 0.812234681950403,
+      "hi": 0.8624615758132316
+    },
+    "NSTEMI_precision": {
+      "mean": 0.8946005759680359,
+      "lo": 0.8660703605604921,
+      "hi": 0.9235672266570245
+    },
+    "STEMI_recall": {
+      "mean": 0.737169261381269,
+      "lo": 0.655996103896104,
+      "hi": 0.8067532973454282
+    },
+    "STEMI_f1": {
+      "mean": 0.6097537141571178,
+      "lo": 0.5454404728398536,
+      "hi": 0.6704879341471089
+    },
+    "STEMI_precision": {
+      "mean": 0.5208956058493918,
+      "lo": 0.4558616986120291,
+      "hi": 0.5879541246904378
+    },
+    "macro_f1": {
+      "mean": 0.7442120038640412,
+      "lo": 0.7098948844106793,
+      "hi": 0.7780455932106387
+    },
+    "balanced_accuracy": {
+      "mean": 0.775325082858171,
+      "lo": 0.7345354477126741,
+      "hi": 0.8130177549167206
+    }
+  },
+  "ceilings": [
+    {
+      "bound": "Stage-1 ACS F1 (IUP)",
+      "value": 0.6712,
+      "method": "full threshold sweep on the PR curve"
+    },
+    {
+      "bound": "Stage-2 min per-class F1",
+      "value": 0.6883,
+      "method": "300,000 sampled decision weight vectors (validation)"
+    },
+    {
+      "bound": "Stage-2 min per-class recall",
+      "value": 0.7741,
+      "method": "400,000 sampled decision weight vectors (validation)"
+    },
+    {
+      "bound": "STEMI-vs-NSTEMI F1",
+      "value": 0.662,
+      "method": "binary model after two feature-engineering passes"
+    },
+    {
+      "bound": "End-to-end 4-class min recall",
+      "value": 0.7394,
+      "method": "200,000 sampled weight vectors (validation)"
+    }
+  ],
+  "verdict": [
+    {
+      "view": "Stage 1 / FULL ED",
+      "class": "No_ACS",
+      "accuracy": 0.9642435486591331,
+      "F1": 0.9792737238780405,
+      "recall>=75": true,
+      "F1>=75": true,
+      "status": "PASS both"
+    },
+    {
+      "view": "Stage 1 / FULL ED",
+      "class": "ACS",
+      "accuracy": 0.8141263940520446,
+      "F1": 0.5206022187004754,
+      "recall>=75": true,
+      "F1>=75": false,
+      "status": "PASS recall"
+    },
+    {
+      "view": "Stage 1 / IUP (screening cohort)",
+      "class": "No_ACS",
+      "accuracy": 0.939073987173471,
+      "F1": 0.9630253448829003,
+      "recall>=75": true,
+      "F1>=75": true,
+      "status": "PASS both"
+    },
+    {
+      "view": "Stage 1 / IUP (screening cohort)",
+      "class": "ACS",
+      "accuracy": 0.8125819134993447,
+      "F1": 0.5735430157261795,
+      "recall>=75": true,
+      "F1>=75": false,
+      "status": "PASS recall"
+    },
+    {
+      "view": "Stage 1 / AWC (biomarker ordered)",
+      "class": "No_ACS",
+      "accuracy": 0.7894280762564991,
+      "F1": 0.8419593345656192,
+      "recall>=75": true,
+      "F1>=75": true,
+      "status": "PASS both"
+    },
+    {
+      "view": "Stage 1 / AWC (biomarker ordered)",
+      "class": "ACS",
+      "accuracy": 0.8336134453781513,
+      "F1": 0.7436281859070465,
+      "recall>=75": true,
+      "F1>=75": false,
+      "status": "PASS recall"
+    },
+    {
+      "view": "Stage 2 / IUP",
+      "class": "UA",
+      "accuracy": 0.8,
+      "F1": 0.7857142857142857,
+      "recall>=75": true,
+      "F1>=75": true,
+      "status": "PASS both"
+    },
+    {
+      "view": "Stage 2 / IUP",
+      "class": "NSTEMI",
+      "accuracy": 0.7887596899224806,
+      "F1": 0.8383110195674562,
+      "recall>=75": true,
+      "F1>=75": true,
+      "status": "PASS both"
+    },
+    {
+      "view": "Stage 2 / IUP",
+      "class": "STEMI",
+      "accuracy": 0.7372262773722628,
+      "F1": 0.6102719033232629,
+      "recall>=75": false,
+      "F1>=75": false,
+      "status": "below"
+    }
+  ]
+}

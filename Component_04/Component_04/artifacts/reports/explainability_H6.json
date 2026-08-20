@@ -1,0 +1,858 @@
+{
+  "horizon": 6,
+  "stage1_modality": {
+    "ecg": 0.26956361532211304,
+    "text": 0.20231835544109344,
+    "interaction": 0.13232943415641785,
+    "vitals": 0.10988175868988037,
+    "history": 0.08673602342605591,
+    "medications": 0.08434265106916428,
+    "demographics": 0.06909316778182983,
+    "labs": 0.045734986662864685
+  },
+  "stage1_top20": [
+    {
+      "feature": "ix_heart_score",
+      "mean_abs_shap": 0.32105931639671326
+    },
+    {
+      "feature": "ecg_n_studies",
+      "mean_abs_shap": 0.2675296664237976
+    },
+    {
+      "feature": "ecg_t_axis",
+      "mean_abs_shap": 0.2390103042125702
+    },
+    {
+      "feature": "cc_referral_dx",
+      "mean_abs_shap": 0.10859480500221252
+    },
+    {
+      "feature": "ix_age_x_chestpain",
+      "mean_abs_shap": 0.10816871374845505
+    },
+    {
+      "feature": "acuity",
+      "mean_abs_shap": 0.09180984646081924
+    },
+    {
+      "feature": "hist_days_since_last",
+      "mean_abs_shap": 0.08294359594583511
+    },
+    {
+      "feature": "cc_acs_lexicon_score",
+      "mean_abs_shap": 0.07569058239459991
+    },
+    {
+      "feature": "cv_risk_age_sex",
+      "mean_abs_shap": 0.06979959458112717
+    },
+    {
+      "feature": "hist_prior_acs_any",
+      "mean_abs_shap": 0.06621160358190536
+    },
+    {
+      "feature": "cc_svd_00",
+      "mean_abs_shap": 0.059799663722515106
+    },
+    {
+      "feature": "cc_svd_01",
+      "mean_abs_shap": 0.058863189071416855
+    },
+    {
+      "feature": "pain_score",
+      "mean_abs_shap": 0.05839427560567856
+    },
+    {
+      "feature": "hist_n_prior_visits",
+      "mean_abs_shap": 0.057875629514455795
+    },
+    {
+      "feature": "ecg_qtc",
+      "mean_abs_shap": 0.051954884082078934
+    },
+    {
+      "feature": "med_antiplatelet",
+      "mean_abs_shap": 0.05141514167189598
+    },
+    {
+      "feature": "trop_max",
+      "mean_abs_shap": 0.04957796260714531
+    },
+    {
+      "feature": "age",
+      "mean_abs_shap": 0.04827526584267616
+    },
+    {
+      "feature": "cc_svd_09",
+      "mean_abs_shap": 0.047435685992240906
+    },
+    {
+      "feature": "ecg_report_len",
+      "mean_abs_shap": 0.0451752170920372
+    }
+  ],
+  "stage2_modality": {
+    "ecg": 0.31807228922843933,
+    "text": 0.23949715495109558,
+    "vitals": 0.15281133353710175,
+    "medications": 0.07856924086809158,
+    "demographics": 0.06267129629850388,
+    "interaction": 0.056205864995718,
+    "labs": 0.05565092712640762,
+    "history": 0.03652188926935196
+  },
+  "stage2_top20": [
+    {
+      "feature": "ecg_acute_ischemia",
+      "mean_abs_shap": 0.10934591293334961
+    },
+    {
+      "feature": "ecg_qtc",
+      "mean_abs_shap": 0.1030290499329567
+    },
+    {
+      "feature": "trop_max",
+      "mean_abs_shap": 0.09817104786634445
+    },
+    {
+      "feature": "ix_shock_x_chestpain",
+      "mean_abs_shap": 0.09200720489025116
+    },
+    {
+      "feature": "cc_svd_02",
+      "mean_abs_shap": 0.07204048335552216
+    },
+    {
+      "feature": "med_total_count",
+      "mean_abs_shap": 0.06975521892309189
+    },
+    {
+      "feature": "cc_svd_18",
+      "mean_abs_shap": 0.060841795057058334
+    },
+    {
+      "feature": "age",
+      "mean_abs_shap": 0.05985303595662117
+    },
+    {
+      "feature": "ecg_abnormal",
+      "mean_abs_shap": 0.058248311281204224
+    },
+    {
+      "feature": "ecg_n_studies",
+      "mean_abs_shap": 0.05772249773144722
+    },
+    {
+      "feature": "ecg_pr_interval",
+      "mean_abs_shap": 0.05717775225639343
+    },
+    {
+      "feature": "ecg_qrs_duration",
+      "mean_abs_shap": 0.05697081983089447
+    },
+    {
+      "feature": "ecg_t_axis",
+      "mean_abs_shap": 0.056065041571855545
+    },
+    {
+      "feature": "ecg_rr_interval",
+      "mean_abs_shap": 0.05519614368677139
+    },
+    {
+      "feature": "shock_index",
+      "mean_abs_shap": 0.054583724588155746
+    },
+    {
+      "feature": "ecg_ischemic_any",
+      "mean_abs_shap": 0.05161591246724129
+    },
+    {
+      "feature": "pain_score",
+      "mean_abs_shap": 0.04778158292174339
+    },
+    {
+      "feature": "cc_referral_dx",
+      "mean_abs_shap": 0.045598696917295456
+    },
+    {
+      "feature": "temperature",
+      "mean_abs_shap": 0.04546415060758591
+    },
+    {
+      "feature": "ecg_report_len",
+      "mean_abs_shap": 0.04369083791971207
+    }
+  ],
+  "stage2_per_class_top": {
+    "UA": {
+      "ix_shock_x_chestpain": 0.2550346255302429,
+      "trop_max": 0.18341998755931854,
+      "cc_referral_dx": 0.1096465066075325,
+      "ecg_qtc": 0.10567136108875275,
+      "med_total_count": 0.09608639776706696,
+      "cc_svd_18": 0.09449972212314606,
+      "age": 0.09016250818967819,
+      "pain_score": 0.08762681484222412,
+      "ecg_rr_interval": 0.0875929519534111,
+      "med_nitrate": 0.08661087602376938,
+      "cc_svd_15": 0.08572179079055786,
+      "ecg_ischemic_any": 0.08430378884077072,
+      "ecg_acuity_score": 0.08220484107732773,
+      "ix_heart_score": 0.08044611662626266,
+      "ix_age_x_chestpain": 0.08019398152828217
+    },
+    "NSTEMI": {
+      "cc_svd_02": 0.17869794368743896,
+      "ecg_abnormal": 0.12195760011672974,
+      "ecg_qtc": 0.10369008034467697,
+      "cc_rdx_nstemi": 0.067073754966259,
+      "ecg_t_axis": 0.06669459491968155,
+      "ecg_rr_interval": 0.058760520070791245,
+      "ecg_pr_interval": 0.05766871199011803,
+      "ecg_acute_ischemia": 0.05402049794793129,
+      "ecg_qrs_duration": 0.05362752452492714,
+      "cc_svd_03": 0.05257725343108177,
+      "cc_svd_07": 0.04963008314371109,
+      "cc_rdx_stemi": 0.04392513260245323,
+      "trop_max": 0.0430358350276947,
+      "hist_charlson_index": 0.0391453318297863,
+      "cc_svd_21": 0.03676429018378258
+    },
+    "STEMI": {
+      "ecg_acute_ischemia": 0.27401718497276306,
+      "ecg_n_studies": 0.11619152128696442,
+      "ecg_qtc": 0.09972579777240753,
+      "med_total_count": 0.09177764505147934,
+      "ecg_qrs_duration": 0.07937289774417877,
+      "med_antiplatelet": 0.07310276478528976,
+      "dbp": 0.07147758454084396,
+      "shock_index": 0.06930813193321228,
+      "age": 0.06871100515127182,
+      "cc_svd_18": 0.06858456879854202,
+      "trop_max": 0.06805739551782608,
+      "ecg_dt_first_h": 0.06716398149728775,
+      "ecg_ischemic_any": 0.06568910926580429,
+      "med_cardiac_count": 0.06512250006198883,
+      "ecg_acute": 0.05925712361931801
+    }
+  },
+  "availability_check": [
+    {
+      "subgroup": "troponin present",
+      "n": 174,
+      "lab share of |SHAP|": 0.16574066877365112
+    },
+    {
+      "subgroup": "troponin absent",
+      "n": 589,
+      "lab share of |SHAP|": 0.01992454007267952
+    }
+  ],
+  "examples": [
+    {
+      "prediction": "No_ACS",
+      "p_acs": 0.0,
+      "probabilities": {
+        "No_ACS": 1.0,
+        "UA": 0.0,
+        "NSTEMI": 0.0,
+        "STEMI": 0.0
+      },
+      "subtype_probabilities": {
+        "UA": 0.014696317078749159,
+        "NSTEMI": 0.535353114894672,
+        "STEMI": 0.44995056802657885
+      },
+      "horizon_h": 6,
+      "text_attribution": [
+        {
+          "term": "depression",
+          "category": "psych",
+          "weight": -2.0,
+          "negated": false
+        }
+      ],
+      "true_label": "No_ACS",
+      "chief_complaint": "INCREASED DEPRESSION",
+      "modality_contribution": {
+        "ecg": 0.2178892344236374,
+        "demographics": 0.18910716474056244,
+        "interaction": 0.1635276824235916,
+        "text": 0.150216743350029,
+        "vitals": 0.09782000631093979,
+        "medications": 0.07970664650201797,
+        "history": 0.07248132675886154,
+        "labs": 0.029251225292682648
+      },
+      "top_features": [
+        {
+          "feature": "ix_heart_score",
+          "shap": -0.5031325817108154,
+          "value": 0.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "age",
+          "shap": -0.3434664309024811,
+          "value": 22.0,
+          "modality": "demographics"
+        },
+        {
+          "feature": "ecg_t_axis",
+          "shap": -0.2786925733089447,
+          "value": 13.0,
+          "modality": "ecg"
+        },
+        {
+          "feature": "cv_risk_age_sex",
+          "shap": -0.23143495619297028,
+          "value": 2.200000047683716,
+          "modality": "demographics"
+        },
+        {
+          "feature": "ecg_n_studies",
+          "shap": -0.20590883493423462,
+          "value": 1.0,
+          "modality": "ecg"
+        },
+        {
+          "feature": "acuity",
+          "shap": -0.17200781404972076,
+          "value": 3.0,
+          "modality": "vitals"
+        },
+        {
+          "feature": "cc_acs_lexicon_score",
+          "shap": -0.0914129987359047,
+          "value": -2.0,
+          "modality": "text"
+        },
+        {
+          "feature": "ix_age_x_chestpain",
+          "shap": -0.08710522204637527,
+          "value": 0.0,
+          "modality": "interaction"
+        }
+      ]
+    },
+    {
+      "prediction": "NSTEMI",
+      "p_acs": 0.12462006079027366,
+      "probabilities": {
+        "No_ACS": 0.8753799392097263,
+        "UA": 0.04148713773751701,
+        "NSTEMI": 0.07055950646015796,
+        "STEMI": 0.012573416592598622
+      },
+      "subtype_probabilities": {
+        "UA": 0.3329089833083681,
+        "NSTEMI": 0.5661970152534624,
+        "STEMI": 0.10089400143816939
+      },
+      "horizon_h": 6,
+      "text_attribution": [
+        {
+          "term": "chest pain",
+          "category": "chest_pain",
+          "weight": 3.0,
+          "negated": false
+        },
+        {
+          "term": "chest",
+          "category": "chest_any",
+          "weight": 1.5,
+          "negated": false
+        }
+      ],
+      "true_label": "UA",
+      "chief_complaint": "Chest pain",
+      "modality_contribution": {
+        "ecg": 0.28893983364105225,
+        "text": 0.1658116579055786,
+        "interaction": 0.15358735620975494,
+        "medications": 0.10315509140491486,
+        "history": 0.09987971931695938,
+        "vitals": 0.09230895340442657,
+        "demographics": 0.060052815824747086,
+        "labs": 0.03626452386379242
+      },
+      "top_features": [
+        {
+          "feature": "ecg_n_studies",
+          "shap": 0.46227574348449707,
+          "value": 2.0,
+          "modality": "ecg"
+        },
+        {
+          "feature": "ix_heart_score",
+          "shap": 0.4244568943977356,
+          "value": 3.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "ecg_t_axis",
+          "shap": -0.2764541208744049,
+          "value": 59.0,
+          "modality": "ecg"
+        },
+        {
+          "feature": "cc_svd_01",
+          "shap": 0.1410079300403595,
+          "value": -0.3122134208679199,
+          "modality": "text"
+        },
+        {
+          "feature": "hist_days_since_last",
+          "shap": 0.13357047736644745,
+          "value": NaN,
+          "modality": "history"
+        },
+        {
+          "feature": "cc_acs_lexicon_score",
+          "shap": 0.12137273699045181,
+          "value": 4.5,
+          "modality": "text"
+        },
+        {
+          "feature": "ix_male_x_chestpain",
+          "shap": 0.12069638073444366,
+          "value": 1.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "hist_n_prior_visits",
+          "shap": 0.11412190645933151,
+          "value": 0.0,
+          "modality": "history"
+        }
+      ]
+    },
+    {
+      "prediction": "NSTEMI",
+      "p_acs": 0.8888888888888888,
+      "probabilities": {
+        "No_ACS": 0.11111111111111116,
+        "UA": 0.000966147110327998,
+        "NSTEMI": 0.7433614784927822,
+        "STEMI": 0.14456126328577862
+      },
+      "subtype_probabilities": {
+        "UA": 0.0010869154991189978,
+        "NSTEMI": 0.83628166330438,
+        "STEMI": 0.16263142119650095
+      },
+      "horizon_h": 6,
+      "text_attribution": [
+        {
+          "term": "chest pain",
+          "category": "chest_pain",
+          "weight": 3.0,
+          "negated": false
+        },
+        {
+          "term": "chest",
+          "category": "chest_any",
+          "weight": 1.5,
+          "negated": false
+        }
+      ],
+      "true_label": "NSTEMI",
+      "chief_complaint": "Chest pain",
+      "modality_contribution": {
+        "labs": 0.2960432469844818,
+        "ecg": 0.21019721031188965,
+        "interaction": 0.2089269459247589,
+        "text": 0.10238828510046005,
+        "history": 0.06470126658678055,
+        "vitals": 0.042292095720767975,
+        "medications": 0.038557033985853195,
+        "demographics": 0.036893874406814575
+      },
+      "top_features": [
+        {
+          "feature": "ix_heart_score",
+          "shap": 0.8989900946617126,
+          "value": 6.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "trop_max",
+          "shap": 0.807076632976532,
+          "value": 0.5600000023841858,
+          "modality": "labs"
+        },
+        {
+          "feature": "ecg_n_studies",
+          "shap": 0.5236384272575378,
+          "value": 3.0,
+          "modality": "ecg"
+        },
+        {
+          "feature": "trop_first",
+          "shap": 0.40065374970436096,
+          "value": 0.5600000023841858,
+          "modality": "labs"
+        },
+        {
+          "feature": "ix_age_x_chestpain",
+          "shap": 0.31091243028640747,
+          "value": 88.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "trop_log_max",
+          "shap": 0.2811144292354584,
+          "value": 0.44468581676483154,
+          "modality": "labs"
+        },
+        {
+          "feature": "hist_days_since_last",
+          "shap": 0.1799793839454651,
+          "value": NaN,
+          "modality": "history"
+        },
+        {
+          "feature": "ecg_p_axis",
+          "shap": -0.16496887803077698,
+          "value": NaN,
+          "modality": "ecg"
+        }
+      ]
+    },
+    {
+      "prediction": "STEMI",
+      "p_acs": 0.59375,
+      "probabilities": {
+        "No_ACS": 0.40625,
+        "UA": 0.09980453051504243,
+        "NSTEMI": 0.19842783548390233,
+        "STEMI": 0.2955176340010553
+      },
+      "subtype_probabilities": {
+        "UA": 0.1680918408674399,
+        "NSTEMI": 0.334194249236046,
+        "STEMI": 0.4977139098965142
+      },
+      "horizon_h": 6,
+      "text_attribution": [
+        {
+          "term": "chest pain",
+          "category": "chest_pain",
+          "weight": 3.0,
+          "negated": false
+        },
+        {
+          "term": "chest",
+          "category": "chest_any",
+          "weight": 1.5,
+          "negated": false
+        }
+      ],
+      "true_label": "STEMI",
+      "chief_complaint": "CHEST PAIN",
+      "modality_contribution": {
+        "ecg": 0.37538570165634155,
+        "interaction": 0.16477908194065094,
+        "text": 0.12793657183647156,
+        "vitals": 0.10452783852815628,
+        "medications": 0.08498401194810867,
+        "history": 0.08192313462495804,
+        "demographics": 0.039296478033065796,
+        "labs": 0.021167218685150146
+      },
+      "top_features": [
+        {
+          "feature": "ecg_n_studies",
+          "shap": 1.2789875268936157,
+          "value": 3.0,
+          "modality": "ecg"
+        },
+        {
+          "feature": "ix_heart_score",
+          "shap": 0.5549442172050476,
+          "value": 3.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "ix_age_x_chestpain",
+          "shap": 0.2581866979598999,
+          "value": 54.0,
+          "modality": "interaction"
+        },
+        {
+          "feature": "pain_score",
+          "shap": -0.19605319201946259,
+          "value": 10.0,
+          "modality": "vitals"
+        },
+        {
+          "feature": "med_total_count",
+          "shap": 0.19195938110351562,
+          "value": 0.0,
+          "modality": "medications"
+        },
+        {
+          "feature": "cc_svd_01",
+          "shap": 0.17701509594917297,
+          "value": -0.3122134208679199,
+          "modality": "text"
+        },
+        {
+          "feature": "hist_days_since_last",
+          "shap": 0.16918431222438812,
+          "value": NaN,
+          "modality": "history"
+        },
+        {
+          "feature": "ecg_infarct_any",
+          "shap": 0.14226259291172028,
+          "value": 1.0,
+          "modality": "ecg"
+        }
+      ]
+    }
+  ],
+  "svd_top_terms": {
+    "cc_svd_00": [
+      "w__chest pain",
+      "w__chest",
+      "w__pain",
+      "c__ ches",
+      "c__ che",
+      "c__hest ",
+      "c__hest",
+      "c__chest"
+    ],
+    "cc_svd_01": [
+      "w__dyspnea",
+      "c__ dysp",
+      "c__spnea",
+      "c__dyspn",
+      "c__spn",
+      "c__yspn",
+      "c__yspne",
+      "c__spne"
+    ],
+    "cc_svd_02": [
+      "w__status",
+      "w__status post",
+      "w__fall",
+      "w__post",
+      "w__post fall",
+      "w__mental",
+      "w__mental status",
+      "w__altered"
+    ],
+    "cc_svd_03": [
+      "w__abd",
+      "w__abd pain",
+      "w__weakness",
+      "w__vomiting",
+      "w__nausea",
+      "w__nausea vomiting",
+      "c__abd ",
+      "c__ abd "
+    ],
+    "cc_svd_04": [
+      "w__weakness",
+      "w__abd",
+      "w__abd pain",
+      "c__ness ",
+      "c__ness",
+      "c__nes",
+      "c__weak",
+      "c__weakn"
+    ],
+    "cc_svd_05": [
+      "w__transfer",
+      "w__vomiting",
+      "w__nausea",
+      "w__nausea vomiting",
+      "w__abd",
+      "w__abd pain",
+      "c__sfer",
+      "c__sfe"
+    ],
+    "cc_svd_06": [
+      "w__shortness",
+      "w__breath",
+      "w__of breath",
+      "w__shortness of",
+      "w__of",
+      "w__weakness",
+      "c__shor",
+      "c__hort"
+    ],
+    "cc_svd_07": [
+      "w__transfer",
+      "w__abd",
+      "w__abd pain",
+      "w__vomiting",
+      "w__nausea",
+      "w__nausea vomiting",
+      "c__ansfe",
+      "c__nsfe"
+    ],
+    "cc_svd_08": [
+      "w__altered",
+      "w__mental",
+      "w__mental status",
+      "w__altered mental",
+      "w__fall",
+      "w__post",
+      "w__status post",
+      "w__post fall"
+    ],
+    "cc_svd_09": [
+      "w__syncope",
+      "c__cope",
+      "c__ncope",
+      "c__ynco",
+      "c__yncop",
+      "c__ncop",
+      "c__synco",
+      "c__ync"
+    ],
+    "cc_svd_10": [
+      "w__fever",
+      "c__fever",
+      "c__feve",
+      "c__fev",
+      "c__ever",
+      "c__ fev",
+      "c__ feve",
+      "c__ever "
+    ],
+    "cc_svd_11": [
+      "w__abnormal",
+      "w__labs",
+      "w__abnormal labs",
+      "c__abn",
+      "c__ abn",
+      "c__bno",
+      "c__abno",
+      "c__mal "
+    ],
+    "cc_svd_12": [
+      "w__dizziness",
+      "c__zzine",
+      "c__zzin",
+      "c__zine",
+      "c__zines",
+      "c__zzi",
+      "c__izzin",
+      "c__dizzi"
+    ],
+    "cc_svd_13": [
+      "w__hypotension",
+      "c__on ",
+      "c__hyp",
+      "c__ hy",
+      "c__ hyp",
+      "c__ypo",
+      "c__hypo",
+      "c__ hypo"
+    ],
+    "cc_svd_14": [
+      "w__cough",
+      "c__cough",
+      "c__coug",
+      "c__ough",
+      "c__ugh",
+      "c__oug",
+      "c__cou",
+      "c__ coug"
+    ],
+    "cc_svd_15": [
+      "w__leg",
+      "w__swelling",
+      "w__leg swelling",
+      "w__exertion",
+      "w__on",
+      "w__on exertion",
+      "w__dyspnea on",
+      "w__palpitations"
+    ],
+    "cc_svd_16": [
+      "w__brbpr",
+      "c__bpr",
+      "c__bpr ",
+      "c__brbp",
+      "c__rbpr",
+      "c__rbp",
+      "c__brbpr",
+      "c__rbpr "
+    ],
+    "cc_svd_17": [
+      "w__leg",
+      "w__swelling",
+      "w__palpitations",
+      "w__brbpr",
+      "w__leg swelling",
+      "w__exertion",
+      "w__on",
+      "w__on exertion"
+    ],
+    "cc_svd_18": [
+      "w__tachycardia",
+      "w__palpitations",
+      "c__ard",
+      "c__ardi",
+      "c__rdi",
+      "c__card",
+      "c__ardia",
+      "c__rdia"
+    ],
+    "cc_svd_19": [
+      "w__palpitations",
+      "w__tachycardia",
+      "w__exertion",
+      "w__on exertion",
+      "w__on",
+      "w__dyspnea on",
+      "c__ palp",
+      "c__palp"
+    ],
+    "cc_svd_20": [
+      "w__epigastric",
+      "w__epigastric pain",
+      "w__pain",
+      "w__abdominal",
+      "w__abd",
+      "w__abd pain",
+      "w__back",
+      "w__back pain"
+    ],
+    "cc_svd_21": [
+      "w__hypoxia",
+      "w__hyperglycemia",
+      "w__hypotension",
+      "c__ia ",
+      "w__anemia",
+      "w__dyspnea hypoxia",
+      "c__emia",
+      "c__mia"
+    ],
+    "cc_svd_22": [
+      "w__abdominal",
+      "w__abdominal pain",
+      "w__epigastric",
+      "w__epigastric pain",
+      "c__bdo",
+      "c__abdo",
+      "c__minal",
+      "c__mina"
+    ],
+    "cc_svd_23": [
+      "w__seizure",
+      "c__zure",
+      "c__zur",
+      "c__izure",
+      "c__izur",
+      "c__eizu",
+      "c__seizu",
+      "c__eiz"
+    ]
+  }
+}

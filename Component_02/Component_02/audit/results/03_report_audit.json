@@ -1,0 +1,40 @@
+{
+  "n": 1711,
+  "tier3": {
+    "identical": 404,
+    "same_after_strip": 404,
+    "truncated_prefix": 974,
+    "real_change": 333
+  },
+  "tier3_content": {
+    "dropped": {
+      "NORM": 37,
+      "STTC": 65,
+      "HYP": 1
+    },
+    "added": {},
+    "records_with_drop": 103
+  },
+  "contradiction": {
+    "norm_plus_abnormal": 99,
+    "inconclusive": 15
+  },
+  "diversity": {
+    "distinct_t2": 63,
+    "distinct_real": 1055
+  },
+  "content_gap": [
+    "heart rate (bpm)",
+    "rhythm classification (AF/flutter/etc.)",
+    "PR / QRS / QT intervals",
+    "QRS axis",
+    "risk score / triage level",
+    "lead-level localisation (anterior/inferior)",
+    "model uncertainty statement",
+    "signal-quality statement"
+  ],
+  "reference_quality": {
+    "normal_in_real": 1121,
+    "non_english": 89
+  }
+}

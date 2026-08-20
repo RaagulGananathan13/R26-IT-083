@@ -1,0 +1,219 @@
+{
+  "gate": {
+    "correct": 198,
+    "RA/LA": 198,
+    "RA/LL": 198,
+    "LA/LL": 197
+  },
+  "flips": {
+    "RA/LA": {
+      "any": 0.86,
+      "MI": 0.545,
+      "CD": 0.245
+    },
+    "RA/LL": {
+      "any": 0.87,
+      "MI": 0.575,
+      "CD": 0.52
+    },
+    "LA/LL": {
+      "any": 0.435,
+      "MI": 0.225,
+      "CD": 0.14
+    }
+  },
+  "violations": [
+    {
+      "cls": "NORM",
+      "variant": "RA/LA",
+      "alpha": 0.2,
+      "miss": 0.9878048780487805,
+      "n": 82
+    },
+    {
+      "cls": "NORM",
+      "variant": "RA/LL",
+      "alpha": 0.2,
+      "miss": 1.0,
+      "n": 82
+    },
+    {
+      "cls": "STTC",
+      "variant": "RA/LA",
+      "alpha": 0.1,
+      "miss": 0.62,
+      "n": 50
+    },
+    {
+      "cls": "STTC",
+      "variant": "RA/LL",
+      "alpha": 0.1,
+      "miss": 0.28,
+      "n": 50
+    },
+    {
+      "cls": "CD",
+      "variant": "LA/LL",
+      "alpha": 0.1,
+      "miss": 0.16363636363636364,
+      "n": 55
+    },
+    {
+      "cls": "HYP",
+      "variant": "RA/LA",
+      "alpha": 0.15,
+      "miss": 0.3333333333333333,
+      "n": 15
+    },
+    {
+      "cls": "HYP",
+      "variant": "RA/LL",
+      "alpha": 0.15,
+      "miss": 0.5333333333333333,
+      "n": 15
+    }
+  ],
+  "detector": {
+    "RA/LA": 0.655,
+    "RA/LL": 0.605,
+    "LA/LL": 0.04,
+    "false_positive": 0.045
+  },
+  "after_gate": [
+    {
+      "cls": "NORM",
+      "variant": "RA/LA",
+      "before": 0.9878048780487805,
+      "after": 0.9736842105263158,
+      "restored": false
+    },
+    {
+      "cls": "NORM",
+      "variant": "RA/LL",
+      "before": 1.0,
+      "after": 1.0,
+      "restored": false
+    },
+    {
+      "cls": "STTC",
+      "variant": "RA/LA",
+      "before": 0.62,
+      "after": 0.5,
+      "restored": false
+    },
+    {
+      "cls": "STTC",
+      "variant": "RA/LL",
+      "before": 0.28,
+      "after": 0.4444444444444444,
+      "restored": false
+    },
+    {
+      "cls": "CD",
+      "variant": "LA/LL",
+      "before": 0.16363636363636364,
+      "after": 0.16666666666666666,
+      "restored": false
+    },
+    {
+      "cls": "HYP",
+      "variant": "RA/LA",
+      "before": 0.3333333333333333,
+      "after": 0.4,
+      "restored": false
+    },
+    {
+      "cls": "HYP",
+      "variant": "RA/LL",
+      "before": 0.5333333333333333,
+      "after": 0.2857142857142857,
+      "restored": false
+    }
+  ],
+  "required_sensitivity": [
+    {
+      "cls": "NORM",
+      "variant": "RA/LA",
+      "m_correct": 0.07317073170731707,
+      "m_reversed": 0.9878048780487805,
+      "required": {
+        "0.004": 0.0,
+        "0.01": 0.0,
+        "0.02": 0.0,
+        "0.04": 0.0
+      }
+    },
+    {
+      "cls": "NORM",
+      "variant": "RA/LL",
+      "m_correct": 0.07317073170731707,
+      "m_reversed": 1.0,
+      "required": {
+        "0.004": 0.0,
+        "0.01": 0.0,
+        "0.02": 0.0,
+        "0.04": 0.0
+      }
+    },
+    {
+      "cls": "STTC",
+      "variant": "RA/LA",
+      "m_correct": 0.12,
+      "m_reversed": 0.62,
+      "required": {
+        "0.004": null,
+        "0.01": null,
+        "0.02": null,
+        "0.04": null
+      }
+    },
+    {
+      "cls": "STTC",
+      "variant": "RA/LL",
+      "m_correct": 0.12,
+      "m_reversed": 0.28,
+      "required": {
+        "0.004": null,
+        "0.01": null,
+        "0.02": null,
+        "0.04": null
+      }
+    },
+    {
+      "cls": "CD",
+      "variant": "LA/LL",
+      "m_correct": 0.03636363636363636,
+      "m_reversed": 0.16363636363636364,
+      "required": {
+        "0.004": 0.0,
+        "0.01": 0.0,
+        "0.02": 0.0,
+        "0.04": 0.0
+      }
+    },
+    {
+      "cls": "HYP",
+      "variant": "RA/LA",
+      "m_correct": 0.2,
+      "m_reversed": 0.3333333333333333,
+      "required": {
+        "0.004": null,
+        "0.01": null,
+        "0.02": null,
+        "0.04": null
+      }
+    },
+    {
+      "cls": "HYP",
+      "variant": "RA/LL",
+      "m_correct": 0.2,
+      "m_reversed": 0.5333333333333333,
+      "required": {
+        "0.004": null,
+        "0.01": null,
+        "0.02": null,
+        "0.04": null
+      }
+    }
+  ]
+}
