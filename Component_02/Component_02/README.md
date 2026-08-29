@@ -163,7 +163,7 @@ class that is not in the label space, so the claim is withheld.
 
 | Module | Responsibility |
 |---|---|
-| `src/models.py` | Architectures (single definition) |
+| `src/models.py` | Architecture registry (single definition, ablation variants) |
 | `src/paths.py`, `src/signals.py` | Asset resolution; reads WFDB or cache |
 | `src/quality.py` | Flatline / noise / unit / duration / rhythm gate |
 | `src/electrodes.py` | Limb-electrode reversal detection (physiology rules) |
@@ -173,7 +173,90 @@ class that is not in the label space, so the claim is withheld.
 | `src/conformal.py` | Risk-controlled triage (rule-out / refer / rule-in) |
 | `src/xai.py` | Thread-safe Grad-CAM, signed IG, territory mapping |
 | `src/report.py`, `src/verify.py` | Grounded report + safety gate |
-| `src/pipeline.py` | The single inference entry point |
+| `src/pipeline.py` | The single inference entry point (one model) |
+| `src/zoo.py` | Serving several models at once, each with its own safety layer |
+
+---
+
+## Using more than one model
+
+Two models are served, each with **its own** calibrator and conformal
+thresholds. They are not interchangeable: the Progress-1 baseline was trained on
+unfiltered signals and the shipped model on band-passed ones, so each bundle
+also carries the preprocessing it was fitted with. `src/zoo.py` reads that from
+the artefacts rather than assuming it.
+
+```
+checkpoints/best_model.pt              resnet_se  (default, filter=on)
+checkpoints/calibrator.json
+checkpoints/conformal_triage.json
+
+checkpoints/resnet/best_model.pt       resnet     (baseline, filter=off)
+checkpoints/resnet/calibrator.json
+checkpoints/resnet/conformal_triage.json
+```
+
+```python
+from src.zoo import ModelZoo
+
+zoo = ModelZoo.discover()            # finds every bundle on disk
+print(zoo.describe())
+
+zoo.analyse(sig, fs=500)                      # default model
+zoo.analyse(sig, fs=500, model="resnet")      # a named model
+cons = zoo.consensus(sig, fs=500)             # every serveable model
+print(cons.summary(), cons.escalate)
+```
+
+Over the API:
+
+```bash
+curl  localhost:5000/api/models                       # what is loaded
+curl -X POST "localhost:5000/api/analyze/9?model=resnet"
+curl -X POST "localhost:5000/api/analyze/9?compare=1" # adds a `consensus` block
+```
+
+### The decision rule when they disagree
+
+A class is **ruled out only if every model rules it out**; any disagreement
+collapses to REFER. This is not a heuristic — the merged rule-out set is the
+intersection of the individual ones, so
+
+```
+P(merged rules out | Y=1)  <=  min_m P(model m rules out | Y=1)  <=  min_m alpha_m
+```
+
+the merged miss rate is bounded by the *tightest* single-model guarantee. On the
+unseen test fold (`audit/results/14_multi_model.txt`, 1,711 records):
+
+| Class | Miss resnet_se | Miss resnet | **Miss merged** | Referred resnet_se | **Referred merged** |
+|---|---|---|---|---|---|
+| NORM | 0.033 | 0.044 | **0.018** | 14.8% | 14.3% |
+| MI | 0.015 | 0.007 | **0.000** | 24.1% | 37.3% |
+| STTC | 0.092 | 0.077 | **0.055** | 7.9% | 12.3% |
+| CD | 0.099 | 0.106 | **0.070** | 11.8% | 17.8% |
+| HYP | 0.121 | 0.098 | **0.053** | 12.3% | 19.6% |
+
+The merged rule misses fewer true positives than *either* model on every class,
+because the two models do not miss the same cases. The price is referrals.
+
+**The number worth reporting:** the two models disagree on at least one class in
+**58.9%** of records, and reach **opposite** conclusions — one rules a class in
+while the other rules it out — in **10.5%** (180 / 1,711). A single-model
+deployment shows the clinician one of those two answers, with a guarantee
+attached, and no indication the other exists.
+
+### Adding a third model
+
+```bash
+python -X utf8 train/train_gpu.py --list-models        # what can be trained
+python -X utf8 train/train_gpu.py --model resnet_se_no_se --seed 0
+python -X utf8 train/fit_calibration.py --model resnet_se_no_se     --ckpt checkpoints/resnet_se_no_se/best_model.pt     --out-dir checkpoints/resnet_se_no_se --tag no_se --delta 0.01
+```
+
+`--out-dir` and `--tag` are required for any model after the first: without them
+the new calibrator overwrites the previous model's, and the second model's
+logits land under filenames that still imply the first.
 
 ---
 
@@ -221,9 +304,15 @@ python -X utf8 audit/12_electrode_reversal.py
 
 # research contribution 3 — out-of-scope disease gets a guarantee anyway
 python -X utf8 audit/13_out_of_scope.py
+
+# multi-model serving + what the two-model rule costs and buys
+python -X utf8 audit/14_multi_model.py
+
+# research contribution 4 — cross-model disagreement as an acquisition check
+python -X utf8 audit/15_disagreement_detector.py
 ```
 
-All four verified standalone with no `_archive/` present.
+All verified standalone with no `_archive/` present.
 
 ---
 
@@ -249,6 +338,7 @@ Send the whole folder minus `frontend/node_modules/`.
 
 | Document | For |
 |---|---|
+| `docs/HOW_IT_WORKS.md` | **Start here if you are new** — the whole system explained from scratch, no ML background assumed |
 | `docs/PANEL_ANSWERS.md` | **Research contribution, novelty, gap, Q&A** |
 | `docs/AUDIT_FINDINGS.md` | The 12 defects found in the previous system |
 | `docs/RESEARCH_CONTRIBUTION.md` | Long-form write-up (§0 is plain English) |

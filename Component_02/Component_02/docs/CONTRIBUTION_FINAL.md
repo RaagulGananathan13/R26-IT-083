@@ -15,8 +15,29 @@ Before claiming anything, the prior art:
 | Strodthoff et al., *Comput. Biol. Med.*, 2024 | Attribution maps + PTB-XL hierarchical labels to separate anterior vs inferior MI | **Large.** XAI→MI-subtype is theirs. |
 | Angelopoulos et al., 2023 | Conformal Risk Control | Method I use |
 | *Pitfalls of Conformal Predictions for Medical Image Classification*, 2025 | Exchangeability breaks under shift — **in imaging** | Adjacent, not ECG |
+| **Vovk, ACML 2012** | Conditional validity of inductive conformal predictors; **Mondrian** (group-conditional) calibration | **The theory is his.** My fix is his method. |
+| **Barber, Candès, Ramdas & Tibshirani, 2021** | *The limits of distribution-free conditional predictive inference* — proves distribution-free **conditional** coverage is impossible in general | **The phenomenon is known theory.** |
 
 So "conformal prediction for ECG" is **not** my contribution, and I will say so on the slide. What none of them tested is the question below.
+
+### ⚠️ And be precise about WHICH part is new
+
+That marginal coverage does not imply conditional coverage is **established theory**, not
+my discovery. Vovk formalised the conditional case in 2012 and introduced Mondrian
+calibration to address it; Barber et al. proved in 2021 that distribution-free
+conditional coverage is impossible in general. A statistician on the panel will know
+both.
+
+**So do not say "I found that conformal guarantees can fail for subgroups."** That is
+textbook. Say instead:
+
+> "Conditional validity is a known theoretical limitation. What has not been done is
+> measuring it on a deployed ECG triage system — which subgroups actually break, by how
+> much, whether the violations are statistically significant, and what the Mondrian fix
+> costs in coverage. That measurement is mine."
+
+The theory says a violation is *possible*. Only measurement says it is *happening here,
+to these patients, by this much* — and that is the part a clinician can act on.
 
 ---
 

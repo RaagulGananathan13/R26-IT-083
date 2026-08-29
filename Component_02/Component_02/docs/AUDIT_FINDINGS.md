@@ -323,7 +323,7 @@ Two implementation issues found by inspection:
 
 | ID | Issue | Location |
 |---|---|---|
-| **E-1** | **PhysioNet credentials in plaintext** — `USERNAME = "[REDACTED]"`, `PASSWORD = "[REDACTED]"` (a teammate's account; the literal values are removed here because this file is published — see note below) | `training/prepare_data.py:26-27` |
+| **E-1** | **PhysioNet credentials in plaintext** — `USERNAME = "<redacted>"`, `PASSWORD = "<redacted>"` (a teammate's account) — **the real values were committed in an earlier revision of this file and must be treated as compromised; rotate the account** | `training/prepare_data.py:26-27` |
 | **E-2** | **Git repo root is `C:\Users\Venushan`** — the whole home directory, remote `work-sheet.git`, no `.gitignore`, 113 untracked entries including `.ssh/`. One `git add -A` publishes SSH keys and the password above. The research project itself is **not under version control at all**. | repo layout |
 | **E-3** | No `secure_filename()` on uploads — `os.path.join(tmpdir, dat_file.filename)` accepts `../` path traversal | `app.py:539-540` |
 | **E-4** | Silent zero-fill on download failure: `except Exception: np.save(npy_path, np.zeros(...))` — an all-zero ECG enters training as a real record. *No records were actually affected (verified 0/17,221), but the trap is still armed for any re-run.* | `training/prepare_data.py:111` |
@@ -453,12 +453,6 @@ attribution, or show magnitude and direction separately.
    fires, suppress the NORM sentence and say so. Fixes C-4. ~10 lines.
 4. **Clinical disclaimer** in the UI and in every generated report. Fixes E-8.
 5. **Rotate the PhysioNet password**, remove it from source, move to `.env`.
-
-> **Redaction note.** The credential quoted in E-1 was removed from this
-> document before the repository was published. The finding stands exactly as
-> written; only the literal username and password are withheld. The account
-> owner should treat the credential as compromised and rotate it, because it
-> existed in plaintext in source and may persist in earlier git history.
    Fixes E-1.
 6. **Get the project into its own git repo** with a `.gitignore` — today a single
    `git add -A` at `C:\Users\Venushan` publishes `.ssh/` and that password.

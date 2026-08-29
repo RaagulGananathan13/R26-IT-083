@@ -50,6 +50,8 @@ sys.path.insert(0, COMP)
 from src import paths, signals                                 # noqa: E402
 from src.models import CLASS_NAMES, LEAD_NAMES, SAMPLING_RATE   # noqa: E402
 from src.pipeline import ECGPipeline                            # noqa: E402
+from src.zoo import ModelAssets, ModelZoo                       # noqa: E402
+from src.models import resolve_model_name                       # noqa: E402
 from src.report import CLASS_FULL, DISCLAIMER                   # noqa: E402
 
 # Assets are resolved by src.paths so this folder can be handed to someone else
@@ -83,18 +85,28 @@ def _startup():
             f"Checkpoint not found: {CKPT}\n"
             f"Train one (train/train_gpu.py) or set ECG_CKPT to an existing file.")
 
-    pipe = ECGPipeline.from_checkpoint(
-        ckpt_path=CKPT,
-        norm_stats_path=NORM_STATS,
-        model_name=MODEL,
-        calibrator_path=os.path.join(CKPT_DIR, "calibrator.json"),
-        triage_path=os.path.join(CKPT_DIR, "conformal_triage.json"),
-        do_filter=FILTER)
+    # Every model on disk is loaded with ITS OWN calibrator and conformal
+    # thresholds (src/zoo.py). The env overrides still name the default model;
+    # when they point somewhere other than the discovered flat layout, that
+    # explicit bundle is appended last and wins on name collision.
+    default_name = resolve_model_name(MODEL)
+    extra = []
+    if os.path.abspath(CKPT) != os.path.abspath(os.path.join(CKPT_DIR, "best_model.pt")):
+        extra.append(ModelAssets(
+            name=default_name, ckpt=CKPT,
+            calibrator=os.path.join(CKPT_DIR, "calibrator.json"),
+            triage=os.path.join(CKPT_DIR, "conformal_triage.json"),
+            do_filter=FILTER))
+
+    zoo = ModelZoo.discover(checkpoints_dir=CKPT_DIR, norm_stats_path=NORM_STATS,
+                            default=default_name, extra=extra or None)
+    pipe = zoo.get(default_name).pipeline
 
     print(f"  model      : {MODEL}   filter={FILTER}")
     print(f"  checkpoint : {os.path.relpath(CKPT, ROOT)}")
     print(f"  calibrator : {'loaded' if pipe.calibrator else 'MISSING'}")
     print(f"  conformal  : {'loaded' if pipe.triage else 'MISSING'}")
+    print(zoo.describe())
 
     # Provenance: a calibrator is only valid for the model it was fitted on.
     problems = []
@@ -125,10 +137,17 @@ def _startup():
     if pipe.triage is not None:
         d = getattr(pipe.triage, "delta", None)
         print(f"  guarantee  : PAC delta={d}" if d else "  guarantee  : marginal")
-    return pipe
+
+    # A second model that is not fully calibrated is excluded from serving
+    # rather than fatal — only the DEFAULT model has to be sound to start.
+    unusable = [b.name for b in zoo if not b.ready and b.name != default_name]
+    if unusable:
+        print(f"  NOTE       : loaded but not serveable: {', '.join(unusable)}")
+    return zoo
 
 
-PIPE = _startup()
+ZOO = _startup()
+PIPE = ZOO.get().pipeline           # the default model, for the single-model paths
 
 TEST_DF = pd.read_csv(TEST_CSV) if TEST_CSV else pd.DataFrame()
 BROWSE_ENABLED = bool(len(TEST_DF)) and signals.available()
@@ -267,10 +286,41 @@ def render_ecg(signal_mv: np.ndarray, cam, r_peaks, dark: bool = False) -> str:
     return base64.b64encode(buf.read()).decode("utf-8")
 
 
-def analyse(signal_raw, fs, patient_id, dark=False, lead_names=None):
+def _requested_model():
+    """`?model=` -> canonical name, or None for the default. Raises on unknown."""
+    raw = request.args.get("model")
+    if not raw:
+        return None
+    if raw not in ZOO:
+        raise ValueError("unknown model %r; loaded: %s"
+                         % (raw, ", ".join(ZOO.names())))
+    return ZOO.get(raw).name
+
+
+def analyse(signal_raw, fs, patient_id, dark=False, lead_names=None,
+            model=None, compare=False):
+    """Analyse one record.
+
+    `compare=True` runs every serveable model and merges their triage zones
+    conservatively (src/zoo.py) — a class is only ruled out if all of them rule
+    it out. XAI comes from the lead model alone; a second set of explanations
+    doubles the ~6 s cost without telling the clinician anything new.
+    """
     t0 = time.time()
-    res = PIPE.analyse(signal_raw, fs=fs, with_xai=True, lead_names=lead_names)
+    ready = ZOO.names(ready_only=True)
+    consensus = None
+    if compare and len(ready) > 1:
+        order = ([model] + [m for m in ready if m != model]) if model else None
+        consensus = ZOO.consensus(signal_raw, fs=fs, models=order,
+                                  lead_names=lead_names, xai_from="primary")
+        res = consensus.primary
+    else:
+        res = ZOO.analyse(signal_raw, fs=fs, model=model, with_xai=True,
+                          lead_names=lead_names)
     payload = res.to_json()
+    payload["model"] = model or ZOO.default
+    if consensus is not None:
+        payload["consensus"] = consensus.to_dict()
     payload["patientId"] = patient_id
     payload["disclaimer"] = DISCLAIMER
     payload["classFullNames"] = CLASS_FULL
@@ -336,6 +386,17 @@ def analyse(signal_raw, fs, patient_id, dark=False, lead_names=None):
 # ══════════════════════════════════════════════════════════════════════════
 #  ROUTES
 # ══════════════════════════════════════════════════════════════════════════
+@app.get("/api/models")
+def models():
+    """What is loaded, which model is the default, and what may be served.
+
+    A model with `ready: false` has a calibrator or conformal thresholds that
+    were not fitted for it; it is listed for transparency but never serves a
+    triage decision.
+    """
+    return jsonify(ZOO.to_dict())
+
+
 @app.get("/api/health")
 def health():
     thr = ({c: {"ruleOut": round(t.lambda_out * 100, 1),
@@ -390,7 +451,12 @@ def analyze_by_id(ecg_id):
     except FileNotFoundError as e:
         return jsonify(error=str(e)), 404
     dark = request.args.get("theme") == "dark"
-    payload = analyse(sig, SAMPLING_RATE, ecg_id, dark)
+    try:
+        model = _requested_model()
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    payload = analyse(sig, SAMPLING_RATE, ecg_id, dark, model=model,
+                      compare=request.args.get("compare") == "1")
     r = row.iloc[0]
     payload["referenceReport"] = str(r.get("report_en") or "")
     payload["groundTruth"] = [c for c in CLASS_NAMES if r[f"label_{c}"] == 1]
@@ -453,7 +519,12 @@ def predict():
                 return jsonify(error=f"unrecognised lead set {names}"), 400
 
     dark = request.args.get("theme") == "dark"
-    payload = analyse(sig, fs, os.path.splitext(hea_name)[0], dark)
+    try:
+        model = _requested_model()
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    payload = analyse(sig, fs, os.path.splitext(hea_name)[0], dark, model=model,
+                      compare=request.args.get("compare") == "1")
     payload["uploaded"] = {"fs": fs, "samples": int(sig.shape[0]), "leads": names}
     if warn:
         payload.setdefault("quality", {}).setdefault("warnings", []).append(warn)

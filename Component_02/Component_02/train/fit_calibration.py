@@ -39,7 +39,8 @@ from src import preprocess as pp                                     # noqa: E40
 from src.calibration import TemperatureCalibrator, calibration_report  # noqa: E402
 from src.conformal import (ConformalTriage, RULE_IN, RULE_OUT, REFER,  # noqa: E402
                            risk_coverage_curve, PRESETS)
-from src.models import CLASS_NAMES, build_model                       # noqa: E402
+from src.models import (CLASS_NAMES, DEFAULT_MODEL, MODEL_REGISTRY,     # noqa: E402
+                        build_model, describe_models)
 
 from src import paths as _paths  # noqa: E402
 DATA = os.path.dirname(_paths.require("test.csv"))
@@ -111,11 +112,18 @@ def load_split(split, df, mean, std, do_filter):
     return np.stack(X), np.asarray(Y, dtype=float)
 
 
-def find_saved_logits(seed: int):
-    """train_gpu.py already dumped val/test logits — reuse them, no inference."""
+def find_saved_logits(seed: int, prefer: str = ""):
+    """train_gpu.py already dumped val/test logits — reuse them, no inference.
+
+    `prefer` is searched first, and it must be: with a second architecture on
+    disk the flat checkpoints/ directory holds the SHIPPED model's logits, so
+    searching there first would fit a calibrator on one network and save it as
+    another's. The result looks entirely valid and is wrong.
+    """
+    roots = ([prefer] if prefer else []) + [OUT_CKPT, OUT_RES]
     for v, t in ((f"val_logits_seed{seed}.npy", f"test_logits_seed{seed}.npy"),
                  ("val_logits.npy", "test_logits.npy")):
-        for d in (OUT_CKPT, OUT_RES):
+        for d in roots:
             pv, pt = os.path.join(d, v), os.path.join(d, t)
             if os.path.exists(pv) and os.path.exists(pt):
                 return pv, pt
@@ -125,7 +133,19 @@ def find_saved_logits(seed: int):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", default=os.path.join(OUT_CKPT, "best_model.pt"))
-    ap.add_argument("--model", default="resnet_se", choices=["resnet", "resnet_se"])
+    ap.add_argument("--model", default=DEFAULT_MODEL,
+                    choices=sorted(MODEL_REGISTRY),
+                    help="architecture (see --list-models)")
+    ap.add_argument("--list-models", action="store_true",
+                    help="print the model registry and exit")
+    ap.add_argument("--out-dir", default=None,
+                    help="where to write calibrator.json and conformal_triage.json. "
+                         "Defaults to checkpoints/ for the shipped model; pass "
+                         "checkpoints/<model>/ when fitting a SECOND model so it "
+                         "does not overwrite the first model's safety layer.")
+    ap.add_argument("--tag", default=None,
+                    help="suffix for the audit/results filenames, so fitting a "
+                         "second model does not overwrite 07_conformal_eval.*")
     ap.add_argument("--filter", action="store_true",
                     help="apply the Component-02 band-pass. Only use this if the "
                          "checkpoint was TRAINED with filtering, otherwise it is a "
@@ -143,10 +163,18 @@ def main():
                     choices=["safety", "balanced", "throughput"],
                     help="clinical operating point (see src/conformal.PRESETS)")
     args = ap.parse_args()
+    if args.list_models:
+        print(describe_models())
+        return
     if args.delta is not None and args.delta <= 0:
         args.delta = None
 
-    os.makedirs(OUT_CKPT, exist_ok=True)
+    # A calibrator is only valid for the logits it was fitted on, so a second
+    # model must not write over the first one's artefacts (src/zoo.py reads
+    # checkpoints/<model>/ for exactly this reason).
+    out_ckpt = os.path.abspath(args.out_dir) if args.out_dir else OUT_CKPT
+    tag = ("_" + args.tag) if args.tag else ""
+    os.makedirs(out_ckpt, exist_ok=True)
     os.makedirs(OUT_RES, exist_ok=True)
 
     hdr("0. SETUP")
@@ -155,7 +183,7 @@ def main():
     Yv = val[[f"label_{c}" for c in CLASS_NAMES]].values.astype(float)
     Yt = test[[f"label_{c}" for c in CLASS_NAMES]].values.astype(float)
 
-    lv_path, lt_path = find_saved_logits(args.seed)
+    lv_path, lt_path = find_saved_logits(args.seed, prefer=out_ckpt)
     use_saved = args.reuse_logits and lv_path is not None
 
     p(f"  model      : {args.model}")
@@ -232,8 +260,8 @@ def main():
       f"{after['macro_ece']:>10.4f}")
     prov = {"model": args.model, "ckpt": os.path.basename(args.ckpt),
             "filter": bool(args.filter), "seed": args.seed}
-    calib.save(os.path.join(OUT_CKPT, "calibrator.json"), fitted_for=prov)
-    p(f"\n  saved -> checkpoints/calibrator.json")
+    calib.save(os.path.join(out_ckpt, "calibrator.json"), fitted_for=prov)
+    p(f"\n  saved -> {os.path.relpath(os.path.join(out_ckpt, 'calibrator.json'), ROOT)}")
 
     # ── 2. CONFORMAL TRIAGE ──────────────────────────────────────────────
     hdr("2. CONFORMAL RISK-CONTROLLED TRIAGE (fitted on fold 9)")
@@ -247,7 +275,7 @@ def main():
 
     triage = ConformalTriage(CLASS_NAMES, alpha=preset["alpha"], beta=preset["beta"],
                              delta=args.delta).fit(Pv_cal, Yv.astype(int))
-    triage.save(os.path.join(OUT_CKPT, "conformal_triage.json"), fitted_for=prov)
+    triage.save(os.path.join(out_ckpt, "conformal_triage.json"), fitted_for=prov)
 
     p(f"\n  {'class':<6} {'lambda_out':>11} {'lambda_in':>10} {'n_pos':>6} {'n_neg':>6} "
       f"{'feasible':>9}")
@@ -313,18 +341,21 @@ def main():
               f"{r['rule_out_frac']*100:>9.1f}% {r['empirical_miss']*100:>13.1f}%")
 
     # ── save ─────────────────────────────────────────────────────────────
-    with open(os.path.join(OUT_RES, "07_conformal_eval.json"), "w") as f:
+    with open(os.path.join(OUT_RES, f"07_conformal_eval{tag}.json"), "w") as f:
         json.dump({"calibration_before": before, "calibration_after": after,
                    "temperature": calib.temperature.tolist(),
                    "bias": calib.bias.tolist(),
                    "triage_eval": ev, "risk_coverage": curves}, f, indent=2, default=str)
-    with open(os.path.join(OUT_RES, "07_conformal_eval.txt"), "w", encoding="utf-8") as f:
+    with open(os.path.join(OUT_RES, f"07_conformal_eval{tag}.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     if not use_saved:                      # don't overwrite what we just read
-        np.save(os.path.join(OUT_RES, "test_logits.npy"), Lt)
-        np.save(os.path.join(OUT_RES, "val_logits.npy"), Lv)
-        np.save(os.path.join(OUT_RES, "val_labels.npy"), Yv)
-        np.save(os.path.join(OUT_RES, "test_labels.npy"), Yt)
+        # Tagged, because these filenames are otherwise model-agnostic: fitting
+        # a SECOND model used to silently replace the shipped model's logits
+        # with the second model's under a name that still implied the first.
+        np.save(os.path.join(OUT_RES, f"test_logits{tag}.npy"), Lt)
+        np.save(os.path.join(OUT_RES, f"val_logits{tag}.npy"), Lv)
+        np.save(os.path.join(OUT_RES, f"val_labels{tag}.npy"), Yv)
+        np.save(os.path.join(OUT_RES, f"test_labels{tag}.npy"), Yt)
     p(f"\nSaved -> {OUT_RES}")
 
 

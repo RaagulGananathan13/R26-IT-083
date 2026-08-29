@@ -54,13 +54,65 @@ COMP = os.path.join(ROOT, "Component_02")
 sys.path.insert(0, COMP)
 
 from src import preprocess as pp                                        # noqa: E402
-from src.models import CLASS_NAMES, FocalLoss, build_model, SIGNAL_LENGTH  # noqa: E402
+from src.models import (CLASS_NAMES, DEFAULT_MODEL, MODEL_REGISTRY,        # noqa: E402
+                        SIGNAL_LENGTH, FocalLoss, build_model,
+                        count_parameters, describe_models)
 
 from src import paths as _paths  # noqa: E402
 DATA = os.path.dirname(_paths.require("train.csv"))
 CACHE = _paths.signals_cache() or ""
 PACK_DIR = os.environ.get("ECG_PACK_DIR", os.path.join(COMP, "data"))
-CKPT_DIR = os.path.join(COMP, "checkpoints")
+CKPT_ROOT = os.path.join(COMP, "checkpoints")
+
+#: Resolved per run in main(). Every save site reads this at call time, so the
+#: assignment there reaches all of them.
+CKPT_DIR = CKPT_ROOT
+
+
+def resolve_ckpt_dir(model_name: str, override: str = "") -> str:
+    """Where this run's artefacts belong.
+
+    The default architecture keeps writing flat to `checkpoints/`, because that
+    is the layout the shipped calibration, the conformal thresholds and the
+    integrated backend all read. Any OTHER architecture gets its own
+    subdirectory -- which is exactly the layout `src/zoo.py` already documents
+    as preferred, and reads.
+
+    Without this every run wrote `checkpoints/best_model.pt` whatever `--model`
+    said, so training a second architecture silently destroyed the first.
+    """
+    if override:
+        return os.path.abspath(override)
+    if model_name == DEFAULT_MODEL:
+        return CKPT_ROOT
+    return os.path.join(CKPT_ROOT, model_name)
+
+
+def guard_existing_checkpoint(ckpt_dir: str, model_name: str, force: bool) -> None:
+    """Refuse to overwrite weights belonging to a different architecture.
+
+    The checkpoint records the architecture that produced it, so a mismatch is
+    detectable and is almost always a mistake: a second `--model` run pointed at
+    the first model's directory. Losing a trained model to a flag typo is not a
+    recoverable error, so this stops rather than warns.
+    """
+    path = os.path.join(ckpt_dir, "best_model.pt")
+    if force or not os.path.exists(path):
+        return
+    try:
+        import torch as _torch
+        existing = _torch.load(path, map_location="cpu", weights_only=False)
+        owner = existing.get("model_name")
+    except Exception:
+        return  # unreadable: let the run proceed rather than block on a guess
+    if owner and owner != model_name:
+        raise SystemExit(
+            "\n%s already holds weights for %r, and this run trains %r.\n"
+            "Refusing to overwrite a trained model. Either:\n"
+            "  * drop --ckpt-dir so %r writes to %s, or\n"
+            "  * pass --force-overwrite if you really mean to replace it.\n"
+            % (path, owner, model_name, model_name,
+               os.path.join(CKPT_ROOT, model_name)))
 
 _STOP = {"now": False}
 
@@ -273,7 +325,19 @@ def main():
     ap.add_argument("--pack", action="store_true", help="build the memmap then exit")
     ap.add_argument("--force-pack", action="store_true")
     ap.add_argument("--no-filter", action="store_true")
-    ap.add_argument("--model", default="resnet_se", choices=["resnet_se", "resnet"])
+    # Registry-driven so the ablation variants are trainable without editing
+    # this list (writeup gap S5). `--list-models` prints what each one is.
+    ap.add_argument("--model", default=DEFAULT_MODEL, choices=sorted(MODEL_REGISTRY),
+                    help="architecture to train (see --list-models)")
+    ap.add_argument("--list-models", action="store_true",
+                    help="print the model registry and exit")
+    ap.add_argument("--ckpt-dir", default="",
+                    help="where to write weights and logits. Default: checkpoints/ "
+                         "for the shipped architecture, checkpoints/<model>/ for "
+                         "any other.")
+    ap.add_argument("--force-overwrite", action="store_true",
+                    help="allow writing over a checkpoint trained with a different "
+                         "architecture. Almost always a mistake.")
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--batch", type=int, default=128)
     ap.add_argument("--lr", type=float, default=3e-3)
@@ -295,12 +359,21 @@ def main():
                     help="hard wall-clock budget; stops cleanly and saves")
     args = ap.parse_args()
 
+    if args.list_models:
+        print(describe_models())
+        return
+
     if args.pack or args.force_pack:
         pack(do_filter=not args.no_filter, force=args.force_pack)
         return
 
     signal.signal(signal.SIGINT, _on_sigint)
+
+    global CKPT_DIR
+    CKPT_DIR = resolve_ckpt_dir(args.model, args.ckpt_dir)
+    guard_existing_checkpoint(CKPT_DIR, args.model, args.force_overwrite)
     os.makedirs(CKPT_DIR, exist_ok=True)
+    print(f"[train] model={args.model}  ->  {os.path.relpath(CKPT_DIR, COMP)}")
     torch.manual_seed(args.seed); np.random.seed(args.seed); random.seed(args.seed)
     torch.backends.cudnn.benchmark = True
 
@@ -320,13 +393,23 @@ def main():
               "workers slower here)")
         args.workers = 0
 
-    if not os.path.exists(os.path.join(PACK_DIR, "train_X.npy")):
-        print("Packed data not found; packing now (one-off) ...")
+    # Every split, not just train. Checking one file meant a pack that died
+    # partway -- or a large .npy deleted to reclaim disk -- looked complete, and
+    # training then crashed at the first validation pass with a FileNotFoundError
+    # several minutes in. pack() already rebuilds only what is missing, so
+    # calling it here is cheap when the set is intact.
+    incomplete = [
+        split for split in ("train", "val", "test")
+        if not (os.path.exists(os.path.join(PACK_DIR, f"{split}_X.npy"))
+                and os.path.exists(os.path.join(PACK_DIR, f"{split}.done")))
+    ]
+    if incomplete:
+        print(f"Packed data incomplete ({', '.join(incomplete)}); packing now ...")
         pack(do_filter=not args.no_filter)
 
     tr, train_loader, val_loader, test_loader, alpha = build_loaders(args, device)
     model = build_model(args.model).to(device)
-    print(f"model={args.model}  params={sum(p.numel() for p in model.parameters()):,}")
+    print(f"model={args.model}  params={count_parameters(model):,}")
 
     crit = FocalLoss(alpha=alpha, gamma=2.0, label_smoothing=0.02).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
@@ -519,8 +602,16 @@ def main():
                    "stop_reason": stop_reason,
                    "minutes": (time.time() - t0) / 60}, f, indent=2)
     print(f"\nsaved -> {CKPT_DIR}")
-    print("Next:\n  python Component_02/train/fit_calibration.py --model "
-          f"{args.model} --ckpt Component_02/checkpoints/best_model.pt"
+    # Paths follow this run, not the shipped model. The hint used to hardcode
+    # checkpoints/best_model.pt whatever --model said, so following it after
+    # training a second architecture would calibrate the FIRST model and write
+    # the result into the second one's directory -- producing a plausible-looking
+    # calibration fitted to the wrong network.
+    _rel = os.path.relpath(CKPT_DIR, ROOT).replace(os.sep, "/")
+    print("Next:\n  python Component_02/train/fit_calibration.py"
+          f" --model {args.model}"
+          f" --ckpt {_rel}/best_model.pt"
+          f" --out-dir {_rel}/"
           f"{'' if args.no_filter else ' --filter'}")
 
 
