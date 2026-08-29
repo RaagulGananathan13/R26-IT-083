@@ -169,6 +169,3 @@ Research Paper/sample_paper/
 Research Paper/latex/*.log
 Research Paper/latex/*.out
 
-# --- stray copies ------------------------------------------------------------
-# A directory literally named "WORKFLOW_README.md/" left by a bad redirect.
-WORKFLOW_README.md/
