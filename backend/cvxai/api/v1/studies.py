@@ -15,7 +15,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from cvxai.api.deps import read_upload, registry
+from cvxai.api.deps import IMAGE_SUFFIXES, VIDEO_SUFFIXES, read_upload, registry
 from cvxai.core.errors import InvalidInput
 from cvxai.core.registry import ComponentRegistry
 from cvxai.schemas.common import Envelope
@@ -24,8 +24,9 @@ from cvxai.services.pdf_triage import extract_triage_record
 
 router = APIRouter(tags=["studies"])
 
-IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp")
-VIDEO_SUFFIXES = (".avi", ".mp4", ".mov", ".mkv", ".webm", ".npy")
+# Re-exported: the accepted-suffix tuples live in deps so every route that takes
+# an upload agrees on them. Kept importable from here for existing callers.
+__all__ = ["router", "IMAGE_SUFFIXES", "VIDEO_SUFFIXES"]
 
 
 @router.post("/cxr/analyze", response_model=Envelope,

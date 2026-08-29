@@ -85,6 +85,8 @@ class EcgAdapter(ComponentAdapter):
         self._stage_dir: Optional[Path] = None
         self._render_ecg = None
         self._render_failed = False
+        self._report_generator = None
+        self._neural_failed = False
 
     # ---- capability ---------------------------------------------------
     @property
@@ -314,7 +316,8 @@ class EcgAdapter(ComponentAdapter):
             self.log.warning("ECG strip rendering unavailable: %s", exc)
         return self._render_ecg
 
-    def _explanation_payload(self, result: Any) -> Dict[str, Any]:
+    def _explanation_payload(self, result: Any,
+                             duration_s: float | None = None) -> Dict[str, Any]:
         """Lead attribution and territory, from the pipeline's own Explanation.
 
         The pipeline returns these as objects; the component's server flattens
@@ -332,6 +335,49 @@ class EcgAdapter(ComponentAdapter):
         payload["territory_score"] = round(float(explanation.territory_score), 2)
         payload["topLeads"] = list(explanation.top_leads or [])
         payload["peaksSeconds"] = [round(float(x), 2) for x in (explanation.cam_peaks_s or [])]
+
+        # The temporal Grad-CAM curve itself, not just where it peaks.
+        #
+        # The pipeline already computes this -- `Explanation.cam` is (T,) in
+        # [0,1] over the signal -- and only its peak times were being forwarded.
+        # Peaks say "look near second 3.2"; the curve says how confident the
+        # model is across the whole strip, which is what lets a reader see a
+        # broad diffuse attribution and distrust it. That is the same thing the
+        # chest-radiograph Grad-CAM overlay does for an image.
+        #
+        # Downsampled to at most 600 points by block mean. A 10-second strip at
+        # 500 Hz is 5,000 samples; a browser drawing a strip a few hundred pixels
+        # wide cannot render more, and the peaks are reported separately at full
+        # precision so nothing sharp is lost by smoothing here.
+        cam = getattr(explanation, "cam", None)
+        if cam is not None:
+            try:
+                import numpy as np
+
+                curve = np.asarray(cam, dtype=np.float64).ravel()
+                if curve.size:
+                    target_points = 600
+                    if curve.size > target_points:
+                        block = int(np.ceil(curve.size / target_points))
+                        usable = (curve.size // block) * block
+                        curve = curve[:usable].reshape(-1, block).mean(axis=1)
+                    payload["cam"] = [round(float(v), 4) for v in curve]
+                    # `cam` is one value per convolutional time-step, not per
+                    # sample: the component stretches it across the whole strip
+                    # (`xai.qrs_alignment` interpolates it onto `n_samples`), so
+                    # its span is the strip duration and NOT len(cam)/fs. A
+                    # 10-second strip arrives here as ~157 bins; dividing those
+                    # by the sampling rate would claim 0.31 s and squash the
+                    # overlay into the first 3 % of the trace.
+                    if duration_s:
+                        payload["camSeconds"] = round(float(duration_s), 2)
+                    payload["camNote"] = (
+                        "Temporal Grad-CAM over the strip, normalised to [0, 1]. A "
+                        "sharp peak means the decision rests on a specific complex; a "
+                        "broad flat curve means it does not, and should be read with "
+                        "more caution than the probability alone suggests.")
+            except Exception:  # noqa: BLE001 - explanation is never load-bearing
+                pass
         payload["lead_attribution"] = sorted(
             [
                 {
@@ -372,7 +418,25 @@ class EcgAdapter(ComponentAdapter):
 
         # The pipeline returns objects, not a wire payload; flatten them the
         # same way the component's own server does.
-        explanation = self._explanation_payload(result)
+        uploaded = raw.get("uploaded") or {}
+        try:
+            duration_s = float(uploaded["samples"]) / float(uploaded["fs"])
+        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+            duration_s = None
+        explanation = self._explanation_payload(result, duration_s=duration_s)
+
+        # Does the territory describe an infarct, or just where the MI-class
+        # attribution happened to be strongest?
+        #
+        # The heuristic runs against whichever class the Grad-CAM targeted, and
+        # that is always MI -- so a hypertrophy tracing whose MI zone came back
+        # `refer` still gets "septal territory, proximal LAD". The number is not
+        # wrong, it is an attribution map, but presented beside a named coronary
+        # artery it reads as a localised occlusion in a patient who has not been
+        # ruled in for one. The console needs to know which it is looking at.
+        zones = (raw.get("zones") or {})
+        explanation["territory_applies"] = zones.get(
+            explanation.get("target")) == "rule_in"
 
         render = self._renderer()
         if render is not None and getattr(result, "signal_mv", None) is not None:
@@ -390,6 +454,25 @@ class EcgAdapter(ComponentAdapter):
             "Territory localisation is a lead-group heuristic and has not been "
             "clinically validated.")
 
+        # The template report is the default and the fallback. A neural report
+        # replaces it only when the flag is on AND the text survives the gate.
+        narrative = raw.get("reportText")
+        if self.settings.ecg_neural_report and not refused:
+            neural = self._neural_report(result, raw)
+            if neural is not None:
+                raw["neuralReport"] = neural
+                if neural["passed"]:
+                    narrative = neural["text"]
+                    raw["reportSource"] = "neural"
+                else:
+                    raw["reportSource"] = "template (verification failed)"
+                    self.log.info("neural report rejected: %s",
+                                  "; ".join(neural["errors"]) or "no reason given")
+            else:
+                raw["reportSource"] = "template"
+        else:
+            raw["reportSource"] = "template"
+
         return self.envelope(
             headline=str(raw.get("headline") or "ECG analysed"),
             findings=findings,
@@ -398,10 +481,185 @@ class EcgAdapter(ComponentAdapter):
             started=started,
             status="refused" if refused else "ok",
             explanation=explanation,
-            narrative=raw.get("reportText"),
+            narrative=narrative,
             decision_rule="PAC conformal triage, per-class alpha; thresholds fitted on "
                           "validation fold 9 and frozen",
         )
+
+    # ---- neural report generation --------------------------------------
+    #: What the generator was trained to read. The prompt format is fixed by
+    #: training and must not drift: the model saw exactly this string shape and
+    #: nothing else.
+    _REPORT_CLASS_NAMES = {
+        "NORM": "normal ECG", "MI": "myocardial infarction",
+        "STTC": "ST/T change", "CD": "conduction disturbance",
+        "HYP": "hypertrophy",
+    }
+
+    def _load_report_generator(self):
+        """Flan-T5, loaded on first use and only when the flag is on.
+
+        990 MB of weights that most deployments will never want. Loading it at
+        startup would tax every run of the service for a feature that is off by
+        default, so it is deferred to the first request that actually asks for
+        it and cached thereafter.
+
+        A failure here is not fatal. `_neural_failed` latches so the attempt is
+        made once, and every request continues to serve the template.
+        """
+        if self._report_generator is not None or self._neural_failed:
+            return self._report_generator
+
+        directory = (self.root / "checkpoints" / "report_generator"
+                     if self.root else None)
+        if directory is None or not (directory / "config.json").exists():
+            self.log.warning(
+                "CVXAI_ECG_NEURAL_REPORT is set but no generator is present at "
+                "%s; serving the template report", directory)
+            self._neural_failed = True
+            return None
+
+        try:
+            import torch
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+            tokenizer = self._load_tokenizer(str(directory))
+            model = AutoModelForSeq2SeqLM.from_pretrained(str(directory))
+            model.to(self._report_device()).eval()
+            self._report_generator = (tokenizer, model)
+            self.log.info("neural report generator loaded from %s", directory)
+        except Exception as exc:                       # noqa: BLE001
+            self.log.warning(
+                "neural report generator failed to load (%s); serving the "
+                "template report", exc)
+            self._neural_failed = True
+        return self._report_generator
+
+    @staticmethod
+    def _load_tokenizer(directory: str):
+        """Load the tokenizer, tolerating a config written by another version.
+
+        `tokenizer_config.json` carries keys whose SHAPE has changed between
+        transformers releases -- `extra_special_tokens` is a list in the version
+        that trained this model and a dict in the version serving it, and the
+        mismatch raises `AttributeError: 'list' object has no attribute 'keys'`
+        deep inside the base class.
+
+        Those keys are metadata: the sentinel tokens themselves live in
+        `tokenizer.json` and survive being dropped. So a failed load is retried
+        against a sanitised copy of the config rather than being surfaced as a
+        missing model. Fine-tuning never alters a T5 tokenizer, so this recovers
+        exactly what training used.
+        """
+        import json
+        import os
+        import shutil
+        import tempfile
+
+        from transformers import AutoTokenizer
+
+        try:
+            return AutoTokenizer.from_pretrained(directory)
+        except Exception:                              # noqa: BLE001
+            pass
+
+        VERSION_SENSITIVE = ("extra_special_tokens", "is_local",
+                             "local_files_only", "backend")
+        staging = tempfile.mkdtemp(prefix="cvxai_tok_")
+        for name in os.listdir(directory):
+            if name.startswith("tokenizer") or name.startswith("special_tokens"):
+                shutil.copy2(os.path.join(directory, name), staging)
+
+        config = os.path.join(staging, "tokenizer_config.json")
+        if os.path.exists(config):
+            with open(config, encoding="utf-8") as handle:
+                payload = json.load(handle)
+            for key in VERSION_SENSITIVE:
+                payload.pop(key, None)
+            with open(config, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle)
+        return AutoTokenizer.from_pretrained(staging)
+
+    @staticmethod
+    def _report_device() -> str:
+        import torch
+
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    def _neural_report(self, result: Any, raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Generate a report, then refuse it unless it preserves the findings.
+
+        The generator conditions on the classifier's ruled-in classes -- it
+        never sees the waveform -- so it cannot invent evidence. What it CAN do
+        is drop a finding or assert one the classifier did not make, which is
+        precisely what the archive's previous generator did: 103 dropped
+        concepts and 42 records claiming atrial fibrillation, a class the model
+        cannot even produce.
+
+        `verify_paraphrase` is the component's own gate for exactly that, and
+        it is the reason this is safe to serve. Bidirectional containment: the
+        text may not add a class the verified report did not assert, nor drop
+        one it did. Fail, and the deterministic template is returned instead --
+        degraded fluency, never degraded safety.
+        """
+        loaded = self._load_report_generator()
+        if loaded is None:
+            return None
+
+        report = getattr(result, "report", None)
+        if report is None:
+            return None
+
+        zones = raw.get("zones") or {}
+        ruled_in = [self._REPORT_CLASS_NAMES[name]
+                    for name in self._class_names
+                    if zones.get(name) == "rule_in" and name in self._REPORT_CLASS_NAMES]
+        findings = ", ".join(ruled_in) if ruled_in else "no abnormality detected"
+        prompt = "generate ECG report: findings: " + findings
+
+        try:
+            import torch
+
+            tokenizer, model = loaded
+            with self.sandbox.active():
+                # `src` is the package the sandbox exposes -- the same import
+                # the component's own pipeline uses for this module.
+                from src.verify import asserted_classes        # type: ignore
+
+            device = self._report_device()
+            encoded = tokenizer([prompt], max_length=96, truncation=True,
+                                return_tensors="pt").to(device)
+            with torch.no_grad():
+                generated = model.generate(**encoded, max_length=64, num_beams=4,
+                                           early_stopping=True,
+                                           no_repeat_ngram_size=3)
+            text = tokenizer.batch_decode(generated, skip_special_tokens=True)[0].strip()
+            if not text:
+                return None
+
+            with self.sandbox.active():
+                said = set(asserted_classes(text))
+        except Exception as exc:                       # noqa: BLE001
+            self.log.warning("neural report generation failed: %s", exc)
+            return None
+
+        expected = {name for name in self._class_names
+                    if zones.get(name) == "rule_in"}
+        invented = sorted(said - expected)
+        dropped = sorted(expected - said)
+
+        errors = ["INVENTED: asserts %s, which was not ruled in" % n for n in invented]
+        errors += ["DROPPED: omits %s, which was ruled in" % n for n in dropped]
+
+        return {
+            "text": text,
+            "prompt": prompt,
+            "passed": not errors,
+            "errors": errors,
+            "asserted": sorted(said),
+            "expected": sorted(expected),
+            "gate": "asserted_classes vs the conformal rule-in set",
+        }
 
     @staticmethod
     def _lead_evidence(raw: Dict[str, Any], class_name: str) -> Optional[str]:

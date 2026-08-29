@@ -85,7 +85,16 @@ class TriageAdapter(ComponentAdapter):
         self._um4_weights = None
         self._um4_coverage: Optional[float] = None
         self._um4_margin_cutoff: Optional[float] = None
-        self._horizon = 24
+        # Built on first explained request and reused: constructing a
+        # TreeExplainer walks the whole forest, which is far more expensive
+        # than scoring the single row we then hand it.
+        self._shap_explainers: Optional[List[Any]] = None
+        self._modality_of = None
+        # Read from settings rather than hard-coded, because `analyze` rejects a
+        # mismatched horizon BEFORE `ensure_loaded` runs. With a literal here, an
+        # adapter configured for H=0 still claimed to be H=24 until its first
+        # successful call -- so its first call could never succeed.
+        self._horizon = int(settings.triage_horizon)
 
     # ---- capability ---------------------------------------------------
     @property
@@ -248,6 +257,10 @@ class TriageAdapter(ComponentAdapter):
             engine = "UM4"
             distribution = weighted[0]
             unweighted = probabilities[0]
+            # Which class the evidence favours BEFORE the recall floor is
+            # applied. Kept because the two can differ, and when they do the
+            # difference is the thing a reader needs to see.
+            natural = int(probabilities.argmax(axis=1)[0])
         else:
             composed = np.concatenate([[1.0 - stage1], stage2 * stage1])
             threshold = float(self._predictor.stage1_cfg["threshold"])
@@ -259,6 +272,12 @@ class TriageAdapter(ComponentAdapter):
             engine = "cascade"
             distribution = composed
             unweighted = composed
+            # The stage-1 threshold is a RULE-OUT cut-off tuned for negative
+            # predictive value, and at H = 0 it sits at 0.053. Clearing it means
+            # ACS is not excluded, not that an infarction is present -- but the
+            # subtype head attaches a name either way. `natural` is what a
+            # neutral half-way cut would have said, so the two can be compared.
+            natural = (subtype + 1) if stage1 >= 0.5 else 0
 
         band, action = self._risk_band(stage1)
         attribution = []
@@ -286,7 +305,118 @@ class TriageAdapter(ComponentAdapter):
             "coverage": self._um4_coverage,
             "horizon_h": self._horizon,
             "text_attribution": attribution,
+            "shap": self._shap_attribution(aligned),
+            "natural_prediction": LABEL_ORDER[natural],
+            "weighting_changed_call": natural != predicted,
         }
+
+    # ---- per-case attribution ------------------------------------------
+    def _ensure_shap(self) -> List[Any]:
+        """TreeExplainers for the two models behind P(ACS), built once."""
+        if self._shap_explainers is not None:
+            return self._shap_explainers
+
+        built: List[Any] = []
+        try:
+            import shap
+
+            with self.sandbox.active():
+                for name in ("stage1_xgb", "stage1_lgb"):
+                    model = getattr(self._predictor, name, None)
+                    if model is not None:
+                        built.append((name, shap.TreeExplainer(model)))
+        except Exception as exc:                       # noqa: BLE001
+            self.log.warning("SHAP unavailable; per-case attribution disabled (%s)", exc)
+            built = []
+
+        self._shap_explainers = built
+        return built
+
+    def _modality_lookup(self):
+        """`column name -> modality group`, borrowed from the component itself.
+
+        Reimplementing the prefix table here would let it drift silently out of
+        step with the preprocessing that produced the columns, so the real
+        function is imported and a failure simply drops the breakdown.
+        """
+        if self._modality_of is not None:
+            return self._modality_of
+        try:
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer), self.sandbox.active():
+                from preprocess import assign_modality      # type: ignore
+            self._modality_of = assign_modality
+        except Exception:                                  # noqa: BLE001
+            self._modality_of = False
+        return self._modality_of
+
+    def _shap_attribution(self, aligned, top_n: int = 12) -> Dict[str, Any]:
+        """Signed per-feature contribution to P(ACS) for THIS patient.
+
+        P(ACS) is the number the pathway routes on -- it sets the risk band and
+        decides whether the chest-pain fast track is entered -- so it is the
+        quantity worth decomposing. It is a blend of the stage-1 XGBoost and
+        LightGBM models, and both are attributed and averaged.
+
+        Averaging SHAP across the two members is an attribution of the mean
+        margin, not an exact decomposition of the blended calibrated
+        probability. It is reported as a direction of evidence, which is what a
+        reader uses it for, and `note` says so rather than implying additivity.
+        """
+        import numpy as np
+
+        explainers = self._ensure_shap()
+        if not explainers:
+            return {}
+
+        try:
+            columns = list(aligned.columns)
+            per_model = []
+            with self.sandbox.active():
+                for _name, explainer in explainers:
+                    sv = explainer.shap_values(aligned, check_additivity=False)
+                    if isinstance(sv, list):
+                        sv = np.stack(sv, axis=-1)
+                    sv = np.asarray(sv, dtype=np.float64)
+                    if sv.ndim == 3:            # (n, f, k) -> the ACS class
+                        sv = sv[:, :, -1]
+                    per_model.append(sv[0])
+
+            contribution = np.mean(per_model, axis=0)
+        except Exception as exc:                          # noqa: BLE001
+            self.log.warning("per-case SHAP failed: %s", exc)
+            return {}
+
+        values = np.asarray(aligned.iloc[0].to_numpy(), dtype=np.float64)
+        order = np.argsort(-np.abs(contribution))[:top_n]
+        features = [{
+            "feature": columns[i],
+            "contribution": round(float(contribution[i]), 5),
+            "value": (None if not np.isfinite(values[i])
+                      else round(float(values[i]), 4)),
+            "direction": "toward ACS" if contribution[i] > 0 else "away from ACS",
+        } for i in order if abs(float(contribution[i])) > 0.0]
+
+        payload: Dict[str, Any] = {
+            "top_features": features,
+            "note": ("Mean SHAP over the two gradient-boosted models behind "
+                     "P(ACS). Positive values pushed this patient toward ACS. "
+                     "Directional evidence, not an additive decomposition of "
+                     "the calibrated probability."),
+        }
+
+        assign = self._modality_lookup()
+        if assign:
+            mass: Dict[str, float] = {}
+            for name, value in zip(columns, np.abs(contribution)):
+                group = assign(name)
+                mass[group] = mass.get(group, 0.0) + float(value)
+            total = sum(mass.values())
+            if total > 0:
+                payload["modality_contribution"] = {
+                    k: round(v / total, 4) for k, v in
+                    sorted(mass.items(), key=lambda kv: -kv[1])}
+        return payload
 
     @staticmethod
     def _risk_band(probability: float):
@@ -329,8 +459,15 @@ class TriageAdapter(ComponentAdapter):
             "bnp": payload.get("bnp") is not None,
         }
 
+        shap_payload = result.get("shap") or {}
         explanation = {
             "text_attribution": result["text_attribution"],
+            # Per-case attribution, as opposed to the cohort figures below.
+            # The published modality percentages describe the whole test set;
+            # they cannot say why THIS patient was scored the way they were.
+            "shap_top_features": shap_payload.get("top_features") or [],
+            "shap_modality_contribution": shap_payload.get("modality_contribution") or {},
+            "shap_note": shap_payload.get("note"),
             "modality_attribution_note": (
                 "Published SHAP mass by horizon -- H=0: text 31.3 %, ECG 0.1 %, labs "
                 "0.0 %; H=6: text 20.2 %, ECG 27.0 %, labs 4.6 %; H=24: text 14.6 %, "
@@ -361,13 +498,46 @@ class TriageAdapter(ComponentAdapter):
 
     @staticmethod
     def _headline(result: Dict[str, Any]) -> str:
+        """One sentence that does not contradict itself.
+
+        The class and the probability come from different models. `prediction`
+        is the argmax of the four-class distribution AFTER the constrained
+        decision layer reweights it -- currently by 1 : 119 : 17 : 229 -- so a
+        minority class needs only a small share of the raw probability to win
+        it. `p_acs` is the calibrated binary probability from stage 1.
+
+        The cascade has the same shape of problem for a different reason: its
+        stage-1 threshold is a rule-out cut-off tuned for negative predictive
+        value, and at H = 0 it sits at 0.053. Clearing it means ACS is not
+        excluded -- it does not mean an infarction is present -- yet the subtype
+        head attaches a name regardless.
+
+        Either way the plain phrasing reads as a contradiction: "NSTEMI --
+        P(ACS) 5.3 %, risk LOW" invites a reader to conclude the system is
+        broken, when both halves are behaving as designed. So the sentence says
+        so, instead of asserting a diagnosis the probability does not support.
+        """
         if result["referred"]:
             return ("Referred to clinician -- evidence does not separate the classes "
                     "(leading: %s, P(ACS)=%.1f %%)"
                     % (result["prediction"], 100 * result["p_acs"]))
+
+        label = LABEL_DESCRIPTIONS.get(result["prediction"], result["prediction"])
+        if result.get("weighting_changed_call"):
+            probability = 100 * result["p_acs"]
+            if result.get("natural_prediction") == "No_ACS":
+                # Not excluded, which is a different statement from present.
+                return ("ACS not excluded -- P(ACS) %.1f %% clears the rule-out "
+                        "threshold, so the subtype head reports %s. Risk %s; the "
+                        "evidence does not support asserting it."
+                        % (probability, label, result["risk_level"]))
+            natural = LABEL_DESCRIPTIONS.get(
+                result.get("natural_prediction"), result.get("natural_prediction"))
+            return ("%s -- raised by the recall floor; the unweighted evidence "
+                    "favours %s, and P(ACS) is only %.1f %% (risk %s)"
+                    % (label, natural, probability, result["risk_level"]))
         return "%s -- P(ACS) %.1f %%, risk %s" % (
-            LABEL_DESCRIPTIONS.get(result["prediction"], result["prediction"]),
-            100 * result["p_acs"], result["risk_level"])
+            label, 100 * result["p_acs"], result["risk_level"])
 
     def _reliability(self, result: Dict[str, Any], payload: Dict[str, Any]) -> Reliability:
         """Horizon and referral drive the verdict; both are the component's own.

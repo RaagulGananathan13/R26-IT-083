@@ -108,6 +108,18 @@ NEGATION_WINDOW = 48
 #: cannot reach back.
 NEGATION_WINDOW_AFTER = 34
 
+#: Most serial troponin protocols draw twice (ESC 0/1 h) and rarely more than
+#: four times. A document offering many more "troponin" numbers than that is not
+#: reporting a result series -- it is a table, a paper, or a price list that
+#: happens to contain the word. Uploading a research write-up produced 25
+#: readings and a confident STEMI, which is the failure this bound prevents.
+MAX_TROPONIN_DRAWS = 6
+
+#: Plausible range in ng/mL, after unit conversion. Normal is below ~0.04; a
+#: large infarct peaks in the tens. Anything above this is a number that landed
+#: near the word "troponin", not a measurement.
+MAX_TROPONIN_NG_ML = 100.0
+
 #: Troponin assay units. MIMIC-IV records troponin I in ng/mL; European
 #: high-sensitivity assays report ng/L, which is 1000x smaller. Reading 45 ng/L
 #: as 45 ng/mL turns a mild elevation into an implausible one and would drive
@@ -519,6 +531,33 @@ def _extract_troponin(text: str) -> Tuple[List[float], List[float], str, List[st
             if scale != 1.0:
                 converted_units.add(unit)
             readings.append((raw_value * scale, hour))
+
+    if not readings:
+        return [], [], "", warnings
+
+    # -- plausibility, before anything downstream sees these ---------------
+    implausible = [value for value, _ in readings if value > MAX_TROPONIN_NG_ML]
+    if implausible:
+        readings = [item for item in readings if item[0] <= MAX_TROPONIN_NG_ML]
+        warnings.append(
+            "Discarded %d value(s) above %.0f ng/mL (%s) as implausible for a "
+            "troponin assay. A number that large next to the word 'troponin' is "
+            "far more likely to be a table entry than a measurement."
+            % (len(implausible), MAX_TROPONIN_NG_ML,
+               ", ".join("%.3g" % value for value in implausible[:5])))
+
+    if len(readings) > MAX_TROPONIN_DRAWS:
+        # Refusing the whole series, not trimming it. If the document is not
+        # reporting a result series then no subset of these numbers is one
+        # either, and a plausible-looking pair salvaged from a table would be
+        # worse than nothing -- the model would treat it as a real biomarker.
+        warnings.append(
+            "Found %d apparent troponin readings, more than the %d a serial "
+            "protocol produces. This document does not appear to report a "
+            "troponin series, so none were used and the biomarker is recorded "
+            "as not ordered. Enter it on the form if the record does have one."
+            % (len(readings), MAX_TROPONIN_DRAWS))
+        return [], [], "", warnings
 
     if not readings:
         return [], [], "", warnings

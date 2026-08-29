@@ -95,6 +95,7 @@ class EchoAdapter(ComponentAdapter):
 
     def __init__(self, settings, root) -> None:
         super().__init__(settings, root)
+        self._reference_efs: Optional[Dict[str, Dict[str, Any]]] = None
         self._members: List[_Member] = []
         self._calibration: Dict[str, Any] = {}
         self._strategy_name: str = ""
@@ -304,11 +305,20 @@ class EchoAdapter(ComponentAdapter):
         started = time.perf_counter()
         self.ensure_loaded()
         frames, source_meta = self._decode(video_bytes, filename)
+        source_meta = dict(source_meta or {})
+        source_meta["filename"] = filename
 
         try:
             with self.sandbox.active():
                 predictions, per_member = self._predict(frames)
                 decision = self._apply_frozen_strategy(predictions)
+                # An explanation must never be able to cost a prediction. A
+                # failure here loses the map and nothing else.
+                try:
+                    cam = self._gradcam(frames)
+                except Exception as exc:       # noqa: BLE001
+                    self.log.warning("Grad-CAM failed: %s", exc)
+                    cam = {}
         except InvalidInput:
             raise
         except Exception as exc:               # noqa: BLE001
@@ -317,7 +327,7 @@ class EchoAdapter(ComponentAdapter):
                 {"component": self.id}) from exc
 
         return self._to_envelope(predictions, per_member, decision,
-                                 source_meta, started)
+                                 source_meta, started, cam=cam)
 
     def _decode(self, video_bytes: bytes, filename: str):
         """Uploaded file -> (T, 112, 112) uint8, matching the training cache."""
@@ -487,7 +497,8 @@ class EchoAdapter(ComponentAdapter):
     # ---- translation --------------------------------------------------
     def _to_envelope(self, predictions: Dict[str, Any], per_member: List[Dict[str, Any]],
                      decision: Dict[str, Any], source_meta: Dict[str, Any],
-                     started: float) -> Envelope:
+                     started: float,
+                     cam: Optional[Dict[str, Any]] = None) -> Envelope:
         ef_raw = float(decision["ef_raw"][0])
         ef_calibrated = float(decision["ef_calibrated"][0])
         operational = int(decision["operational_pred"][0])
@@ -554,6 +565,20 @@ class EchoAdapter(ComponentAdapter):
             "tta_clips": predictions["_n_views"],
             "source": source_meta,
         }
+
+        # The measured EF, for bundled EchoNet studies only. Attached beside the
+        # estimate rather than folded into it: a reader comparing the two is
+        # doing the check the number exists for.
+        reference = self._reference_ef(source_meta.get("filename"))
+        if reference is not None:
+            raw["ground_truth_ef"] = {
+                **reference,
+                "predicted_ef": round(float(ef_calibrated), 2),
+                "absolute_error": round(abs(float(ef_calibrated) - reference["ef"]), 2),
+                "within_interval": bool(
+                    interval is not None
+                    and float(interval[0]) <= reference["ef"] <= float(interval[1])),
+            }
         if class_probs is not None:
             raw["auxiliary_class_distribution"] = {
                 name: round(float(class_probs[i]), 4)
@@ -569,6 +594,8 @@ class EchoAdapter(ComponentAdapter):
                              % predictions["_n_views"],
             "per_clip_ef_spread": round(predictions["_ef_epistemic"], 3),
         }
+        if cam:
+            explanation["gradcam"] = cam
 
         return self.envelope(
             headline="EF %.1f %% -- %s" % (ef_calibrated, self._class_names[operational]),
@@ -579,6 +606,296 @@ class EchoAdapter(ComponentAdapter):
             explanation=explanation,
             decision_rule=self._describe_decision_rule(len(per_member)),
         )
+
+    # ---- ground truth for bundled studies -------------------------------
+    def _reference_ef(self, filename: Optional[str]) -> Optional[Dict[str, Any]]:
+        """The measured ejection fraction for a bundled study, if it is one.
+
+        EchoNet-Dynamic ships a human-traced EF per study in `FileList.csv`, and
+        the bundled clips keep the EchoNet identifier in their filename --
+        `moderate_01_0X7EEA66DBE251854B.npy`. That makes the true value
+        recoverable for exactly the studies that came from the benchmark, and
+        for nothing else.
+
+        An arbitrary upload has no reference, and returning one would be worse
+        than returning none: a number beside a prediction is read as the answer,
+        and this must never show a different patient's measurement.
+
+        Read from the demo manifest rather than from `FileList.csv`, so the
+        component's own dataset directory is not a runtime dependency of the
+        service. Absent manifest, absent reference, and the response simply
+        carries no ground truth.
+        """
+        if not filename:
+            return None
+        if self._reference_efs is None:
+            self._reference_efs = self._load_reference_efs()
+        return self._reference_efs.get(str(filename))
+
+    def _load_reference_efs(self) -> Dict[str, Dict[str, Any]]:
+        import json
+        import re
+
+        table: Dict[str, Dict[str, Any]] = {}
+        try:
+            here = Path(__file__).resolve()
+            manifest = None
+            for parent in here.parents:
+                candidate = parent / "demo" / "manifest.json"
+                if candidate.exists():
+                    manifest = candidate
+                    break
+            if manifest is None:
+                return table
+
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            studies = (payload.get("components", {})
+                       .get("echo", {}).get("studies", []) or [])
+            for study in studies:
+                name = study.get("file")
+                truth = str(study.get("ground_truth") or "")
+                match = re.search(r"true EF\s*([0-9.]+)", truth)
+                if not name or not match:
+                    continue
+                grade = truth.split("(")[0].strip() or None
+                table[str(name)] = {
+                    "ef": float(match.group(1)),
+                    "grade": grade,
+                    "source": "EchoNet-Dynamic FileList.csv (human tracing)",
+                }
+        except Exception as exc:                       # noqa: BLE001
+            self.log.warning("reference EF table unreadable (%s)", exc)
+        return table
+
+    # ---- Grad-CAM ---------------------------------------------------------
+    def _cam_target_layer(self, model):
+        """The last spatiotemporal convolutional block.
+
+        `layer4` by name for both torchvision video backbones this component
+        supports, with a search for the final Conv3d as a fallback so a backbone
+        swap degrades to no map rather than to a wrong one.
+        """
+        layer = getattr(getattr(model, "backbone", None), "layer4", None)
+        if layer is not None:
+            return layer
+        last = None
+        for module in model.modules():
+            if module.__class__.__name__ == "Conv3d":
+                last = module
+        return last
+
+    def _gradcam(self, frames, top_k: int = 3) -> Dict[str, Any]:
+        """Where in the loop the ejection fraction came from.
+
+        WHAT IS BEING EXPLAINED
+        -----------------------
+        The gradient is taken of `ef_z` -- the continuous regression output, in
+        standardised units -- and not of the ordinal head. The grade the report
+        shows is a threshold applied to EF, so EF is the quantity the model
+        actually estimates and the ordinal logits sit downstream of it. Taking
+        the gradient of a threshold crossing would explain the boundary rather
+        than the measurement.
+
+        ONE CLIP, NOT THE AVERAGE
+        -------------------------
+        The reported EF averages several clips and both ensemble members. A
+        saliency map averaged the same way would blur across different cardiac
+        phases and mean very little, so the map is computed for ONE clip of the
+        first member and is labelled as such. It explains a clip, and the
+        response says which one; it does not explain the ensemble mean.
+        """
+        import numpy as np
+        import torch
+        import torch.nn.functional as F
+
+        member = self._members[0]
+        cfg = self._cfg
+        n_frames = int(frames.shape[0])
+        n_views = int(self.settings.echo_tta_clips)
+        view_index = n_views // 2          # the middle clip, not an edge one
+
+        indices = self._sampling.sample_indices(
+            n_frames, cfg.clip_len, cfg.sampling_period,
+            ed_frame=None, es_frame=None, train=False,
+            rng=np.random.default_rng(view_index),
+            view_index=view_index, n_views=n_views)
+        indices = np.clip(indices, 0, n_frames - 1)
+        clip = self._sampling.build_multichannel(
+            np.asarray(frames[indices], dtype=np.uint8),
+            member.pixel_mean, member.pixel_std, cfg.motion_mode)
+
+        batch = torch.from_numpy(
+            np.ascontiguousarray(clip[None])).float().to(self._device)
+        # The parameters may or may not carry requires_grad depending on how the
+        # checkpoint was frozen. Making the INPUT require grad guarantees the
+        # graph reaches the target layer either way.
+        batch.requires_grad_(True)
+
+        target_layer = self._cam_target_layer(member.model)
+        if target_layer is None:
+            return {}
+
+        captured: Dict[str, Any] = {}
+
+        def _capture(_module, _inputs, output):
+            captured["activations"] = output
+
+        handle = target_layer.register_forward_hook(_capture)
+        try:
+            with torch.enable_grad():
+                ef_z, _ordinal, _aux = member.model(batch)
+                activations = captured.get("activations")
+                if activations is None:
+                    return {}
+                gradients = torch.autograd.grad(ef_z[0], activations)[0]
+        finally:
+            handle.remove()
+            member.model.zero_grad(set_to_none=True)
+
+        activations = activations.detach()
+
+        # Channel weights are the spatially averaged gradients; the map is the
+        # positively contributing part of that weighted sum.
+        weights = gradients.mean(dim=(2, 3, 4), keepdim=True)
+        cam = torch.relu((weights * activations).sum(dim=1, keepdim=True))
+
+        # Record the resolution the evidence actually has, BEFORE interpolation.
+        # On this backbone the map is 4 x 7 x 7 and it is about to be stretched
+        # to 32 x 112 x 112 -- a 16-fold spatial upsample. The overlay therefore
+        # looks far more precise than the 49 numbers per bin behind it, and a
+        # reader who is not told that will over-read the smooth edges.
+        native = tuple(int(v) for v in cam.shape[2:])
+        native_bins = cam[0, 0].detach().cpu().numpy()
+        live_bins = int((native_bins.reshape(native[0], -1).max(axis=1) > 0).sum())
+
+        clip_len, height, width = clip.shape[1], clip.shape[2], clip.shape[3]
+        cam = F.interpolate(cam, size=(clip_len, height, width),
+                            mode="trilinear", align_corners=False)
+        cam = cam[0, 0].detach().cpu().numpy().astype(np.float64)
+
+        ceiling = float(cam.max())
+        if not np.isfinite(ceiling) or ceiling <= 0:
+            # A flat map is a real outcome, not an error: it means no region of
+            # this clip raised the estimate. Saying so beats rendering noise
+            # stretched to look like structure.
+            return {"degenerate": True,
+                    "note": "Grad-CAM was uniformly zero for this clip; no region "
+                            "raised the ejection-fraction estimate."}
+        cam = cam / ceiling
+
+        per_frame = cam.mean(axis=(1, 2))
+        order = list(np.argsort(-per_frame)[:max(1, top_k)])
+
+        # Judge flatness on RELATIVE spread. The absolute mean is small whenever
+        # the map is spatially sparse -- most voxels are zero after the ReLU, so
+        # a frame average of 0.03 is normal and says nothing about whether the
+        # attribution varies over the cycle.
+        peak = float(per_frame.max())
+        spread = (peak - float(per_frame.min())) / peak if peak > 0 else 0.0
+
+        # The curve is reported normalised to its own peak so it can be drawn;
+        # `frame_importance_peak` keeps the absolute height, and `concentration`
+        # states how much of the volume carries the mass.
+        readable = (per_frame / peak) if peak > 0 else per_frame
+
+        payload: Dict[str, Any] = {
+            "frame_importance": [round(float(v), 4) for v in readable],
+            "frame_importance_peak": round(peak, 5),
+            "frame_importance_spread": round(float(spread), 3),
+            "native_resolution": {
+                "temporal_bins": native[0],
+                "spatial": "%d x %d" % (native[1], native[2]),
+                "upsampled_to": "%d x %d x %d" % (clip_len, height, width),
+                "temporal_bins_with_signal": live_bins,
+                "caveat": ("The map is computed at %d x %d x %d and interpolated up. "
+                           "Its real resolution is %d values per time bin across %d "
+                           "bins, so smooth edges in the overlay are interpolation, "
+                           "not evidence."
+                           % (native[0], native[1], native[2],
+                              native[1] * native[2], native[0])),
+            },
+            "concentration": {
+                "above_0.5": round(float((cam > 0.5).mean()), 5),
+                "above_0.25": round(float((cam > 0.25).mean()), 5),
+                "note": ("Share of the clip volume above each level. A very small "
+                         "share means the estimate rests on a focal region rather "
+                         "than the whole image."),
+            },
+            "source_frame_indices": [int(i) for i in indices],
+            "clip_index": int(view_index),
+            "clip_count": int(n_views),
+            "member_run": member.run,
+            "target": "ef_z (continuous ejection fraction), not the ordinal grade",
+            "note": ("Grad-CAM over the last spatiotemporal convolution for ONE of "
+                     "the %d clips, from ensemble member %s. The reported EF is the "
+                     "mean over every clip and member, so this map explains a clip "
+                     "rather than the reported number."
+                     % (n_views, member.run)),
+        }
+        if spread < 0.15:
+            payload["flat_attribution"] = True
+            payload["flat_attribution_note"] = (
+                "Frame importance varies by less than 15 %% of its peak across the "
+                "clip, so the estimate does not rest on any particular phase of the "
+                "cycle.")
+        if live_bins < native[0]:
+            payload["partial_temporal_support"] = (
+                "%d of the %d temporal bins carry no positive attribution at all. "
+                "The estimate draws on part of the clip only."
+                % (native[0] - live_bins, native[0]))
+
+        overlays = []
+        for rank, frame_index in enumerate(order):
+            image = self._overlay_frame(
+                np.asarray(frames[indices[int(frame_index)]]), cam[int(frame_index)])
+            if image:
+                overlays.append({
+                    "rank": rank + 1,
+                    "clip_frame": int(frame_index),
+                    "source_frame": int(indices[int(frame_index)]),
+                    "importance": round(float(per_frame[int(frame_index)]), 4),
+                    "png_base64": image,
+                })
+        if overlays:
+            payload["frames"] = overlays
+        return payload
+
+    @staticmethod
+    def _overlay_frame(frame, cam_frame) -> str:
+        """One grayscale frame with the map composited over it, as a PNG."""
+        import base64
+        import io as _io
+
+        import numpy as np
+
+        try:
+            from PIL import Image
+            from matplotlib import colormaps
+        except Exception:                              # noqa: BLE001
+            return ""
+
+        try:
+            grey = np.asarray(frame)
+            if grey.ndim == 3:
+                grey = grey.mean(axis=2)
+            grey = grey.astype(np.float64)
+            spread = float(grey.max() - grey.min())
+            grey = (grey - grey.min()) / spread if spread > 0 else np.zeros_like(grey)
+            base = np.repeat(grey[:, :, None], 3, axis=2)
+
+            heat = np.asarray(colormaps["inferno"](
+                np.clip(cam_frame, 0.0, 1.0)))[:, :, :3]
+
+            # Weight the blend by the map itself, so cold regions stay a clean
+            # echo image instead of being tinted dark everywhere.
+            alpha = np.clip(cam_frame, 0.0, 1.0)[:, :, None] * 0.65
+            blended = np.clip(base * (1.0 - alpha) + heat * alpha, 0.0, 1.0)
+
+            buffer = _io.BytesIO()
+            Image.fromarray((blended * 255).astype(np.uint8)).save(buffer, format="PNG")
+            return base64.b64encode(buffer.getvalue()).decode("ascii")
+        except Exception:                              # noqa: BLE001
+            return ""
 
     def _describe_decision_rule(self, n_members: int) -> str:
         """State precisely which frozen rule produced this grade."""

@@ -46,6 +46,7 @@ class CxrAdapter(ComponentAdapter):
     def __init__(self, settings, root) -> None:
         super().__init__(settings, root)
         self._service = None
+        self._demo_ids: Optional[Dict[str, str]] = None
 
     # ---- capability ---------------------------------------------------
     def required_paths(self) -> List[Path]:
@@ -99,6 +100,54 @@ class CxrAdapter(ComponentAdapter):
         self.sandbox.verify_owns("backend.config")
         self._service = InferenceService()
 
+    # ---- bundled-sample provenance -------------------------------------
+    def _demo_dicom_ids(self) -> Dict[str, str]:
+        """`demo filename -> dicom_id`, read once from the demo manifest.
+
+        The component finds a radiologist's original report by treating the
+        uploaded filename as a dicom_id, which is exactly right: an arbitrary
+        upload has no ground truth and must not be matched to some other
+        patient's report.
+
+        The bundled samples were renamed to say what they demonstrate --
+        `PA_cardiomegaly_01.png` rather than a 40-character identifier -- and
+        that rename is what stopped them matching. The manifest kept each
+        file's `source_id`, so the two can be reconciled here instead of
+        renaming the samples back into something unreadable.
+
+        This only ever affects files listed in the manifest. A real upload
+        still falls through to the component's own lookup and still gets None.
+        """
+        if self._demo_ids is not None:
+            return self._demo_ids
+
+        mapping: Dict[str, str] = {}
+        try:
+            manifest = self.root.parent.parent / "demo" / "manifest.json" if self.root else None
+            if manifest is None or not manifest.exists():
+                # Walk up from the backend package instead.
+                here = Path(__file__).resolve()
+                for parent in here.parents:
+                    candidate = parent / "demo" / "manifest.json"
+                    if candidate.exists():
+                        manifest = candidate
+                        break
+            if manifest is not None and manifest.exists():
+                import json
+
+                payload = json.loads(manifest.read_text(encoding="utf-8"))
+                studies = (payload.get("components", {})
+                           .get("cxr", {}).get("studies", []) or [])
+                for study in studies:
+                    name, source = study.get("file"), study.get("source_id")
+                    if name and source:
+                        mapping[str(name)] = str(source)
+        except Exception as exc:                       # noqa: BLE001
+            self.log.warning("demo manifest unreadable, ground truth stays blank (%s)", exc)
+
+        self._demo_ids = mapping
+        return mapping
+
     # ---- inference ----------------------------------------------------
     def analyze(self, image_bytes: bytes, view: Optional[str] = None,
                 filename: Optional[str] = None, **_: Any) -> Envelope:
@@ -110,7 +159,8 @@ class CxrAdapter(ComponentAdapter):
         self.ensure_loaded()
         try:
             with self.sandbox.active():
-                raw = self._service.predict(image_bytes, view=view, filename=filename)
+                lookup = self._demo_dicom_ids().get(filename or "", filename)
+                raw = self._service.predict(image_bytes, view=view, filename=lookup)
         except InvalidInput:
             raise
         except Exception as exc:               # noqa: BLE001

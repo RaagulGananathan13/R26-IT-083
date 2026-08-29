@@ -77,7 +77,8 @@ class Settings:
         "CVXAI_CORS_ORIGINS",
         ["http://localhost:5173", "http://127.0.0.1:5173",
          "http://localhost:5174", "http://127.0.0.1:5174",
-         "http://localhost:3000", "http://127.0.0.1:3000"]))
+         "http://localhost:3000", "http://127.0.0.1:3000",
+         "http://localhost:3001", "http://127.0.0.1:3001"]))
 
     # ---- inference -----------------------------------------------------
     device: str = field(default_factory=lambda: _env("CVXAI_DEVICE", "auto"))
@@ -96,8 +97,7 @@ class Settings:
         ["Component_03/Dilukshan", "Component_03"]))
     triage_root: Optional[Path] = field(default_factory=lambda: _resolve_root(
         "CVXAI_TRIAGE_ROOT",
-        ["Component_04/Component_04", "Component_4/Component_04",
-         "Component_04", "Component_4"]))
+        ["Component_04", "Component_4/Component_04", "Component_4"]))
 
     # ---- component options --------------------------------------------
     # Component 03: which trained seeds form the serving ensemble, and which
@@ -118,6 +118,17 @@ class Settings:
     # thresholds, or the statistical guarantee does not hold.
     ecg_model: str = field(default_factory=lambda: _env("CVXAI_ECG_MODEL", "resnet_se"))
     ecg_filter: bool = field(default_factory=lambda: _env_bool("CVXAI_ECG_FILTER", True))
+
+    #: Serve the fine-tuned Flan-T5 report instead of the deterministic template.
+    #:
+    #: Off by default, and deliberately so. The template is the component's
+    #: shipped generator and every sentence in it traces to a Finding; the
+    #: neural model is newer, larger and only worth its cost if its output
+    #: survives `verify_paraphrase`. With this off the adapter behaves exactly
+    #: as before and the model is never loaded, so nothing pays for a feature
+    #: that is not switched on.
+    ecg_neural_report: bool = field(
+        default_factory=lambda: _env_bool("CVXAI_ECG_NEURAL_REPORT", False))
 
     # ---- working directory --------------------------------------------
     cache_dir: Path = field(default_factory=lambda: Path(

@@ -252,9 +252,14 @@ def build(document, sample: Dict) -> None:
         "footer", parent=base["Normal"], fontSize=8,
         textColor=colors.HexColor("#9ca3af"), spaceBefore=14)
 
+    # The provenance line and the footer are per-sample rather than fixed:
+    # make_real_triage_pdfs.py renders genuine held-out records through this
+    # same layout, and stamping "synthetic" on a real record would be a lie on
+    # the face of the document.
     story = [
         Paragraph(sample["title"], title_style),
-        Paragraph("Synthetic case: %s" % sample["case"], case_style),
+        Paragraph(sample.get("case_prefix", "Synthetic case: ") + sample["case"],
+                  case_style),
         HRFlowable(width="100%", thickness=0.7,
                    color=colors.HexColor("#d1d5db"), spaceAfter=4),
     ]
@@ -265,7 +270,7 @@ def build(document, sample: Dict) -> None:
     story.append(Spacer(1, 4 * mm))
     story.append(HRFlowable(width="100%", thickness=0.5,
                             color=colors.HexColor("#e5e7eb")))
-    story.append(Paragraph(DISCLAIMER, footer_style))
+    story.append(Paragraph(sample.get("disclaimer", DISCLAIMER), footer_style))
     document.build(story)
 
 
