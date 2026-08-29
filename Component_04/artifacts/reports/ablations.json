@@ -1,0 +1,205 @@
+{
+  "modality": [
+    {
+      "configuration": "ALL modalities",
+      "n_features": 242,
+      "S1 AUROC": 0.9562108088815197,
+      "S1 AUPRC": 0.7179172267693035,
+      "S2 macro-F1": 0.7592978107218613,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "- text",
+      "n_features": 178,
+      "S1 AUROC": 0.9503111918569191,
+      "S1 AUPRC": 0.6930214376618234,
+      "S2 macro-F1": 0.7427728413413247,
+      "dS1 AUPRC": -0.024895789107480026,
+      "dS2 macro-F1": -0.016524969380536603
+    },
+    {
+      "configuration": "- ecg",
+      "n_features": 190,
+      "S1 AUROC": 0.9524537814643679,
+      "S1 AUPRC": 0.7043712086498147,
+      "S2 macro-F1": 0.7398973155002296,
+      "dS1 AUPRC": -0.013546018119488745,
+      "dS2 macro-F1": -0.019400495221631675
+    },
+    {
+      "configuration": "- vitals",
+      "n_features": 204,
+      "S1 AUROC": 0.9545143678814826,
+      "S1 AUPRC": 0.7075860279226932,
+      "S2 macro-F1": 0.749438874117735,
+      "dS1 AUPRC": -0.010331198846610268,
+      "dS2 macro-F1": -0.00985893660412629
+    },
+    {
+      "configuration": "- labs",
+      "n_features": 216,
+      "S1 AUROC": 0.952962662512385,
+      "S1 AUPRC": 0.6859199116774025,
+      "S2 macro-F1": 0.7419008938902212,
+      "dS1 AUPRC": -0.03199731509190096,
+      "dS2 macro-F1": -0.01739691683164013
+    },
+    {
+      "configuration": "- demographics",
+      "n_features": 226,
+      "S1 AUROC": 0.9560621780990389,
+      "S1 AUPRC": 0.713958710529142,
+      "S2 macro-F1": 0.7773215473933958,
+      "dS1 AUPRC": -0.003958516240161525,
+      "dS2 macro-F1": 0.01802373667153445
+    },
+    {
+      "configuration": "- medications",
+      "n_features": 226,
+      "S1 AUROC": 0.9545682849791272,
+      "S1 AUPRC": 0.7130123638234124,
+      "S2 macro-F1": 0.7651630387844559,
+      "dS1 AUPRC": -0.0049048629458910975,
+      "dS2 macro-F1": 0.005865228062594596
+    },
+    {
+      "configuration": "- history",
+      "n_features": 226,
+      "S1 AUROC": 0.9554811854955216,
+      "S1 AUPRC": 0.7141210701667235,
+      "S2 macro-F1": 0.7609508338670962,
+      "dS1 AUPRC": -0.0037961566025799254,
+      "dS2 macro-F1": 0.0016530231452348554
+    },
+    {
+      "configuration": "- interaction",
+      "n_features": 228,
+      "S1 AUROC": 0.9555732340766718,
+      "S1 AUPRC": 0.7173918491430842,
+      "S2 macro-F1": 0.7636529182920935,
+      "dS1 AUPRC": -0.0005253776262192922,
+      "dS2 macro-F1": 0.004355107570232164
+    },
+    {
+      "configuration": "only text",
+      "n_features": 64,
+      "S1 AUROC": 0.8259989167378556,
+      "S1 AUPRC": 0.3335211020615193,
+      "S2 macro-F1": 0.5425227682638318,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only ecg",
+      "n_features": 52,
+      "S1 AUROC": 0.8389818155875354,
+      "S1 AUPRC": 0.32828926155848304,
+      "S2 macro-F1": 0.5490720285688142,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only vitals",
+      "n_features": 38,
+      "S1 AUROC": 0.6982804341002887,
+      "S1 AUPRC": 0.10958322091925088,
+      "S2 macro-F1": 0.48684584578191337,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only labs",
+      "n_features": 26,
+      "S1 AUROC": 0.8651794773075646,
+      "S1 AUPRC": 0.5578573871581357,
+      "S2 macro-F1": 0.6016302129853532,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only demographics",
+      "n_features": 16,
+      "S1 AUROC": 0.6721140873485683,
+      "S1 AUPRC": 0.10558075997031588,
+      "S2 macro-F1": 0.3682447998237472,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only medications",
+      "n_features": 16,
+      "S1 AUROC": 0.6336754506434072,
+      "S1 AUPRC": 0.09093587919565993,
+      "S2 macro-F1": 0.3840978088380032,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only history",
+      "n_features": 16,
+      "S1 AUROC": 0.5345058149487305,
+      "S1 AUPRC": 0.06606880124261302,
+      "S2 macro-F1": 0.15519639181841202,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    },
+    {
+      "configuration": "only interaction",
+      "n_features": 14,
+      "S1 AUROC": 0.9244197608007939,
+      "S1 AUPRC": 0.5961616530984042,
+      "S2 macro-F1": 0.6601731601731602,
+      "dS1 AUPRC": NaN,
+      "dS2 macro-F1": NaN
+    }
+  ],
+  "split": [
+    {
+      "protocol": "random stratified (original)",
+      "S1 AUROC": 0.953784100164809,
+      "S1 AUPRC": 0.6790578681890439,
+      "patients in both folds": 5804,
+      "contaminated test rows": 7627
+    },
+    {
+      "protocol": "patient-level grouped (ours)",
+      "S1 AUROC": 0.9558315441262244,
+      "S1 AUPRC": 0.7194488828195178,
+      "patients in both folds": 0,
+      "contaminated test rows": 0
+    }
+  ],
+  "cohort": [
+    {
+      "population": "Intended Use Population",
+      "test n": 13549,
+      "prevalence": 0.05631411912318252,
+      "S1 AUROC": 0.9562108088815197,
+      "S1 AUPRC": 0.7179172267693035
+    },
+    {
+      "population": "full ED",
+      "test n": 30452,
+      "prevalence": 0.026500722448443453,
+      "S1 AUROC": 0.9713327661089936,
+      "S1 AUPRC": 0.6945670725183501
+    }
+  ],
+  "rdm": [
+    {
+      "configuration": "RDM ON (masked, default)",
+      "S1 AUROC": 0.9558315441262244,
+      "S1 AUPRC": 0.7194488828195177,
+      "S2 macro-F1": 0.7688350807764414,
+      "S2 STEMI recall": 0.7007299270072993
+    },
+    {
+      "configuration": "RDM OFF (leaky text)",
+      "S1 AUROC": 0.9562448402055084,
+      "S1 AUPRC": 0.7181408420571922,
+      "S2 macro-F1": 0.7633265055676913,
+      "S2 STEMI recall": 0.6934306569343066
+    }
+  ]
+}

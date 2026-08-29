@@ -1,0 +1,130 @@
+{
+  "L1_charlson": {
+    "table": [
+      {
+        "class": "No_ACS",
+        "n": 197636,
+        "P(myocardial_infarct=1)": 0.061267142351095594,
+        "P(chf=1)": 0.15356004250797026,
+        "mean charlson": 3.640590051110774
+      },
+      {
+        "class": "UA",
+        "n": 739,
+        "P(myocardial_infarct=1)": 0.2814614343707713,
+        "P(chf=1)": 0.2462787550744249,
+        "mean charlson": 4.307171853856563
+      },
+      {
+        "class": "NSTEMI",
+        "n": 3700,
+        "P(myocardial_infarct=1)": 1.0,
+        "P(chf=1)": 0.5124324324324324,
+        "mean charlson": 6.617567567567567
+      },
+      {
+        "class": "STEMI",
+        "n": 941,
+        "P(myocardial_infarct=1)": 1.0,
+        "P(chf=1)": 0.41339001062699254,
+        "mean charlson": 5.520722635494155
+      }
+    ],
+    "single_feature_auroc": 0.9200210164441092
+  },
+  "L2_patient": {
+    "n_stays": 203016,
+    "n_patients": 107391,
+    "pct_multi_visit": 0.3106033094020914,
+    "shared_patients": 19936,
+    "contaminated_test_fraction": 0.5729578852310976
+  },
+  "L3_labs": {
+    "median_h": 21.75,
+    "max_h": 3559.0833333333335,
+    "pct_beyond_24h": 0.4700402004305828,
+    "windows": [
+      {
+        "window_h": 1,
+        "pct_of_troponins_inside": 0.029664488349496067
+      },
+      {
+        "window_h": 3,
+        "pct_of_troponins_inside": 0.054584944843485056
+      },
+      {
+        "window_h": 6,
+        "pct_of_troponins_inside": 0.09573799226475127
+      },
+      {
+        "window_h": 12,
+        "pct_of_troponins_inside": 0.27523005696648695
+      },
+      {
+        "window_h": 24,
+        "pct_of_troponins_inside": 0.5299597995694172
+      },
+      {
+        "window_h": 48,
+        "pct_of_troponins_inside": 0.7069750604911692
+      }
+    ]
+  },
+  "L4_ecg": {
+    "n_pairs": 2546849,
+    "pct_after_24h": 0.36347266759827535,
+    "pct_before_24h": 0.5698932288486676,
+    "pct_in_window": 0.04561126317264981
+  },
+  "L5_text": {
+    "table": [
+      {
+        "class": "No_ACS",
+        "n": 197636,
+        "P(referral dx present)": 0.0057884191139266124,
+        "P(transfer mention)": 0.09838288570908134
+      },
+      {
+        "class": "UA",
+        "n": 739,
+        "P(referral dx present)": 0.036535859269282815,
+        "P(transfer mention)": 0.05548037889039242
+      },
+      {
+        "class": "NSTEMI",
+        "n": 3700,
+        "P(referral dx present)": 0.15675675675675677,
+        "P(transfer mention)": 0.25216216216216214
+      },
+      {
+        "class": "STEMI",
+        "n": 941,
+        "P(referral dx present)": 0.2592986184909671,
+        "P(transfer mention)": 0.1392136025504782
+      }
+    ],
+    "auroc_single_flag": 0.5761950097738918
+  },
+  "L6_experiment": [
+    {
+      "configuration": "A. leaky features + random split (original)",
+      "AUROC": 0.9580436102054102,
+      "AUPRC": 0.7188038488861552
+    },
+    {
+      "configuration": "B. leaky features + patient-disjoint split",
+      "AUROC": 0.9577420792889338,
+      "AUPRC": 0.7589556067583361
+    },
+    {
+      "configuration": "C. temporally-safe features + patient-disjoint split",
+      "AUROC": 0.9665018706490246,
+      "AUPRC": 0.6749567872177663
+    },
+    {
+      "configuration": "D. safe features + ONLY the Charlson MI flag added",
+      "AUROC": 0.9888614612025031,
+      "AUPRC": 0.8100628963570845
+    }
+  ]
+}

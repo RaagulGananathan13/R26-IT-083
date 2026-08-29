@@ -1,0 +1,41 @@
+
+==============================================================================
+  0. FUSION CHECKPOINT
+==============================================================================
+  epoch 10   best val macro-AUROC 0.9585
+  stored thresholds: [0.453, 0.6439, 0.5498, 0.5547, 0.7331]
+  INPUTS: 12-lead signal  +  6 demographics  +  ClinicalBERT([CLS], report_en)
+  The 5 labels were derived from the SCP codes attached to that same report_en.
+
+==============================================================================
+  1. ABLATION ON THE TEST SET (1711 records)
+==============================================================================
+  config                          NORM      MI    STTC      CD     HYP   mAUROC     mF1
+  ------------------------------------------------------------------------------------
+  A  full (signal+demo+TEXT)    0.9804  0.9641  0.9520  0.9578  0.9290   0.9567  0.7733
+  B  TEXT zeroed                0.9341  0.9096  0.9122  0.8825  0.8976   0.9072  0.6271
+  C  SIGNAL zeroed              0.9523  0.9265  0.8640  0.8959  0.8130   0.8904  0.5535
+  D  signal+demo zeroed         0.9486  0.9280  0.8573  0.8993  0.8030   0.8872  0.5127
+
+==============================================================================
+  2. VERDICT
+==============================================================================
+  Full model macro-AUROC                    : 0.9567
+  Remove the ECG, keep the report text      : 0.8904  (93.1% of full)
+  Remove the report text, keep the ECG      : 0.9072  (94.8% of full)
+  Report text ALONE                         : 0.8872
+
+  Drop caused by removing the ECG signal    : +0.0663
+  Drop caused by removing the report text   : +0.0495
+
+  >>> Text contributes less than the signal; leakage is present but not dominant.
+
+==============================================================================
+  3. WHICH MODEL IS ACTUALLY DEPLOYED?
+==============================================================================
+  app.py  -> checkpoints_ecg_only/best_model.pt   (ECG only, NO leakage)  GOOD
+  README  -> quotes the ECG-only numbers (macro-F1 0.717)                 GOOD
+  checkpoints/test_results.json (fusion, leaked) is still in the repo and
+  DOCUMENTATION/Project_Complete_Overview.txt calls fusion 'NOVELTY 2'.
+  Any thesis claim built on the fusion model must be withdrawn or re-run
+  without report_en.

@@ -1,0 +1,88 @@
+
+==============================================================================
+  C-1  ADVERSARIAL / DEGENERATE INPUTS  (archive: flatline -> 'MI 0.691')
+==============================================================================
+  [PASS] all-zero flatline  -- REFUSED: every lead is flat — the electrodes are disconnected or this is not an ECG
+  [PASS] pure Gaussian noise  -- REFUSED: 12 of 12 leads are dominated by high-frequency noise — this does not look like
+  [PASS] constant 0.5 mV  -- REFUSED: every lead is flat — the electrodes are disconnected or this is not an ECG
+  [PASS] real ECG in microvolts  -- accepted, triage=ROUTINE, findings=['NORM']
+  [PASS] real ECG x50 (saturation)  -- REFUSED: amplitude is implausible for a diagnostic ECG (95th percentile |x| = 15.1) and
+  [PASS] 8 of 12 leads dead  -- REFUSED: 8 flat/disconnected leads (aVL, aVF, V1, V2, V3, V4, V5, V6); at most 2 can be
+  [PASS] 2.0 s fragment  -- REFUSED: recording is 2.0s; only 5-60s is supported (the archive silently resampled any
+  [PASS] 30 s strip  -- accepted, triage=ROUTINE, findings=['NORM']
+  [PASS] real ECG still analysed normally  -- triage=ROUTINE, p={'NORM': 0.968, 'MI': 0.003, 'STTC': 0.004, 'CD': 0.024, 'HYP': 0.0}
+
+==============================================================================
+  C-4  NORM / ABNORMALITY CONTRADICTION  (archive: 99 of 1711 reports)
+==============================================================================
+  [PASS] NORM suppressed when an abnormality is ruled in  -- ruled in = ['MI']
+  [PASS] no 'within normal limits' alongside an infarction
+
+==============================================================================
+  C-3  HALLUCINATION GATE  (archive: 'Graphic atrial fibrillation' x42)
+==============================================================================
+  [PASS] paraphrase inventing 'atrial fibrillation' is REJECTED  -- DROPPED FINDING: paraphrase omits myocardial infarction; DROPPED FINDING: paraphrase omits ST/T chan
+  [PASS] paraphrase that DROPS the infarction is REJECTED  -- DROPPED FINDING: paraphrase omits myocardial infarction; DROPPED FINDING: paraphrase omits ST/T chan
+  [PASS] faithful paraphrase is ACCEPTED
+
+==============================================================================
+  C-5  GRAD-CAM THREAD SAFETY  (archive: 3 of 4 concurrent calls corrupted)
+==============================================================================
+  [PASS] 4 concurrent Grad-CAM calls match the sequential result  -- mismatched indices: []
+
+==============================================================================
+  C-6  CALIBRATION
+==============================================================================
+  [PASS] macro ECE improved  -- 0.0948 -> 0.0182
+  [PASS] HYP no longer over-predicted  -- 2.31x -> 1.01x
+
+==============================================================================
+  REPORT CONTENT  (archive: 0/1711 had HR, triage, uncertainty or quality)
+==============================================================================
+  [PASS] report contains heart rate
+  [PASS] report contains triage tier
+  [PASS] report contains signal quality
+  [PASS] report contains statistical guarantee
+  [PASS] report contains limitations
+  [PASS] report contains disclaimer
+  [PASS] report passed automated verification
+
+==============================================================================
+  CORPUS-LEVEL SAFETY  (200 test records)
+==============================================================================
+  [PASS] 100% of reports pass verification  -- 200/200  errors={}
+  [PASS] zero self-contradictory reports  -- 0 found (archive rate: 5.8%)
+
+  Distinct reports across 200 patients: 175  (archive produced 63 distinct across 1711)
+  Triage distribution: {'ROUTINE': 62, 'PRIORITY': 52, 'URGENT': 45, 'IMMEDIATE': 39, 'REPEAT ECG': 2}
+
+==============================================================================
+  SUMMARY:  26 passed, 0 failed
+==============================================================================
+
+  Sample report:
+  --------------------------------------------------------------------------
+  TRIAGE: PRIORITY
+  
+  TECHNICAL: Signal quality index 1.00. All 12 leads usable.
+  RATE & RHYTHM: Ventricular rate 53 bpm (sinus bradycardia range), 9 complexes analysed over 10.0 s.
+  
+  FINDINGS:
+    - Possible normal ECG (calibrated probability 45%). This falls between the rule-out and rule-in thresholds, so the system does not decide it — cardiologist review is required.
+    - A conduction disturbance is present.
+    - Possible ventricular hypertrophy (calibrated probability 7%). This falls between the rule-out and rule-in thresholds, so the system does not decide it — cardiologist review is required.
+  
+  RULED OUT: myocardial infarction, ST/T change.
+  
+  RECOMMENDATION: A significant abnormality is present. Clinician review during this episode of care is indicated.
+  
+  STATISTICAL GUARANTEES:
+    - myocardial infarction ruled out under a conformal miss-rate bound of 5% (calibrated on 283 positive cases).
+    - ST/T change ruled out under a conformal miss-rate bound of 10% (calibrated on 455 positive cases).
+  
+  LIMITATIONS:
+    - This system recognises only 5 diagnostic superclasses (NORM, MI, STTC, CD, HYP). Arrhythmias such as atrial fibrillation, and any condition outside these classes, are NOT detected and their absence here is not evidence of their absence.
+    - Intervals (PR, QRS, QT) and QRS axis are not measured.
+    - The model was trained on PTB-XL (German cohort, 1989-1996) and has not been validated on this population.
+  
+  AI-generated decision support. NOT a medical device and NOT a diagnosis. Every report requires review by a qualified clinician before any clinical action is taken.

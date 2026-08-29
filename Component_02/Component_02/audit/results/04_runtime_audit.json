@@ -1,0 +1,76 @@
+{
+  "boot_s": 26.328997373580933,
+  "rss_mb": 1567.244288,
+  "latency": {
+    "total": 11.772001504898071,
+    "classifier": 0.01999497413635254,
+    "gradcam": 0.06200289726257324,
+    "ig": 1.8319964408874512,
+    "plot": 5.224004507064819,
+    "smooth": 2.5539982318878174,
+    "free_gen": 1.4870014190673828
+  },
+  "tier3_live": [
+    {
+      "case": "NORM only",
+      "raw": " ECG is within normal limits. Sinus rhythm is present with no significant abnormalities detected. No further immediate action is required based on ECG findings alone.",
+      "guarded": "The ECG is within normal limits. Sinus rhythm is present with no significant abnormalities detected. No further immediate action is required based on ECG findings alone.",
+      "same": true
+    },
+    {
+      "case": "MI high",
+      "raw": "-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. Clinical correlation with patient history and examination findings is essential.",
+      "guarded": "ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. Clinical correlation with patient history and examination findings is essential.",
+      "same": true
+    },
+    {
+      "case": "NORM+CD (contradiction)",
+      "raw": "ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for a defined abnormality. Conduction delay is detected, consistent with bundle branch block or intraventricular conduction disturbance. Cardiology referral is recommended. Clinical correlation with patient history and examination findings is essential.",
+      "guarded": "ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for a defined abnormality. Conduction delay is detected, consistent with bundle branch block or intraventricular conduction disturbance. Cardiology referral is recommended. Clinical correlation with patient history and examination findings is essential.",
+      "same": true
+    },
+    {
+      "case": "MI+STTC+HYP",
+      "raw": "ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. Diffuse ST-seal and T-wave changes are identified. Ischaemia, metabolic disturbance, or drug effect should be excluded. Voltage criteria are suggestive with ventricular hypertrophy. Echocardiographic correlation is advised. Clinical correlation with patient history and examination findings is essential.",
+      "guarded": "ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. Diffuse ST-segment and T-wave changes are identified. Ischaemia, metabolic disturbance, or drug effect should be excluded. Voltage criteria are suggestive with ventricular hypertrophy. Echocardiographic correlation is advised. Clinical correlation with patient history and examination findings is essential.",
+      "same": false
+    },
+    {
+      "case": "inconclusive",
+      "raw": " findings exceeded the diagnostic threshold. ECG interpretation is inconclusive \u2014 manual review by a clinician is required.",
+      "guarded": "No findings exceeded the diagnostic threshold. ECG interpretation is inconclusive \u2014 manual review by a clinician is required.",
+      "same": true
+    }
+  ],
+  "upload_vs_cached": {
+    "order_match": false,
+    "max_abs_diff": 0.0,
+    "probs_upload": [
+      80.2,
+      14.9,
+      22.0,
+      25.5,
+      10.6
+    ],
+    "probs_cached": [
+      80.2,
+      14.9,
+      22.0,
+      25.5,
+      10.6
+    ],
+    "fs": 500,
+    "units": [
+      "mV"
+    ]
+  },
+  "upload_probes": [],
+  "concurrency": {
+    "errors": [],
+    "mismatched": [
+      1,
+      0,
+      2
+    ]
+  }
+}

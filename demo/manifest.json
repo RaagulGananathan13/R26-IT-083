@@ -1,0 +1,400 @@
+{
+  "generated": "2026-08-19T10:16:04",
+  "what_this_is": "Curated studies from each component's held-out test split, selected because the component predicts them correctly and stands behind the result. Chosen so a demonstration does not fail for reasons unrelated to the work.",
+  "what_this_is_not": "A performance sample. These cases were selected BY the models' own correctness, so their hit rate here is 100 % by construction and means nothing. The unselected test-set figures are in `true_performance`.",
+  "true_performance": {
+    "cxr": "Cardiomegaly AUROC 0.9189, sensitivity 92.3 %, specificity 74.0 % on the full n=4,722 test set.",
+    "ecg": "Macro accuracy 0.864, macro recall 0.810 on the untouched test fold 10 (n=1,711).",
+    "echo": "MAE 3.979 EF points, 73.0 % overall accuracy, min per-class recall 0.723 on the untouched test split (n=1,277).",
+    "triage": "Stage-1 AUROC 0.9560 with NPV 99.41 %; Stage-2 subtyping macro-F1 0.7448 on the patient-disjoint test fold."
+  },
+  "components": {
+    "cxr": {
+      "folder": "01_chest_xray",
+      "count": 8,
+      "true_performance": "Cardiomegaly AUROC 0.9189, sensitivity 92.3 %, specificity 74.0 % on the full n=4,722 test set.",
+      "studies": [
+        {
+          "file": "PA_cardiomegaly_01.png",
+          "ground_truth": "Cardiomegaly",
+          "projection": "PA",
+          "predicted": "Cardiomegaly present (p=0.800)",
+          "probability": 0.7998,
+          "threshold": 0.3481,
+          "verdict": "actionable",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "37fc7e2a-1b6412df-6ccc776a-abaabe91-66ba7d26"
+        },
+        {
+          "file": "PA_cardiomegaly_02.png",
+          "ground_truth": "Cardiomegaly",
+          "projection": "PA",
+          "predicted": "Cardiomegaly present (p=0.916)",
+          "probability": 0.9158,
+          "threshold": 0.3481,
+          "verdict": "actionable",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "9fc4de5f-79f19989-f03896c7-6549e975-639136b0"
+        },
+        {
+          "file": "PA_normal_01.png",
+          "ground_truth": "No cardiomegaly",
+          "projection": "PA",
+          "predicted": "No cardiomegaly (p=0.001)",
+          "probability": 0.0012,
+          "threshold": 0.3481,
+          "verdict": "actionable",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "74b452c6-bf8d6fcd-ac6de7c0-aa528bc1-ce72af87"
+        },
+        {
+          "file": "PA_normal_02.png",
+          "ground_truth": "No cardiomegaly",
+          "projection": "PA",
+          "predicted": "No cardiomegaly (p=0.099)",
+          "probability": 0.099,
+          "threshold": 0.3481,
+          "verdict": "actionable",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "68bb31da-f55b7296-a8ed7c5e-756974b1-533abde4"
+        },
+        {
+          "file": "AP_cardiomegaly_01.png",
+          "ground_truth": "Cardiomegaly",
+          "projection": "AP",
+          "predicted": "Cardiomegaly present (p=0.925)",
+          "probability": 0.9248,
+          "threshold": 0.4095,
+          "verdict": "caution",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "fcd0203f-2030f1cb-7aca2d84-f1319575-c4e400d7"
+        },
+        {
+          "file": "AP_cardiomegaly_02.png",
+          "ground_truth": "Cardiomegaly",
+          "projection": "AP",
+          "predicted": "Cardiomegaly present (p=0.892)",
+          "probability": 0.8918,
+          "threshold": 0.4095,
+          "verdict": "caution",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "c4fcb9fb-69662560-668520d6-b97a0b10-7eabf46d"
+        },
+        {
+          "file": "AP_normal_01.png",
+          "ground_truth": "No cardiomegaly",
+          "projection": "AP",
+          "predicted": "No cardiomegaly (p=0.004)",
+          "probability": 0.0042,
+          "threshold": 0.4095,
+          "verdict": "caution",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "cd8dcba4-3b0c18be-5ce9ae5b-95d263ab-d0ea152a"
+        },
+        {
+          "file": "AP_normal_02.png",
+          "ground_truth": "No cardiomegaly",
+          "projection": "AP",
+          "predicted": "No cardiomegaly (p=0.009)",
+          "probability": 0.0094,
+          "threshold": 0.4095,
+          "verdict": "caution",
+          "how_to_use": "Upload the file, then set Projection to the value in its name (PA or AP). The projection selects the operating point, so it changes the result.",
+          "source_id": "d69ed698-0f8ca3d1-27ef42b3-8ba51f2b-f7ae90c1"
+        }
+      ]
+    },
+    "ecg": {
+      "folder": "02_ecg",
+      "count": 10,
+      "true_performance": "Macro accuracy 0.864, macro recall 0.810 on the untouched test fold 10 (n=1,711).",
+      "studies": [
+        {
+          "file": "NORM_12886_hr.dat  +  NORM_12886_hr.hea",
+          "ground_truth": "NORM",
+          "predicted": "normal ECG",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "12886"
+        },
+        {
+          "file": "NORM_19324_hr.dat  +  NORM_19324_hr.hea",
+          "ground_truth": "NORM",
+          "predicted": "normal ECG",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "19324"
+        },
+        {
+          "file": "MI_18363_hr.dat  +  MI_18363_hr.hea",
+          "ground_truth": "MI",
+          "predicted": "myocardial infarction, conduction disturbance",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "18363"
+        },
+        {
+          "file": "MI_12870_hr.dat  +  MI_12870_hr.hea",
+          "ground_truth": "MI",
+          "predicted": "myocardial infarction",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "12870"
+        },
+        {
+          "file": "STTC_03454_hr.dat  +  STTC_03454_hr.hea",
+          "ground_truth": "STTC",
+          "predicted": "ST/T change, conduction disturbance, ventricular hypertrophy",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "3454"
+        },
+        {
+          "file": "STTC_18422_hr.dat  +  STTC_18422_hr.hea",
+          "ground_truth": "STTC",
+          "predicted": "ST/T change, conduction disturbance",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "18422"
+        },
+        {
+          "file": "CD_10950_hr.dat  +  CD_10950_hr.hea",
+          "ground_truth": "CD",
+          "predicted": "myocardial infarction, conduction disturbance",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "10950"
+        },
+        {
+          "file": "CD_21148_hr.dat  +  CD_21148_hr.hea",
+          "ground_truth": "CD",
+          "predicted": "conduction disturbance",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "21148"
+        },
+        {
+          "file": "HYP_13899_hr.dat  +  HYP_13899_hr.hea",
+          "ground_truth": "HYP",
+          "predicted": "ST/T change, ventricular hypertrophy",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "13899"
+        },
+        {
+          "file": "HYP_12252_hr.dat  +  HYP_12252_hr.hea",
+          "ground_truth": "HYP",
+          "predicted": "ST/T change, ventricular hypertrophy",
+          "zone": "rule_in",
+          "verdict": "actionable",
+          "how_to_use": "Upload BOTH files; they must share a base name.",
+          "source_id": "12252"
+        }
+      ]
+    },
+    "echo": {
+      "folder": "03_echocardiogram",
+      "count": 8,
+      "true_performance": "MAE 3.979 EF points, 73.0 % overall accuracy, min per-class recall 0.723 on the untouched test split (n=1,277).",
+      "studies": [
+        {
+          "file": "severe_01_0X9A03DC1334986F3.npy",
+          "ground_truth": "Severe(<30) (true EF 10.2 %)",
+          "predicted": "EF 19.6 % -- Severe(<30)",
+          "predicted_ef": 19.5661,
+          "interval_95": [
+            14.99,
+            24.14
+          ],
+          "verdict": "actionable",
+          "note": null,
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X9A03DC1334986F3"
+        },
+        {
+          "file": "severe_02_0X5FF8D238E3A43BA9.npy",
+          "ground_truth": "Severe(<30) (true EF 17.9 %)",
+          "predicted": "EF 16.5 % -- Severe(<30)",
+          "predicted_ef": 16.4737,
+          "interval_95": [
+            8.37,
+            24.58
+          ],
+          "verdict": "actionable",
+          "note": null,
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X5FF8D238E3A43BA9"
+        },
+        {
+          "file": "moderate_01_0X7EEA66DBE251854B.npy",
+          "ground_truth": "Moderate(30-40) (true EF 35.2 %)",
+          "predicted": "EF 39.8 % -- Moderate(30-40)",
+          "predicted_ef": 39.7912,
+          "interval_95": [
+            21.04,
+            58.55
+          ],
+          "verdict": "deferred",
+          "note": "Graded correctly but DEFERRED. Moderate spans only 30-40 EF, so every case in this class sits near a boundary and the conformal interval straddles it. Expect a referral, not a call -- this is the component behaving as designed.",
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X7EEA66DBE251854B"
+        },
+        {
+          "file": "moderate_02_0X7CEA8E5FA8F3FB3F.npy",
+          "ground_truth": "Moderate(30-40) (true EF 39.4 %)",
+          "predicted": "EF 44.9 % -- Moderate(30-40)",
+          "predicted_ef": 44.9462,
+          "interval_95": [
+            21.73,
+            68.16
+          ],
+          "verdict": "deferred",
+          "note": "Graded correctly but DEFERRED. Moderate spans only 30-40 EF, so every case in this class sits near a boundary and the conformal interval straddles it. Expect a referral, not a call -- this is the component behaving as designed.",
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X7CEA8E5FA8F3FB3F"
+        },
+        {
+          "file": "mild_01_0X6D1D29802905D6E0.npy",
+          "ground_truth": "Mild(40-55) (true EF 45.4 %)",
+          "predicted": "EF 45.2 % -- Mild(40-55)",
+          "predicted_ef": 45.2465,
+          "interval_95": [
+            40.07,
+            50.43
+          ],
+          "verdict": "actionable",
+          "note": null,
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X6D1D29802905D6E0"
+        },
+        {
+          "file": "mild_02_0X33C3D95C20A0D931.npy",
+          "ground_truth": "Mild(40-55) (true EF 45.2 %)",
+          "predicted": "EF 48.5 % -- Mild(40-55)",
+          "predicted_ef": 48.4739,
+          "interval_95": [
+            43.42,
+            53.53
+          ],
+          "verdict": "actionable",
+          "note": null,
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X33C3D95C20A0D931"
+        },
+        {
+          "file": "normal_01_0X6FCE7C69AE34FBF7.npy",
+          "ground_truth": "Normal(>=55) (true EF 66.8 %)",
+          "predicted": "EF 63.9 % -- Normal(>=55)",
+          "predicted_ef": 63.933,
+          "interval_95": [
+            59.36,
+            68.51
+          ],
+          "verdict": "actionable",
+          "note": null,
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X6FCE7C69AE34FBF7"
+        },
+        {
+          "file": "normal_02_0X55AE4F5E25A9609F.npy",
+          "ground_truth": "Normal(>=55) (true EF 67.5 %)",
+          "predicted": "EF 65.9 % -- Normal(>=55)",
+          "predicted_ef": 65.9387,
+          "interval_95": [
+            59.64,
+            72.23
+          ],
+          "verdict": "actionable",
+          "note": null,
+          "how_to_use": "Upload directly; .npy is a cached clip array.",
+          "source_id": "0X55AE4F5E25A9609F"
+        }
+      ]
+    },
+    "triage": {
+      "folder": "04_ed_triage",
+      "count": 5,
+      "true_performance": "Stage-1 AUROC 0.9560 with NPV 99.41 %; Stage-2 subtyping macro-F1 0.7448 on the patient-disjoint test fold.",
+      "studies": [
+        {
+          "file": "sample_01_stemi.pdf",
+          "ground_truth": "STEMI",
+          "predicted": "STEMI",
+          "p_acs": 0.6489,
+          "verdict": "actionable",
+          "extraction_gaps": [
+            "bnp"
+          ],
+          "how_to_use": "Upload on the Triage console's PDF tab, or load it from the sample list there.",
+          "synthetic": true
+        },
+        {
+          "file": "sample_02_nstemi.pdf",
+          "ground_truth": "NSTEMI",
+          "predicted": "NSTEMI",
+          "p_acs": 0.4645,
+          "verdict": "deferred",
+          "extraction_gaps": [],
+          "how_to_use": "Upload on the Triage console's PDF tab, or load it from the sample list there.",
+          "synthetic": true
+        },
+        {
+          "file": "sample_03_unstable_angina.pdf",
+          "ground_truth": "deferral (UA is the hardest class)",
+          "predicted": "No_ACS",
+          "p_acs": 0.1024,
+          "verdict": "deferred",
+          "extraction_gaps": [
+            "bnp"
+          ],
+          "how_to_use": "Upload on the Triage console's PDF tab, or load it from the sample list there.",
+          "synthetic": true
+        },
+        {
+          "file": "sample_04_non_cardiac.pdf",
+          "ground_truth": "No_ACS",
+          "predicted": "No_ACS",
+          "p_acs": 0.0013,
+          "verdict": "caution",
+          "extraction_gaps": [
+            "bnp",
+            "troponin",
+            "ecg",
+            "home_medications"
+          ],
+          "how_to_use": "Upload on the Triage console's PDF tab, or load it from the sample list there.",
+          "synthetic": true
+        },
+        {
+          "file": "sample_05_sparse.pdf",
+          "ground_truth": "deferral (sparse record)",
+          "predicted": "STEMI",
+          "p_acs": 0.05,
+          "verdict": "deferred",
+          "extraction_gaps": [
+            "resprate",
+            "o2sat",
+            "temperature",
+            "pain",
+            "bnp",
+            "prior_ed_visits",
+            "troponin",
+            "ecg",
+            "home_medications"
+          ],
+          "how_to_use": "Upload on the Triage console's PDF tab, or load it from the sample list there.",
+          "synthetic": true
+        }
+      ]
+    }
+  }
+}

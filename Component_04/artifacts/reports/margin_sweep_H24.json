@@ -1,0 +1,56 @@
+[
+  {
+    "margin": 0.0,
+    "val min recall": 0.753731343283582,
+    "val macro-F1": 0.7438381256175957,
+    "test min recall": 0.7372262773722628,
+    "test macro-F1": 0.7447657362016683,
+    "test STEMI recall": 0.7372262773722628,
+    "all >= floor (test)": "no"
+  },
+  {
+    "margin": 0.02,
+    "val min recall": 0.7706422018348624,
+    "val macro-F1": 0.7358488927537326,
+    "test min recall": 0.7372262773722628,
+    "test macro-F1": 0.7349920775091402,
+    "test STEMI recall": 0.7372262773722628,
+    "all >= floor (test)": "no"
+  },
+  {
+    "margin": 0.04,
+    "val min recall": 0.7706422018348624,
+    "val macro-F1": 0.7358488927537326,
+    "test min recall": 0.7372262773722628,
+    "test macro-F1": 0.7349920775091402,
+    "test STEMI recall": 0.7372262773722628,
+    "all >= floor (test)": "no"
+  },
+  {
+    "margin": 0.06,
+    "val min recall": 0.7706422018348624,
+    "val macro-F1": 0.7358488927537326,
+    "test min recall": 0.7372262773722628,
+    "test macro-F1": 0.7349920775091402,
+    "test STEMI recall": 0.7372262773722628,
+    "all >= floor (test)": "no"
+  },
+  {
+    "margin": 0.08,
+    "val min recall": 0.752895752895753,
+    "val macro-F1": 0.7251344407414934,
+    "test min recall": 0.7226277372262774,
+    "test macro-F1": 0.7232542048115819,
+    "test STEMI recall": 0.7226277372262774,
+    "all >= floor (test)": "no"
+  },
+  {
+    "margin": 0.1,
+    "val min recall": 0.752895752895753,
+    "val macro-F1": 0.7246802327935633,
+    "test min recall": 0.7226277372262774,
+    "test macro-F1": 0.723769988910543,
+    "test STEMI recall": 0.7226277372262774,
+    "all >= floor (test)": "no"
+  }
+]

@@ -1,0 +1,84 @@
+
+==============================================================================
+  1. HOW MUCH DISEASE IS OUTSIDE THE LABEL SPACE?
+==============================================================================
+  condition                   records    share
+  --------------------------------------------
+  atrial fibrillation           1,225    7.11%
+  atrial flutter                   27    0.16%
+  paced rhythm                     12    0.07%
+  SV tachycardia                   28    0.16%
+  ventricular tachycardia          30    0.17%
+  atrial ectopy                   617    3.58%
+  ventricular ectopy            1,127    6.54%
+  --------------------------------------------
+  ANY out-of-scope              2,455   14.26%
+
+  These are cardiologist-documented findings in the reference reports of the
+  very records this system was trained and evaluated on. The five-class label
+  space cannot express any of them.
+
+==============================================================================
+  2. WHAT DOES THE SYSTEM REPORT FOR ATRIAL FIBRILLATION?
+==============================================================================
+  114 recordings in the held-out test fold document atrial
+  fibrillation or flutter. The model has no output unit for either.
+
+  triage distribution: {'PRIORITY': 16, 'URGENT': 42, 'IMMEDIATE': 54, 'ROUTINE': 1, 'REPEAT ECG': 1}
+  refused by quality control            :    1 / 114
+  reported as NORMAL                    :    2 / 114
+  carrying a statistical guarantee      :  113 / 114
+
+  Not one of those guarantees concerns atrial fibrillation, because no
+  guarantee about atrial fibrillation exists. The system certifies what it
+  can measure while being blind to the finding that will cause the stroke.
+
+  Patients told their ECG is normal:
+    ECG 15796: triage ROUTINE, 4 guarantees attached
+    ECG 18266: triage URGENT, 3 guarantees attached
+
+==============================================================================
+  3. FITTING THE RHYTHM CHECK ON THE VALIDATION FOLD
+==============================================================================
+  Threshold chosen on the FULL fold 9, at a fixed false-positive budget
+  against records with no documented irregular rhythm. Fold 10 is never used
+  to select it — the same discipline as every other threshold in this system.
+
+  validation sample : 1696 records (124 irregular, 1572 regular)
+  threshold at 5% FPR : irr = 0.1792
+  sensitivity on validation      : 42.7%
+  saved -> checkpoints/scope.json
+
+==============================================================================
+  4. DOES IT CATCH THEM ON THE UNSEEN TEST FOLD?
+==============================================================================
+  test sample  : 695 records (45 irregular)
+  sensitivity  : 48.9%   (out-of-scope rhythms flagged)
+  false-positive rate : 4.8%   (regular rhythms wrongly flagged)
+  AUROC        : 0.912
+
+  This is a rhythm-regularity screen, not an arrhythmia classifier. It flags irregular ventricular response (AF, flutter with variable block, frequent ectopy). It will NOT catch out-of-scope disease that preserves a regular rhythm — paced rhythms at a fixed rate, monomorphic ventricular tachycardia, or Brugada and long-QT patterns. Those remain silent failures and require a different check.
+
+==============================================================================
+  5. THE COST OF WITHHOLDING THE GUARANTEE
+==============================================================================
+  Records that would have the guarantee withheld: 53/695 (7.6%)
+    of which genuinely out-of-scope : 22
+    of which in-scope (over-caution): 31
+
+  Note this does NOT reduce diagnostic output. The classifier still reports
+  its five classes. What is withheld is the CLAIM — the sentence promising a
+  bounded miss rate — because that claim was never true for these records.
+
+  Trade-off: at a 5% false-positive budget the system stays silent about its
+  guarantee on roughly 1 in 20 normal-rhythm records, in exchange for not
+  making a false promise to 49% of patients whose disease it cannot see.
+
+==============================================================================
+  SUMMARY
+==============================================================================
+  Out-of-scope disease in the dataset          : 14.3% of records
+  AF/flutter recordings in the test fold       : 114
+  ... carrying a statistical guarantee         : 113/114
+  ... reported as NORMAL                       : 2
+  Rhythm check sensitivity / FPR / AUROC       : 49% / 5% / 0.912

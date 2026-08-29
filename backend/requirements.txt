@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# R26-IT-083 unified backend.
+#
+# Lower bounds, not pins: these are the versions the service was built and
+# verified against on Python 3.11. The four components were developed against
+# the same stack, so a single environment serves all of them.
+#
+#   python -m pip install -r requirements.txt
+#
+# Torch is listed without a CUDA suffix. For GPU inference install it from the
+# PyTorch index FIRST, then run this file:
+#   python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# The service runs on CPU without changes; Component 01 is roughly 10x slower.
+# ---------------------------------------------------------------------------
+
+# --- web layer -------------------------------------------------------------
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.20          # multipart/form-data uploads
+pydantic>=2.10.0
+
+# --- shared numerics -------------------------------------------------------
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.13.0
+scikit-learn>=1.5.0
+joblib>=1.4.0
+
+# --- Component 01 (chest radiograph) ---------------------------------------
+torch>=2.4.0
+torchvision>=0.19.0
+transformers>=4.44.0              # BioBART-v2-base decoder
+pillow>=10.0.0
+opencv-python>=4.10.0             # Grad-CAM overlay rendering
+
+# --- Component 02 (12-lead ECG) --------------------------------------------
+wfdb>=4.1.0                       # WFDB .dat/.hea reader
+matplotlib>=3.9.0                 # ECG strip rendering
+
+# --- Component 04 (ED triage) ----------------------------------------------
+lightgbm>=4.5.0
+xgboost>=2.1.0
+shap>=0.46.0                      # feature attribution
+
+# --- development -----------------------------------------------------------
+pytest>=8.0.0
+httpx>=0.27.0                     # required by fastapi.testclient

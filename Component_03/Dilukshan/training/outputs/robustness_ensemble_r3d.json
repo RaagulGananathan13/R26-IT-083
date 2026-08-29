@@ -1,0 +1,358 @@
+{
+  "system_a": {
+    "runs": [
+      "uefnet_r3d_s1337",
+      "uefnet_r3d_s2024",
+      "uefnet_r3d_s777"
+    ],
+    "strategy": "reg_operational_expanded",
+    "rule": "operational",
+    "n": 1277
+  },
+  "subgroups": {
+    "frame_rate_fps": {
+      "groups": [
+        {
+          "label": "[-inf, 50)",
+          "n": 65,
+          "underpowered": false,
+          "mae": 4.50589826238231,
+          "overall_acc": 0.6615384615384615,
+          "balanced_acc": 0.6741491267353337,
+          "min_class_recall": 0.5454545454545454,
+          "per_class_recall": [
+            0.9285714285714286,
+            0.5454545454545454,
+            0.6363636363636364,
+            0.5862068965517241
+          ],
+          "class_support": [
+            14,
+            11,
+            11,
+            29
+          ]
+        },
+        {
+          "label": "[50, inf)",
+          "n": 1212,
+          "underpowered": false,
+          "mae": 4.007654299517371,
+          "overall_acc": 0.7087458745874587,
+          "balanced_acc": 0.7125447016751365,
+          "min_class_recall": 0.6521739130434783,
+          "per_class_recall": [
+            0.6521739130434783,
+            0.7575757575757576,
+            0.7391304347826086,
+            0.7012987012987013
+          ],
+          "class_support": [
+            69,
+            66,
+            230,
+            847
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 0.49824396286493844,
+        "mae_min": 4.007654299517371,
+        "mae_max": 4.50589826238231,
+        "overall_acc_range": 0.04720741304899723,
+        "overall_acc_min": 0.6615384615384615,
+        "overall_acc_max": 0.7087458745874587,
+        "balanced_acc_range": 0.038395574939802835,
+        "balanced_acc_min": 0.6741491267353337,
+        "balanced_acc_max": 0.7125447016751365
+      }
+    },
+    "recording_length_frames": {
+      "groups": [
+        {
+          "label": "[-inf, 155)",
+          "n": 422,
+          "underpowered": false,
+          "mae": 4.232157560415402,
+          "overall_acc": 0.6966824644549763,
+          "balanced_acc": 0.6964176973523801,
+          "min_class_recall": 0.6551724137931034,
+          "per_class_recall": [
+            0.7021276595744681,
+            0.6551724137931034,
+            0.7397260273972602,
+            0.6886446886446886
+          ],
+          "class_support": [
+            47,
+            29,
+            73,
+            273
+          ]
+        },
+        {
+          "label": "[155, 190)",
+          "n": 422,
+          "underpowered": false,
+          "mae": 3.917392287719886,
+          "overall_acc": 0.6990521327014217,
+          "balanced_acc": 0.7003337516634941,
+          "min_class_recall": 0.65,
+          "per_class_recall": [
+            0.65,
+            0.7391304347826086,
+            0.7191011235955056,
+            0.6931034482758621
+          ],
+          "class_support": [
+            20,
+            23,
+            89,
+            290
+          ]
+        },
+        {
+          "label": "[190, inf)",
+          "n": 433,
+          "underpowered": false,
+          "mae": 3.951617464565387,
+          "overall_acc": 0.7228637413394919,
+          "balanced_acc": 0.7515251546892062,
+          "min_class_recall": 0.7092651757188498,
+          "per_class_recall": [
+            0.75,
+            0.8,
+            0.7468354430379747,
+            0.7092651757188498
+          ],
+          "class_support": [
+            16,
+            25,
+            79,
+            313
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 0.3147652726955159,
+        "mae_min": 3.917392287719886,
+        "mae_max": 4.232157560415402,
+        "overall_acc_range": 0.02618127688451566,
+        "overall_acc_min": 0.6966824644549763,
+        "overall_acc_max": 0.7228637413394919,
+        "balanced_acc_range": 0.05510745733682609,
+        "balanced_acc_min": 0.6964176973523801,
+        "balanced_acc_max": 0.7515251546892062
+      }
+    },
+    "end_diastolic_volume_ml": {
+      "groups": [
+        {
+          "label": "[-inf, 68.82)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 3.9689746412380456,
+          "overall_acc": 0.7347417840375586,
+          "balanced_acc": 0.5031040170491038,
+          "min_class_recall": 0.1111111111111111,
+          "per_class_recall": [
+            0.1111111111111111,
+            0.36363636363636365,
+            0.7833333333333333,
+            0.7543352601156069
+          ],
+          "class_support": [
+            9,
+            11,
+            60,
+            346
+          ]
+        },
+        {
+          "label": "[68.82, 98.34)",
+          "n": 425,
+          "underpowered": false,
+          "mae": 3.693034680007854,
+          "overall_acc": 0.7058823529411765,
+          "balanced_acc": 0.6546952736318408,
+          "min_class_recall": 0.375,
+          "per_class_recall": [
+            0.375,
+            0.7333333333333333,
+            0.8208955223880597,
+            0.6895522388059702
+          ],
+          "class_support": [
+            8,
+            15,
+            67,
+            335
+          ]
+        },
+        {
+          "label": "[98.34, inf)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 4.436238173472204,
+          "overall_acc": 0.6784037558685446,
+          "balanced_acc": 0.7225636334769462,
+          "min_class_recall": 0.6102564102564103,
+          "per_class_recall": [
+            0.8181818181818182,
+            0.803921568627451,
+            0.6578947368421053,
+            0.6102564102564103
+          ],
+          "class_support": [
+            66,
+            51,
+            114,
+            195
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 0.7432034934643501,
+        "mae_min": 3.693034680007854,
+        "mae_max": 4.436238173472204,
+        "overall_acc_range": 0.05633802816901401,
+        "overall_acc_min": 0.6784037558685446,
+        "overall_acc_max": 0.7347417840375586,
+        "balanced_acc_range": 0.2194596164278424,
+        "balanced_acc_min": 0.5031040170491038,
+        "balanced_acc_max": 0.7225636334769462
+      }
+    },
+    "end_systolic_volume_ml": {
+      "groups": [
+        {
+          "label": "[-inf, 27.31)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 3.5114129030833516,
+          "overall_acc": 0.7887323943661971,
+          "balanced_acc": 0.37907904278462656,
+          "min_class_recall": 0.0,
+          "per_class_recall": [
+            0.0,
+            0.0,
+            0.7142857142857143,
+            0.8020304568527918
+          ],
+          "class_support": [
+            1,
+            3,
+            28,
+            394
+          ]
+        },
+        {
+          "label": "[27.31, 42.57)",
+          "n": 425,
+          "underpowered": false,
+          "mae": 3.872603218797282,
+          "overall_acc": 0.68,
+          "balanced_acc": 0.5158063383869835,
+          "min_class_recall": 0.0,
+          "per_class_recall": [
+            0.0,
+            0.5714285714285714,
+            0.8378378378378378,
+            0.6539589442815249
+          ],
+          "class_support": [
+            3,
+            7,
+            74,
+            341
+          ]
+        },
+        {
+          "label": "[42.57, inf)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 4.714652895228995,
+          "overall_acc": 0.6502347417840375,
+          "balanced_acc": 0.6760970383643401,
+          "min_class_recall": 0.5106382978723404,
+          "per_class_recall": [
+            0.7341772151898734,
+            0.7761194029850746,
+            0.6834532374100719,
+            0.5106382978723404
+          ],
+          "class_support": [
+            79,
+            67,
+            139,
+            141
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 1.2032399921456434,
+        "mae_min": 3.5114129030833516,
+        "mae_max": 4.714652895228995,
+        "overall_acc_range": 0.13849765258215962,
+        "overall_acc_min": 0.6502347417840375,
+        "overall_acc_max": 0.7887323943661971,
+        "balanced_acc_range": 0.29701799557971353,
+        "balanced_acc_min": 0.37907904278462656,
+        "balanced_acc_max": 0.6760970383643401
+      }
+    }
+  },
+  "system_b": {
+    "runs": [
+      "uefnet_v3",
+      "uefnet_v3b",
+      "uefnet_v3c"
+    ],
+    "strategy": "reg_operational_expanded"
+  },
+  "paired_comparison": {
+    "n": 1277,
+    "mae_a": 4.033015190344482,
+    "mae_b": 3.979381806723766,
+    "accuracy_a": 0.706342991386061,
+    "accuracy_b": 0.7298355520751761,
+    "mae_difference": {
+      "observed_difference": 0.053633383620716124,
+      "ci_lower": -0.040996296498993855,
+      "ci_hi": 0.14843715068326285,
+      "ci_level": 0.95,
+      "p_value_two_sided": 0.27017298270172985,
+      "n_bootstrap": 10000,
+      "significant_at_alpha": false,
+      "note": "paired bootstrap over studies; both systems resampled on identical indices"
+    },
+    "accuracy_difference": {
+      "observed_difference": -0.023492560689115094,
+      "ci_lower": -0.039937353171495715,
+      "ci_hi": -0.007830853563038365,
+      "ci_level": 0.95,
+      "p_value_two_sided": 0.006399360063993601,
+      "n_bootstrap": 10000,
+      "significant_at_alpha": true,
+      "note": "paired bootstrap over studies; both systems resampled on identical indices"
+    },
+    "balanced_accuracy_difference": {
+      "observed_difference": -0.022147103051662564,
+      "ci_lower": -0.043786854978857835,
+      "ci_hi": -0.0015064338432960059,
+      "ci_level": 0.95,
+      "p_value_two_sided": 0.030984507746126936,
+      "n_bootstrap": 2000,
+      "significant_at_alpha": true,
+      "note": "paired bootstrap over studies; both systems resampled on identical indices"
+    },
+    "mcnemar": {
+      "b01_a_right_b_wrong": 42,
+      "b10_a_wrong_b_right": 72,
+      "n_discordant": 114,
+      "p_value_two_sided": 0.006351623919901832,
+      "significant_at_0.05": true,
+      "test": "exact binomial McNemar"
+    }
+  }
+}

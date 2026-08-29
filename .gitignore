@@ -1,0 +1,171 @@
+# =============================================================================
+# R26-IT-083 — what must never leave this machine
+#
+# Three of the four datasets are credentialed under data use agreements, and
+# every component's README states plainly that images, waveforms, reports and
+# derived files are NOT distributed with the code. Model weights are derived
+# from that data and are not redistributable either.
+#
+# The working tree is ~41 GB. What follows keeps the repository to source code,
+# documentation and synthetic samples.
+#
+# Before the first push, verify with:
+#     git status --porcelain | wc -l
+#     git count-objects -vH
+# =============================================================================
+
+# --- credentialed source data ------------------------------------------------
+# MIMIC-CXR (PhysioNet DUA). `Component_01/data` is a junction to the image set.
+Component_01/data/
+Component_01/Component_01/training_manifest/
+Component_01/Component_01/reports/stage12/
+Component_01/Component_01/review_cases/
+
+# PTB-XL (PhysioNet). Waveforms and the metadata carrying report_en.
+Component_02/Component_02/data/
+Component_02/Component_02/csv/
+Component_02/Component_02/reference/
+
+# EchoNet-Dynamic + CAMUS. The decoded frame cache alone is ~35 GB.
+Component_03/Dilukshan/Dataset/
+Component_03/Dilukshan/preprocessing/cache/
+# NOT the whole artifacts/ directory. Git cannot re-include a file whose parent
+# directory is excluded, and Component_03's own .gitignore -- which stays in
+# place once the submodule becomes a plain directory -- deliberately keeps the
+# small verification reports, norm stats and class visualisations there while
+# dropping the two giant manifests. Excluding the directory outright would
+# silently discard 21 files of evidence that its own rules were written to keep.
+Component_03/Dilukshan/preprocessing/artifacts/manifest.csv
+Component_03/Dilukshan/preprocessing/artifacts/camus_manifest.csv
+Component_03/Dilukshan/preprocessing/artifacts/*.absolute.bak
+
+# MIMIC-IV-ED (PhysioNet). Feature tables, raw extracts, ECG waveforms.
+# Original radiologist reports indexed by dicom_id, so a bundled test image can
+# be shown beside the text a human actually dictated. MIMIC-CXR derived and
+# credentialed: never distributed.
+Component_01/Component_01/review_cases/
+
+# Panel-facing samples and the data dictionary built from them. Both contain
+# real MIMIC-IV values -- chief complaints, vitals, lab results -- so neither
+# is redistributable, however small the files are.
+Component_04/data_for_panel/
+
+Component_04/artifacts/data/
+# Raw MIMIC-IV-ED derived tables, moved in from a sibling copy so the component
+# is self-contained. Credentialed data under a DUA that forbids redistribution:
+# the whole directory stays out of the repository, CSVs included -- the
+# *.parquet rule below would not have covered the two small CSVs here.
+Component_04/data/
+
+# --- trained weights (derived from credentialed data) ------------------------
+**/checkpoints/
+Component_03/Dilukshan/training/outputs/
+Component_04/artifacts/models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.joblib
+*.onnx
+
+# --- bulk artefacts ----------------------------------------------------------
+*.npy
+*.npz
+*.parquet
+*.dat
+*.hea
+*.avi
+*.mp4
+*.tar
+*.zip
+*.csv.gz
+*.h5
+
+# Large derived CSVs. Small config/threshold JSON is kept deliberately.
+Component_01/Component_01/reports/**/*.csv
+Component_02/Component_02/analysis/results/*.json
+Component_04/artifacts/figures/
+
+# --- secrets -----------------------------------------------------------------
+.credentials/
+**/.credentials
+*.pem
+*.key
+.env
+.env.local
+!.env.example
+!.env.local.example
+
+# --- python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# --- node / next -------------------------------------------------------------
+node_modules/
+# Component_02 came out of a zip that suffixed every name; its node_modules is
+# still literally "node_modules (1)", which the plain pattern above misses.
+node_modules*/
+**/node_modules*/
+.next/
+out/
+# Built frontend bundles for the superseded per-component UIs.
+Component_01/Component_01/frontend/dist/
+Component_02/Component_02/frontend/dist/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+
+# --- backend runtime ---------------------------------------------------------
+backend/.cache/
+
+# --- editor / os -------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# --- explicitly KEPT (synthetic, safe to publish) ----------------------------
+!backend/samples/triage/*.pdf
+!frontend/public/samples/*.pdf
+
+# Stray file: an unrelated marketing flyer that ended up in Component_04.
+Component_04/WhatsApp*.jpeg
+
+# Ad-hoc browser probes used during development.
+frontend/*probe*.mjs
+
+# Curated demo studies. Components 01-03 draw on credentialed datasets;
+# only the manifest and README are tracked.
+demo/*
+!demo/README.md
+!demo/manifest.json
+
+# --- EchoNet-Dynamic derived files (added 2026-08-29) ------------------------
+# All three are derived from the protected EchoNet videos, so the Research DUA
+# covers them just as it covers the videos themselves.
+#   viz/*.png        rendered frames of real patient studies
+#   video_index.csv  10,031-row index of the whole video set; also carries the
+#                    absolute paths of the machine it was built on
+#   keyframes.csv    per-study ED/ES frame indices and traced areas
+Component_03/Dilukshan/preprocessing/artifacts/viz/
+Component_03/Dilukshan/preprocessing/artifacts/video_index.csv
+Component_03/Dilukshan/preprocessing/artifacts/keyframes.csv
+
+# --- paper working files -----------------------------------------------------
+# Someone else's published paper, kept locally as a formatting example.
+Research Paper/sample_paper/
+# LaTeX build leftovers.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+Research Paper/latex/*.log
+Research Paper/latex/*.out
+

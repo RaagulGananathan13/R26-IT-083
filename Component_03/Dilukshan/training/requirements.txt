@@ -1,0 +1,10 @@
+# UEF-Net training dependencies (all already present in your environment).
+torch>=2.1            # installed: 2.10.0+cu128 (CUDA)
+torchvision>=0.16     # installed: 0.25.0+cu128 (r2plus1d_18 + Kinetics weights)
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11           # LDS kernel smoothing
+opencv-python>=4.9    # motion channel / clip decode (shared with preprocessing)
+tqdm>=4.65            # progress bars
+matplotlib>=3.7       # training curves + confusion matrix plots
+# nibabel>=5.0 is required only by preprocessing/build_camus.py (CAMUS conversion)

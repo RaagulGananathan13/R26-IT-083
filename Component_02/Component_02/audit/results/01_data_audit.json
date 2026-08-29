@@ -1,0 +1,141 @@
+{
+  "counts": {
+    "master": 17221,
+    "train": 13801,
+    "val": 1709,
+    "test": 1711
+  },
+  "ecg_overlap": {
+    "train_val": 0,
+    "train_test": 0,
+    "val_test": 0
+  },
+  "patient_overlap": {
+    "train_val": 0,
+    "train_test": 0,
+    "val_test": 0,
+    "n_train_patients": 12109,
+    "n_test_patients": 1515,
+    "leaked_test_rows": 0,
+    "leaked_val_rows": 0
+  },
+  "strat_fold": {
+    "train": {
+      "1": 1704,
+      "2": 1720,
+      "3": 1775,
+      "4": 1703,
+      "5": 1705,
+      "6": 1714,
+      "7": 1741,
+      "8": 1739
+    },
+    "val": {
+      "9": 1709
+    },
+    "test": {
+      "10": 1711
+    }
+  },
+  "dupes": {
+    "train": 0,
+    "val": 0,
+    "test": 0
+  },
+  "records_per_patient": {
+    "n_patients": 15174,
+    "n_multi": 1509,
+    "max": 10
+  },
+  "label_counts": {
+    "master": {
+      "NORM": 7032,
+      "MI": 2975,
+      "STTC": 4565,
+      "CD": 4778,
+      "HYP": 1468
+    },
+    "train": {
+      "NORM": 5626,
+      "MI": 2424,
+      "STTC": 3654,
+      "CD": 3810,
+      "HYP": 1202
+    },
+    "val": {
+      "NORM": 699,
+      "MI": 283,
+      "STTC": 455,
+      "CD": 485,
+      "HYP": 134
+    },
+    "test": {
+      "NORM": 707,
+      "MI": 268,
+      "STTC": 456,
+      "CD": 483,
+      "HYP": 132
+    }
+  },
+  "label_rows": {
+    "zero_label_rows": 0,
+    "multi_label_rows": 2970,
+    "mean_labels": 1.2088728877533244
+  },
+  "norm_and_abnormal": 0,
+  "validated": {
+    "1": 12849,
+    "0": 4372
+  },
+  "pos_weight_implied": [
+    1.453075008887309,
+    4.693481848184819,
+    2.7769567597153806,
+    2.622309711286089,
+    10.48169717138103
+  ],
+  "demo": {
+    "age": {
+      "min": 2.0,
+      "max": 300.0,
+      "mean": 63.02369200394867,
+      "std": 33.57067737509779,
+      "nan": 0
+    },
+    "height": {
+      "min": 6.0,
+      "max": 209.0,
+      "mean": 167.3349979675977,
+      "std": 8.453041692978704,
+      "nan": 0
+    },
+    "weight": {
+      "min": 5.0,
+      "max": 250.0,
+      "mean": 70.57249869345567,
+      "std": 11.834350127377215,
+      "nan": 0
+    }
+  },
+  "age_300": 255,
+  "age_clean": {
+    "mean": 59.46192384769539,
+    "std": 16.94516894379581
+  },
+  "cache_files": 17221,
+  "cache_missing": 0,
+  "cache_scan": {
+    "ok": 17221,
+    "bad_shape": 0,
+    "all_zero": 0,
+    "all_zero_ids": [],
+    "nan": 0,
+    "flat_lead_records": 1
+  },
+  "amp": {
+    "median": 1.8990000486373901,
+    "p99": 5.58560009002684,
+    "max": 32.715999603271484,
+    "gt10mV": 37
+  }
+}

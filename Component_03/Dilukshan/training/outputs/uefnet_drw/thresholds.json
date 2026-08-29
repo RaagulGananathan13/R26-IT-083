@@ -1,0 +1,18 @@
+{
+  "strategy": "reg_expanded",
+  "thresholds": [
+    31.0,
+    44.0,
+    58.5
+  ],
+  "expansion": {
+    "pred_mean": 55.72378516937635,
+    "target_mean": 55.824502111962126,
+    "k": 1.0
+  },
+  "val_min_recall": 0.6914539400665927,
+  "val_mae": 4.290541727229643,
+  "protocol": "TTA_5clip",
+  "ef_mean": 55.777643,
+  "ef_std": 12.406359
+}

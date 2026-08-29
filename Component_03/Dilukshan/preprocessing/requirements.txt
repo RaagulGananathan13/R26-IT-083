@@ -1,0 +1,11 @@
+# Preprocessing pipeline dependencies (all already present in your env).
+# Pinned to >= the versions detected on your machine.
+numpy>=1.26
+pandas>=2.0
+opencv-python>=4.9
+scikit-image>=0.22
+scipy>=1.11
+tqdm>=4.65
+nibabel>=5.0          # CAMUS NIfTI reader (build_camus.py)
+# Torch is only needed for the later training stage, not preprocessing:
+# torch>=2.1  (CUDA build already installed: 2.10.0+cu128)

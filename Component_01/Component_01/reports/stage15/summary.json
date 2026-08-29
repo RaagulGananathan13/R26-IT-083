@@ -1,0 +1,241 @@
+{
+  "study_id_order_agreement": 0.4959,
+  "main": {
+    "condition": "card_same",
+    "n_pairs": 1666,
+    "n_patients": 692,
+    "by_transition": [
+      {
+        "transition": "AP->AP",
+        "n": 1035,
+        "n_patients": 417,
+        "false_worse_pct": 3.0,
+        "false_better_pct": 3.77,
+        "asymmetry": -0.77,
+        "ci_lo": -2.07,
+        "ci_hi": 0.49,
+        "significant": false
+      },
+      {
+        "transition": "PA->PA",
+        "n": 245,
+        "n_patients": 184,
+        "false_worse_pct": 4.08,
+        "false_better_pct": 6.12,
+        "asymmetry": -2.04,
+        "ci_lo": -5.58,
+        "ci_hi": 1.28,
+        "significant": false
+      },
+      {
+        "transition": "PA->AP",
+        "n": 207,
+        "n_patients": 183,
+        "false_worse_pct": 13.53,
+        "false_better_pct": 1.93,
+        "asymmetry": 11.59,
+        "ci_lo": 6.37,
+        "ci_hi": 16.92,
+        "significant": true
+      },
+      {
+        "transition": "AP->PA",
+        "n": 179,
+        "n_patients": 167,
+        "false_worse_pct": 3.91,
+        "false_better_pct": 9.5,
+        "asymmetry": -5.59,
+        "ci_lo": -11.17,
+        "ci_hi": 0.0,
+        "significant": false
+      }
+    ],
+    "arms": {
+      "A_same_projection": {
+        "n": 1280,
+        "n_patients": 567,
+        "false_worse_pct": 3.2,
+        "false_better_pct": 4.22,
+        "asymmetry": -1.02,
+        "ci_lo": -2.23,
+        "ci_hi": 0.18,
+        "significant": false
+      },
+      "B_shuffled_null": {
+        "n": 386,
+        "n_patients": 276,
+        "false_worse_pct": 8.03,
+        "false_better_pct": 6.48,
+        "asymmetry": 1.55,
+        "ci_lo": -2.22,
+        "ci_hi": 5.37,
+        "significant": false
+      },
+      "C_true_order_PA_to_AP": {
+        "n": 207,
+        "n_patients": 183,
+        "false_worse_pct": 13.53,
+        "false_better_pct": 1.93,
+        "asymmetry": 11.59,
+        "ci_lo": 6.37,
+        "ci_hi": 16.92,
+        "significant": true
+      },
+      "D_threshold_corrected": {
+        "n": 207,
+        "n_patients": 183,
+        "false_worse_pct": 11.59,
+        "false_better_pct": 3.38,
+        "asymmetry": 8.21,
+        "ci_lo": 2.96,
+        "ci_hi": 13.62,
+        "significant": true
+      }
+    },
+    "tests": {
+      "C_vs_A_finding_vs_control": {
+        "diff": 12.61,
+        "ci": [
+          7.36,
+          18.11
+        ],
+        "p": 0.0
+      },
+      "C_vs_B_finding_vs_shuffled_null": {
+        "diff": 10.05,
+        "ci": [
+          3.65,
+          16.59
+        ],
+        "p": 0.0015
+      },
+      "D_vs_C_does_the_fix_work": {
+        "diff": -3.4,
+        "ci": [
+          -5.94,
+          -1.4
+        ],
+        "p": 0.0015
+      }
+    }
+  },
+  "strict": {
+    "condition": "all_same",
+    "n_pairs": 397,
+    "n_patients": 271,
+    "by_transition": [
+      {
+        "transition": "AP->AP",
+        "n": 184,
+        "n_patients": 135,
+        "false_worse_pct": 3.26,
+        "false_better_pct": 1.09,
+        "asymmetry": 2.17,
+        "ci_lo": -0.55,
+        "ci_hi": 5.52,
+        "significant": false
+      },
+      {
+        "transition": "PA->PA",
+        "n": 107,
+        "n_patients": 86,
+        "false_worse_pct": 3.74,
+        "false_better_pct": 2.8,
+        "asymmetry": 0.93,
+        "ci_lo": -2.97,
+        "ci_hi": 5.17,
+        "significant": false
+      },
+      {
+        "transition": "PA->AP",
+        "n": 55,
+        "n_patients": 55,
+        "false_worse_pct": 10.91,
+        "false_better_pct": 0.0,
+        "asymmetry": 10.91,
+        "ci_lo": 3.64,
+        "ci_hi": 20.0,
+        "significant": true
+      },
+      {
+        "transition": "AP->PA",
+        "n": 51,
+        "n_patients": 50,
+        "false_worse_pct": 1.96,
+        "false_better_pct": 11.76,
+        "asymmetry": -9.8,
+        "ci_lo": -20.0,
+        "ci_hi": 0.0,
+        "significant": false
+      }
+    ],
+    "arms": {
+      "A_same_projection": {
+        "n": 291,
+        "n_patients": 217,
+        "false_worse_pct": 3.44,
+        "false_better_pct": 1.72,
+        "asymmetry": 1.72,
+        "ci_lo": -0.66,
+        "ci_hi": 4.29,
+        "significant": false
+      },
+      "B_shuffled_null": {
+        "n": 106,
+        "n_patients": 89,
+        "false_worse_pct": 4.72,
+        "false_better_pct": 7.55,
+        "asymmetry": -2.83,
+        "ci_lo": -9.35,
+        "ci_hi": 3.0,
+        "significant": false
+      },
+      "C_true_order_PA_to_AP": {
+        "n": 55,
+        "n_patients": 55,
+        "false_worse_pct": 10.91,
+        "false_better_pct": 0.0,
+        "asymmetry": 10.91,
+        "ci_lo": 3.64,
+        "ci_hi": 20.0,
+        "significant": true
+      },
+      "D_threshold_corrected": {
+        "n": 55,
+        "n_patients": 55,
+        "false_worse_pct": 9.09,
+        "false_better_pct": 0.0,
+        "asymmetry": 9.09,
+        "ci_lo": 1.82,
+        "ci_hi": 16.36,
+        "significant": true
+      }
+    },
+    "tests": {
+      "C_vs_A_finding_vs_control": {
+        "diff": 9.12,
+        "ci": [
+          1.45,
+          18.02
+        ],
+        "p": 0.0185
+      },
+      "C_vs_B_finding_vs_shuffled_null": {
+        "diff": 13.62,
+        "ci": [
+          3.84,
+          24.35
+        ],
+        "p": 0.005
+      },
+      "D_vs_C_does_the_fix_work": {
+        "diff": -1.81,
+        "ci": [
+          -5.45,
+          0.0
+        ],
+        "p": 0.725
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+# Component 04 — Temporally-Safe Explainable ACS Triage
+# Verified on Python 3.11 / Windows 11 / RTX 4060 8GB (CUDA 12.8)
+# The pipeline auto-detects GPU availability and falls back to CPU.
+
+numpy>=2.0
+pandas>=2.2
+pyarrow>=15.0
+scipy>=1.13
+scikit-learn>=1.5
+
+xgboost>=3.0          # GPU histogram trees (device="cuda")
+lightgbm>=4.3
+optuna>=4.0
+shap>=0.46
+
+matplotlib>=3.8
+joblib>=1.4
+
+# Optional — only needed to re-extract the raw tables from BigQuery
+# google-cloud-bigquery>=3.25
+# pydata-google-auth>=1.8
+# db-dtypes>=1.2

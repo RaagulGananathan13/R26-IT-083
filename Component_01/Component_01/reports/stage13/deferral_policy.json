@@ -1,0 +1,20 @@
+{
+  "pathology": "Cardiomegaly",
+  "deploy_coverage": 0.85,
+  "margin_cutoff": {
+    "AP": 0.22465848658323284,
+    "PA": 0.0029436368836295076
+  },
+  "fitted_on": "manifest_val.csv n=4474",
+  "measured_on_test": {
+    "coverage": 85.83227445997458,
+    "accuracy": 86.92326671601282,
+    "sensitivity": 95.06875296348981,
+    "specificity": 78.08641975308642,
+    "acc_ap": 86.57386618769645,
+    "acc_pa": 87.34939759036145,
+    "gap": 0.7755314026649955,
+    "coverage_ap": 77.03216879972328,
+    "coverage_pa": 99.72692517749864
+  }
+}

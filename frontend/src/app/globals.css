@@ -1,0 +1,311 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  DESIGN LANGUAGE — clinical decision platform
+  ===========================================
+  A product a hospital would licence, not a research script with a web page.
+
+  The previous pass over-corrected into austerity: every surface was flat white
+  divided by 1px rules, every label 11px monospace. Precise on paper, but with
+  no elevation and no weight contrast a reader gets no hierarchy, and the result
+  reads as unfinished rather than exact. This pass puts hierarchy back.
+
+  FOUR DECISIONS, AND THE REASON FOR EACH
+
+    Layered surfaces        The page sits on a tinted ground; cards lift off it
+                            with a soft, low-spread shadow. Depth is the
+                            cheapest hierarchy there is -- it tells you what is
+                            a container and what is content before you read a
+                            word. Hairlines alone cannot do that.
+
+    Type that carries       16px base, a real scale, and weights from 400 to
+    weight                  800. Headings are set in the display face at size
+                            AND weight, so scanning works without relying on
+                            colour. Figures stay monospaced and tabular so
+                            columns align and a changing value never reflows.
+
+    One confident accent    A deep, saturated blue for primary action and
+                            navigation. The old steel blue was so desaturated
+                            it read as another grey. An accent that does not
+                            look chosen makes the whole page look unfinished.
+
+    Semantics stay separate The five verdict colours are the only other
+                            saturated colour, and none of them is the accent.
+                            Nothing decorative can be mistaken for a
+                            reliability state.
+*/
+:root {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono",
+    Menlo, Consolas, monospace;
+
+  /* Cool, faintly blue neutrals so the accent sits in the same family as the
+     greys rather than on top of them. */
+  --bg: 244 246 250;
+  --surface: 255 255 255;
+  --surface-2: 243 246 250;
+  --ink: 15 27 45;
+  --ink-muted: 82 97 118;
+  --ink-faint: 104 119 140;
+  --line: 224 230 238;
+
+  --accent: 42 88 224;
+  --accent-strong: 30 66 186;
+  --accent-contrast: 255 255 255; /* 5.88:1 on the fill */
+
+  --verdict-actionable: 6 130 88;
+  --verdict-caution: 176 96 6;
+  --verdict-deferred: 109 61 214;
+  --verdict-withheld: 202 44 44;
+  --verdict-unavailable: 110 125 145;
+
+  /* Low spread, tight offset: an interface shadow, not a lifted card. */
+  --shadow-sm: 0 1px 2px rgb(15 27 45 / 0.05), 0 1px 1px rgb(15 27 45 / 0.03);
+  --shadow-md: 0 1px 3px rgb(15 27 45 / 0.06), 0 8px 20px -10px rgb(15 27 45 / 0.12);
+  --shadow-lg: 0 2px 6px rgb(15 27 45 / 0.07), 0 18px 40px -18px rgb(15 27 45 / 0.20);
+}
+
+.dark {
+  --bg: 10 15 26;
+  --surface: 19 27 44;
+  --surface-2: 26 36 56;
+  --ink: 232 238 246;
+  --ink-muted: 154 169 190;
+  --ink-faint: 121 137 160;
+  --line: 40 53 76;
+
+  --accent: 108 152 255;
+  --accent-strong: 146 180 255;
+  --accent-contrast: 10 15 26;   /* 6.91:1 -- white would be 2.77:1 */
+
+  --verdict-actionable: 52 211 153;
+  --verdict-caution: 251 176 64;
+  --verdict-deferred: 167 139 250;
+  --verdict-withheld: 248 113 113;
+  --verdict-unavailable: 145 160 180;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 1px 3px rgb(0 0 0 / 0.45), 0 8px 20px -10px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.5), 0 18px 40px -18px rgb(0 0 0 / 0.75);
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    @apply bg-bg text-ink antialiased;
+    min-height: 100vh;
+    letter-spacing: -0.006em;
+  }
+
+  /* Figures align down a column and never reflow their row when they change. */
+  .tabular,
+  table td,
+  table th,
+  code,
+  kbd {
+    font-variant-numeric: tabular-nums;
+  }
+  code,
+  kbd {
+    font-family: var(--font-mono);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    @apply font-bold;
+    letter-spacing: -0.022em;
+    line-height: 1.22;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: rgb(var(--accent));
+    --tw-ring-offset-color: rgb(var(--bg));
+  }
+  ::selection {
+    background: rgb(var(--accent) / 0.16);
+  }
+}
+
+@layer components {
+  /* Content lifts off the ground. This is the page's primary hierarchy. */
+  .card {
+    @apply rounded-xl border border-line bg-surface;
+    box-shadow: var(--shadow-md);
+  }
+  /* A panel inside a panel: recessed rather than lifted, so nesting reads. */
+  .card-flat {
+    @apply rounded-lg border border-line bg-surface-2;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    @apply font-semibold uppercase text-ink-faint;
+  }
+
+  .display {
+    font-family: var(--font-display);
+    @apply font-bold;
+    letter-spacing: -0.022em;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1;
+    font-size: 0.75rem;
+    @apply font-medium text-ink-muted;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .segmented {
+    @apply inline-flex rounded-lg border border-line bg-surface-2 p-1;
+  }
+  .segmented-btn {
+    @apply rounded-md px-3.5 py-1.5 text-sm font-medium text-ink-muted transition-all;
+  }
+  .segmented-btn:hover {
+    @apply text-ink;
+  }
+  .segmented-btn.active {
+    @apply bg-surface text-ink;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .meter {
+    @apply h-2 overflow-hidden rounded-full bg-surface-2;
+  }
+  .meter-fill {
+    @apply block h-full rounded-full;
+    transition: width 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Media must never dominate the viewport.
+     The four consoles put images in a ~520 px column, so `w-full` was always
+     a reasonable size there. The pathway panel is the full page width, and
+     the very same markup renders a square radiograph at ~1300 px tall --
+     one study filling the screen and pushing the decision it belongs to far
+     below the fold. Capping here rather than at each call site means a new
+     surface cannot reintroduce it. */
+  .image-frame {
+    @apply relative mx-auto w-full overflow-hidden rounded-lg border border-line bg-black;
+    aspect-ratio: 1 / 1;
+    max-width: min(100%, 36rem);
+  }
+  .image-frame img {
+    @apply absolute inset-0 h-full w-full object-contain;
+  }
+
+  /* A label/value pair, aligned on the value. */
+  .readout {
+    @apply flex items-baseline justify-between gap-3 border-b border-line py-2 last:border-0;
+  }
+  .readout dt {
+    @apply text-sm text-ink-muted;
+  }
+  .readout dd {
+    font-family: var(--font-mono);
+    @apply text-sm font-semibold text-ink;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Data tables. The console's densest surface, so it gets explicit treatment
+     rather than inheriting browser defaults. */
+  .data-table {
+    @apply w-full text-sm;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .data-table thead th {
+    font-family: var(--font-mono);
+    @apply border-b border-line bg-surface-2 px-4 py-2.5 text-left align-bottom;
+    font-size: 0.6875rem;
+    letter-spacing: 0.09em;
+    @apply font-semibold uppercase text-ink-faint;
+  }
+  .data-table tbody td {
+    @apply border-b border-line px-4 py-3 align-top;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-0;
+  }
+  .data-table tbody tr {
+    transition: background-color 0.12s ease;
+  }
+  .data-table tbody tr:hover {
+    background: rgb(var(--surface-2) / 0.7);
+  }
+}
+
+@layer utilities {
+  /* Findings a component declined to stand behind: present, but pushed back so
+     they cannot be mistaken for an answer. */
+  .not-actionable {
+    @apply opacity-45 saturate-[0.35];
+  }
+
+  /* Scrolls, but shows no track. For chrome -- a navigation rail that grows a
+     scrollbar reads as a layout accident, not as an affordance. Reserve this
+     for places where the overflow is incidental; content areas keep their
+     scrollbar so a reader knows there is more. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--ink-faint) / 0.35) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--ink-faint) / 0.28);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--ink-faint) / 0.45);
+  }
+
+  .rise-in { animation: rise 380ms cubic-bezier(0.32, 0.72, 0, 1) both; }
+  .rise-in-1 { animation: rise 380ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both; }
+  .rise-in-2 { animation: rise 380ms cubic-bezier(0.32, 0.72, 0, 1) 120ms both; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in, .rise-in-1, .rise-in-2 { animation: none; }
+  .meter-fill { transition: none; }
+}

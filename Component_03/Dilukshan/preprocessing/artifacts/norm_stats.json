@@ -1,0 +1,10 @@
+{
+  "ef_mean": 55.777643,
+  "ef_std": 12.406359,
+  "pixel_mean": 0.128799,
+  "pixel_std": 0.195979,
+  "source": "exact_cached_train_pixels",
+  "n_videos_sampled": 7465,
+  "n_train_pixels": 16499624960,
+  "provenance_note": "pixel_mean/std refined by stage4 over all cached TRAIN frames (n_train_pixels); ef_mean/std from stage3 over the TRAIN split. stage5_verify recomputes on a --stats-sample subsample (default 512 videos) purely as a drift check and reports that separately."
+}

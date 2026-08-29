@@ -1,0 +1,354 @@
+{
+  "system_a": {
+    "runs": [
+      "uefnet_r3d"
+    ],
+    "strategy": "reg_operational_expanded",
+    "rule": "operational",
+    "n": 1277
+  },
+  "subgroups": {
+    "frame_rate_fps": {
+      "groups": [
+        {
+          "label": "[-inf, 50)",
+          "n": 65,
+          "underpowered": false,
+          "mae": 4.770889557143751,
+          "overall_acc": 0.6923076923076923,
+          "balanced_acc": 0.7054970891177788,
+          "min_class_recall": 0.5454545454545454,
+          "per_class_recall": [
+            0.9285714285714286,
+            0.5454545454545454,
+            0.7272727272727273,
+            0.6206896551724138
+          ],
+          "class_support": [
+            14,
+            11,
+            11,
+            29
+          ]
+        },
+        {
+          "label": "[50, inf)",
+          "n": 1212,
+          "underpowered": false,
+          "mae": 4.0956749806910775,
+          "overall_acc": 0.735973597359736,
+          "balanced_acc": 0.7072485156477251,
+          "min_class_recall": 0.5942028985507246,
+          "per_class_recall": [
+            0.5942028985507246,
+            0.7878787878787878,
+            0.691304347826087,
+            0.755608028335301
+          ],
+          "class_support": [
+            69,
+            66,
+            230,
+            847
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 0.6752145764526736,
+        "mae_min": 4.0956749806910775,
+        "mae_max": 4.770889557143751,
+        "overall_acc_range": 0.04366590505204371,
+        "overall_acc_min": 0.6923076923076923,
+        "overall_acc_max": 0.735973597359736,
+        "balanced_acc_range": 0.0017514265299463094,
+        "balanced_acc_min": 0.7054970891177788,
+        "balanced_acc_max": 0.7072485156477251
+      }
+    },
+    "recording_length_frames": {
+      "groups": [
+        {
+          "label": "[-inf, 155)",
+          "n": 422,
+          "underpowered": false,
+          "mae": 4.332622418364706,
+          "overall_acc": 0.7322274881516587,
+          "balanced_acc": 0.7061070008360936,
+          "min_class_recall": 0.6575342465753424,
+          "per_class_recall": [
+            0.6808510638297872,
+            0.7241379310344828,
+            0.6575342465753424,
+            0.7619047619047619
+          ],
+          "class_support": [
+            47,
+            29,
+            73,
+            273
+          ]
+        },
+        {
+          "label": "[155, 190)",
+          "n": 422,
+          "underpowered": false,
+          "mae": 4.048616458345126,
+          "overall_acc": 0.7298578199052133,
+          "balanced_acc": 0.6937890605259168,
+          "min_class_recall": 0.6,
+          "per_class_recall": [
+            0.6,
+            0.6956521739130435,
+            0.7415730337078652,
+            0.7379310344827587
+          ],
+          "class_support": [
+            20,
+            23,
+            89,
+            290
+          ]
+        },
+        {
+          "label": "[190, inf)",
+          "n": 433,
+          "underpowered": false,
+          "mae": 4.011970189007807,
+          "overall_acc": 0.7390300230946882,
+          "balanced_acc": 0.7224699215432523,
+          "min_class_recall": 0.625,
+          "per_class_recall": [
+            0.625,
+            0.84,
+            0.6708860759493671,
+            0.7539936102236422
+          ],
+          "class_support": [
+            16,
+            25,
+            79,
+            313
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 0.32065222935689874,
+        "mae_min": 4.011970189007807,
+        "mae_max": 4.332622418364706,
+        "overall_acc_range": 0.009172203189474981,
+        "overall_acc_min": 0.7298578199052133,
+        "overall_acc_max": 0.7390300230946882,
+        "balanced_acc_range": 0.02868086101733547,
+        "balanced_acc_min": 0.6937890605259168,
+        "balanced_acc_max": 0.7224699215432523
+      }
+    },
+    "end_diastolic_volume_ml": {
+      "groups": [
+        {
+          "label": "[-inf, 68.82)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 4.011919756246012,
+          "overall_acc": 0.8004694835680751,
+          "balanced_acc": 0.5487840836106732,
+          "min_class_recall": 0.1111111111111111,
+          "per_class_recall": [
+            0.1111111111111111,
+            0.45454545454545453,
+            0.8,
+            0.8294797687861272
+          ],
+          "class_support": [
+            9,
+            11,
+            60,
+            346
+          ]
+        },
+        {
+          "label": "[68.82, 98.34)",
+          "n": 425,
+          "underpowered": false,
+          "mae": 3.8417954214685106,
+          "overall_acc": 0.72,
+          "balanced_acc": 0.644247512437811,
+          "min_class_recall": 0.375,
+          "per_class_recall": [
+            0.375,
+            0.7333333333333333,
+            0.746268656716418,
+            0.7223880597014926
+          ],
+          "class_support": [
+            8,
+            15,
+            67,
+            335
+          ]
+        },
+        {
+          "label": "[98.34, inf)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 4.535739501237116,
+          "overall_acc": 0.6807511737089202,
+          "balanced_acc": 0.7119766971934154,
+          "min_class_recall": 0.6052631578947368,
+          "per_class_recall": [
+            0.7575757575757576,
+            0.8235294117647058,
+            0.6052631578947368,
+            0.6615384615384615
+          ],
+          "class_support": [
+            66,
+            51,
+            114,
+            195
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 0.6939440797686056,
+        "mae_min": 3.8417954214685106,
+        "mae_max": 4.535739501237116,
+        "overall_acc_range": 0.11971830985915488,
+        "overall_acc_min": 0.6807511737089202,
+        "overall_acc_max": 0.8004694835680751,
+        "balanced_acc_range": 0.16319261358274217,
+        "balanced_acc_min": 0.5487840836106732,
+        "balanced_acc_max": 0.7119766971934154
+      }
+    },
+    "end_systolic_volume_ml": {
+      "groups": [
+        {
+          "label": "[-inf, 27.31)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 3.5743556278297315,
+          "overall_acc": 0.8474178403755869,
+          "balanced_acc": 0.4032360406091371,
+          "min_class_recall": 0.0,
+          "per_class_recall": [
+            0.0,
+            0.0,
+            0.75,
+            0.8629441624365483
+          ],
+          "class_support": [
+            1,
+            3,
+            28,
+            394
+          ]
+        },
+        {
+          "label": "[27.31, 42.57)",
+          "n": 425,
+          "underpowered": false,
+          "mae": 3.9583388108961266,
+          "overall_acc": 0.7011764705882353,
+          "balanced_acc": 0.5415142834497673,
+          "min_class_recall": 0.0,
+          "per_class_recall": [
+            0.0,
+            0.7142857142857143,
+            0.7567567567567568,
+            0.6950146627565983
+          ],
+          "class_support": [
+            3,
+            7,
+            74,
+            341
+          ]
+        },
+        {
+          "label": "[42.57, inf)",
+          "n": 426,
+          "underpowered": false,
+          "mae": 4.857033816257302,
+          "overall_acc": 0.6525821596244131,
+          "balanced_acc": 0.6741347948529359,
+          "min_class_recall": 0.574468085106383,
+          "per_class_recall": [
+            0.6835443037974683,
+            0.7910447761194029,
+            0.6474820143884892,
+            0.574468085106383
+          ],
+          "class_support": [
+            79,
+            67,
+            139,
+            141
+          ]
+        }
+      ],
+      "spread_over_powered_groups": {
+        "mae_range": 1.2826781884275706,
+        "mae_min": 3.5743556278297315,
+        "mae_max": 4.857033816257302,
+        "overall_acc_range": 0.19483568075117375,
+        "overall_acc_min": 0.6525821596244131,
+        "overall_acc_max": 0.8474178403755869,
+        "balanced_acc_range": 0.27089875424379883,
+        "balanced_acc_min": 0.4032360406091371,
+        "balanced_acc_max": 0.6741347948529359
+      }
+    }
+  },
+  "system_b": {
+    "runs": [
+      "uefnet_v3"
+    ],
+    "strategy": "reg_operational_thresholds"
+  },
+  "paired_comparison": {
+    "n": 1277,
+    "mae_a": 4.130043772757972,
+    "mae_b": 4.138437208409432,
+    "accuracy_a": 0.7337509788566954,
+    "accuracy_b": 0.721221613155834,
+    "mae_difference": {
+      "observed_difference": -0.008393435651459669,
+      "ci_lower": -0.13136894159609366,
+      "ci_hi": 0.11715203672058774,
+      "ci_level": 0.95,
+      "p_value_two_sided": 0.8887111288871112,
+      "n_bootstrap": 10000,
+      "significant_at_alpha": false,
+      "note": "paired bootstrap over studies; both systems resampled on identical indices"
+    },
+    "accuracy_difference": {
+      "observed_difference": 0.012529365700861383,
+      "ci_lower": -0.007047768206734473,
+      "ci_hi": 0.03210649960845735,
+      "ci_level": 0.95,
+      "p_value_two_sided": 0.21737826217378262,
+      "n_bootstrap": 10000,
+      "significant_at_alpha": false,
+      "note": "paired bootstrap over studies; both systems resampled on identical indices"
+    },
+    "balanced_accuracy_difference": {
+      "observed_difference": -0.01785447932528439,
+      "ci_lower": -0.04725843184307544,
+      "ci_hi": 0.009767718242048957,
+      "ci_level": 0.95,
+      "p_value_two_sided": 0.2158920539730135,
+      "n_bootstrap": 2000,
+      "significant_at_alpha": false,
+      "note": "paired bootstrap over studies; both systems resampled on identical indices"
+    },
+    "mcnemar": {
+      "b01_a_right_b_wrong": 87,
+      "b10_a_wrong_b_right": 71,
+      "n_discordant": 158,
+      "p_value_two_sided": 0.23263498900407617,
+      "significant_at_0.05": false,
+      "test": "exact binomial McNemar"
+    }
+  }
+}
