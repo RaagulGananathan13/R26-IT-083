@@ -5,7 +5,10 @@
 
 paths:
   # Raw MIMIC-IV-ED derived parquet files (extracted via BigQuery).
-  raw_dir: "../Component_4/Component_4/data/processed"
+  # Held inside the component. It previously lived in a sibling copy of an
+  # earlier version of this project, which meant the component could not be
+  # moved or handed over without silently losing the data it preprocesses from.
+  raw_dir: "data/processed"
   # Everything this component produces.
   artifacts_dir: "artifacts"
 
