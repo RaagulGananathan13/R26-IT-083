@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Card, CardBody, CardHeader, Hero } from "@/components/ui";
+import { useHealth } from "@/hooks/useHealth";
 import { getCohorts } from "@/lib/api";
 import { cn, humanise } from "@/lib/format";
 import type { CohortReport } from "@/lib/types";
@@ -23,7 +24,7 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-4xl px-6 pb-20 pt-6">
+    <div className="mx-auto max-w-4xl">
       <Hero
         eyebrow="Method"
         title="Method and cohorts"
@@ -151,6 +152,8 @@ export default function AboutPage() {
           </Card>
         )}
 
+        <RuntimeCard />
+
         <Card>
           <CardHeader title="Data use" />
           <CardBody className="text-sm leading-relaxed text-ink-muted">
@@ -164,3 +167,50 @@ export default function AboutPage() {
     </div>
   );
 }
+
+/**
+ * Where the service is actually running.
+ *
+ * Deliberately here and not in the header. Which GPU answered a request is
+ * operator telemetry -- it tells a clinician nothing about whether a result can
+ * be trusted -- but it is exactly what someone reproducing a figure or
+ * diagnosing a slow response needs, so it belongs on the provenance page.
+ */
+function RuntimeCard() {
+  const { health, error } = useHealth();
+  if (error || !health) return null;
+
+  const ready = health.components.filter(
+    (component) => component.status === "ready",
+  ).length;
+
+  return (
+    <Card>
+      <CardHeader
+        title="Runtime"
+        description="The environment serving this session. Recorded for reproducibility, not for clinical interpretation."
+      />
+      <CardBody>
+        <dl className="grid gap-x-8 sm:grid-cols-2">
+          <div className="readout">
+            <dt>Service</dt>
+            <dd>{health.service} {health.version}</dd>
+          </div>
+          <div className="readout">
+            <dt>Compute device</dt>
+            <dd className="truncate" title={health.device}>{health.device}</dd>
+          </div>
+          <div className="readout">
+            <dt>Components loaded</dt>
+            <dd>{ready} of {health.components.length}</dd>
+          </div>
+          <div className="readout">
+            <dt>Uptime</dt>
+            <dd>{Math.floor(health.uptime_s / 60)} min</dd>
+          </div>
+        </dl>
+      </CardBody>
+    </Card>
+  );
+}
+

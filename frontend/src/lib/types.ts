@@ -197,3 +197,117 @@ export interface ApiError {
   message: string;
   detail?: unknown;
 }
+
+/* ---- clinical pathway ------------------------------------------------- */
+
+export type StageStatus =
+  | "completed"
+  | "not_supplied"
+  | "skipped"
+  | "blocked"
+  | "not_reached";
+
+export type Urgency = "immediate" | "urgent" | "routine" | "none";
+
+export interface StageRouting {
+  branch: string;
+  statement: string;
+  basis: string;
+  next_stage: string | null;
+  terminates: boolean;
+  urgency: Urgency;
+  guideline: string | null;
+}
+
+export interface PathwayStage {
+  id: string;
+  ordinal: number;
+  clock: string;
+  component: ComponentId | null;
+  horizon_h: number | null;
+  title: string;
+  clinical_act: string;
+  question: string;
+  status: StageStatus;
+  detail: string | null;
+  routing: StageRouting | null;
+  result: Envelope | null;
+  deadline: string | null;
+}
+
+export interface Disposition {
+  destination:
+    | "cath_lab"
+    | "ccu"
+    | "ward"
+    | "observation"
+    | "discharge"
+    | "non_cardiac"
+    | "indeterminate";
+  label: string;
+  urgency: Urgency;
+  time_target: string | null;
+  rationale: string[];
+  heart_failure_pathway: boolean;
+}
+
+export interface PathwayResponse {
+  patient_id: string;
+  stages: PathwayStage[];
+  disposition: Disposition;
+  actionability: Actionability;
+  actionability_reasons: string[];
+  terminated_at: string | null;
+  termination_reason: string | null;
+  observations: CrossModalObservation[];
+  stages_completed: number;
+  stages_total: number;
+  limits: string[];
+  elapsed_ms: number;
+  request_id: string;
+  disclaimer: string;
+}
+
+export interface PathwayReference {
+  id: string;
+  title: string;
+  journal: string;
+  url: string;
+  supports: string;
+}
+
+export interface PathwayDefinition {
+  stages: Array<
+    Pick<
+      PathwayStage,
+      "id" | "ordinal" | "clock" | "component" | "horizon_h" | "title" | "clinical_act" | "question" | "deadline"
+    >
+  >;
+  references: PathwayReference[];
+}
+
+/** Continuation state for a stage-by-stage traversal. Opaque: pass it back unread. */
+export interface PathwayContext {
+  visited: string[];
+  completed: string[];
+  hf_pathway: boolean;
+  mimics: string[];
+  verdicts: Record<string, string>;
+  terminated_at: string | null;
+  termination_reason: string | null;
+}
+
+export interface StageRunResponse {
+  stage: PathwayStage;
+  context: PathwayContext;
+  next_stage: string | null;
+  /** Stages the routing advanced past. Reported by the server so the client
+   *  never has to reimplement the ordering to work them out. */
+  skipped: PathwayStage[];
+  finished: boolean;
+  actionability: Actionability;
+  disposition: Disposition | null;
+  limits: string[];
+  elapsed_ms: number;
+  request_id: string;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardBody, CardHeader } from "@/components/ui";
+import { frame } from "@/components/ui";
 import { cn, decimal } from "@/lib/format";
 
 interface LeadAttribution {
@@ -25,22 +25,30 @@ export function EcgStripViewer({
   imageBase64,
   leads,
   explanation,
+  bare,
 }: {
   imageBase64: string | null;
   leads: LeadAttribution[];
   explanation: Record<string, unknown>;
+  bare?: boolean;
 }) {
+  const { Frame, FrameHeader, FrameBody } = frame(bare);
   const target = explanation.target ?? explanation.gradcam_target;
   const territory = explanation.territory as string | undefined;
   const artery = explanation.artery as string | undefined;
+  // The heuristic localises whichever class the Grad-CAM targeted, and that is
+  // always MI. When MI was not ruled in, the territory still has a value and a
+  // named artery -- and printed plainly it reads as a localised occlusion in a
+  // patient who has no infarct on this trace.
+  const territoryApplies = explanation.territory_applies !== false;
   const topLeads = (explanation.topLeads ?? explanation.top_leads) as string[] | undefined;
   const peaks = (explanation.peaksSeconds ?? explanation.peaks_seconds) as number[] | undefined;
 
   const maxMagnitude = Math.max(1, ...leads.map((lead) => Math.abs(lead.signed)));
 
   return (
-    <Card>
-      <CardHeader
+    <Frame>
+      <FrameHeader
         title="Signal and attribution"
         description={
           target
@@ -48,14 +56,17 @@ export function EcgStripViewer({
             : "Twelve-lead strip as the model received it, after band-pass filtering and resampling."
         }
       />
-      <CardBody className="space-y-4">
+      <FrameBody className="space-y-4">
+        {/* A 12-lead strip is 1924x1146. At full width in the pathway panel
+            that is 774 px tall; capping the height keeps all twelve leads
+            legible without swallowing the screen. */}
         {imageBase64 && (
           <div className="overflow-hidden rounded-xl border border-line bg-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`data:image/png;base64,${imageBase64}`}
               alt="Twelve-lead ECG with attribution band"
-              className="w-full"
+              className="mx-auto block max-h-[22rem] w-auto max-w-full"
             />
           </div>
         )}
@@ -65,12 +76,23 @@ export function EcgStripViewer({
             {territory && (
               <div>
                 <dt className="eyebrow">Territory</dt>
-                <dd className="mt-0.5 text-sm font-medium capitalize text-ink">
+                <dd
+                  className={cn(
+                    "mt-0.5 text-sm font-medium capitalize",
+                    territoryApplies ? "text-ink" : "text-ink-faint",
+                  )}
+                >
                   {territory}
                   {artery && (
                     <span className="ml-1 font-normal text-ink-muted">({artery})</span>
                   )}
                 </dd>
+                {!territoryApplies && (
+                  <p className="mt-1 text-2xs leading-relaxed text-verdict-caution">
+                    Infarction was not ruled in on this trace. This is where the
+                    MI-class attribution fell, not a localised occlusion.
+                  </p>
+                )}
               </div>
             )}
             {topLeads && topLeads.length > 0 && (
@@ -132,7 +154,7 @@ export function EcgStripViewer({
             </p>
           </div>
         )}
-      </CardBody>
-    </Card>
+      </FrameBody>
+    </Frame>
   );
 }

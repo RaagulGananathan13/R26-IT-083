@@ -62,13 +62,13 @@ export function FindingsTable({
         }
       />
       <div className={cn("overflow-x-auto scrollbar-thin", muted && "not-actionable")}>
-        <table className="w-full text-sm">
+        <table className="data-table">
           <thead>
-            <tr className="border-b border-line text-left">
-              <th className="eyebrow px-5 py-2 font-semibold">Finding</th>
-              <th className="eyebrow px-3 py-2 text-right font-semibold">Value</th>
-              <th className="eyebrow px-3 py-2 text-right font-semibold">Operating point</th>
-              <th className="eyebrow px-5 py-2 text-right font-semibold">Call</th>
+            <tr>
+              <th>Finding</th>
+              <th className="text-right">Value</th>
+              <th className="text-right">Operating point</th>
+              <th className="text-right">Call</th>
             </tr>
           </thead>
           <tbody>
@@ -91,23 +91,25 @@ function FindingRow({ finding }: { finding: Finding }) {
         : "—";
 
   return (
-    <tr className="border-b border-line/60 last:border-0">
-      <td className="px-5 py-2.5">
-        <span className="font-medium text-ink">{finding.name}</span>
+    <tr>
+      <td>
+        <span className="text-[0.9375rem] font-semibold text-ink">{finding.name}</span>
         {finding.interval && finding.interval.length === 2 && (
-          <span className="ml-2 text-xs text-ink-faint">
+          <span className="ml-2 font-mono text-[0.75rem] text-ink-faint">
             95 % interval {decimal(finding.interval[0], 1)}–{decimal(finding.interval[1], 1)}
           </span>
         )}
         {finding.evidence && (
-          <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">{finding.evidence}</p>
+          <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink-faint">{finding.evidence}</p>
         )}
       </td>
-      <td className="px-3 py-2.5 text-right tabular font-medium text-ink">{value}</td>
-      <td className="px-3 py-2.5 text-right tabular text-xs text-ink-faint">
+      <td className="tabular whitespace-nowrap text-right font-mono font-semibold text-ink">
+        {value}
+      </td>
+      <td className="tabular whitespace-nowrap text-right font-mono text-[0.8125rem] text-ink-faint">
         {finding.threshold !== null ? decimal(finding.threshold, 3) : "—"}
       </td>
-      <td className="px-5 py-2.5 text-right">
+      <td className="text-right">
         <Call finding={finding} />
       </td>
     </tr>

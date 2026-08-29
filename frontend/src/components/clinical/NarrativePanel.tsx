@@ -1,22 +1,26 @@
-import { Card, CardBody, CardHeader } from "@/components/ui";
+import { frame } from "@/components/ui";
 
 export function NarrativePanel({
   text,
   title = "Generated report",
   description,
+  bare,
 }: {
   text: string;
   title?: string;
   description?: string;
+  bare?: boolean;
 }) {
+  const { Frame, FrameHeader, FrameBody } = frame(bare);
+
   return (
-    <Card>
-      <CardHeader title={title} description={description} />
-      <CardBody>
+    <Frame>
+      <FrameHeader title={title} description={description} />
+      <FrameBody>
         <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-ink-muted">
           {text}
         </pre>
-      </CardBody>
-    </Card>
+      </FrameBody>
+    </Frame>
   );
 }

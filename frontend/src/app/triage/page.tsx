@@ -3,14 +3,16 @@
 import { useCallback, useState } from "react";
 
 import {
+  AnalysisSplit,
   ClassDistribution,
   ErrorNotice,
   ExtractionReview,
+  LoadedStudy,
   FindingsGrid,
-  ModelCardPanel,
   RawPayload,
   StudyGrid,
   StudyLayout,
+  ShapAttribution,
   TextAttribution,
   VerdictBanner,
 } from "@/components/clinical";
@@ -124,8 +126,19 @@ function PdfMode({ onCorrect }: { onCorrect: (record: Record<string, any>) => vo
   }
 
   return (
-    <StudyGrid>
+    <StudyGrid wide={Boolean(result && !pending)}>
       <div className="space-y-4">
+        {result && !pending ? (
+          <LoadedStudy
+            name={file?.name ?? "ED record"}
+            detail={result.result.headline}
+            onReset={() => {
+              setFile(null);
+              reset();
+            }}
+            label="New record"
+          />
+        ) : (
         <Card>
           <CardHeader
             title="ED record"
@@ -153,6 +166,7 @@ function PdfMode({ onCorrect }: { onCorrect: (record: Record<string, any>) => vo
             </Button>
           </CardBody>
         </Card>
+        )}
 
         <Card>
           <CardHeader
@@ -230,7 +244,7 @@ function FormMode({ initial }: { initial: Record<string, any> | null }) {
   const { result, error, pending, execute } = useAnalysis<Envelope, TriageFormValue>(run);
 
   return (
-    <StudyGrid>
+    <StudyGrid wide={Boolean(result && !pending)}>
       <TriageForm initial={initial} pending={pending} onSubmit={(value) => execute(value)} />
 
       <div className="space-y-4">
@@ -303,10 +317,27 @@ function TriageResult({ envelope }: { envelope: Envelope }) {
         />
       )}
 
-      <TextAttribution
-        complaint={String(raw.chief_complaint ?? raw.complaint ?? "")}
-        tokens={(envelope.explanation.text_attribution as never[]) ?? []}
-        modalityNote={envelope.explanation.modality_attribution_note as string | undefined}
+      {/* The two halves of "why this patient": which words in the complaint
+          the lexicon matched, and which features moved P(ACS). Read together,
+          because the text channel is one of the features being attributed. */}
+      <AnalysisSplit
+        left={
+          <ShapAttribution
+            features={(envelope.explanation.shap_top_features as never[]) ?? []}
+            modality={
+              (envelope.explanation.shap_modality_contribution as Record<string, number>) ?? {}
+            }
+            note={envelope.explanation.shap_note as string | undefined}
+            horizon={raw.horizon_h as number | undefined}
+          />
+        }
+        right={
+          <TextAttribution
+            complaint={String(raw.chief_complaint ?? raw.complaint ?? "")}
+            tokens={(envelope.explanation.text_attribution as never[]) ?? []}
+            modalityNote={envelope.explanation.modality_attribution_note as string | undefined}
+          />
+        }
       />
 
       <FindingsGrid
@@ -315,7 +346,6 @@ function TriageResult({ envelope }: { envelope: Envelope }) {
         title="Four-class call"
       />
 
-      <ModelCardPanel model={envelope.model} />
       <RawPayload payload={raw} />
 
       <p className="text-2xs text-ink-faint">

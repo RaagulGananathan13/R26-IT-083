@@ -34,17 +34,35 @@ export function TriageForm({
   pending,
   onSubmit,
   initial,
+  submitLabel = "Analyse record",
+  pendingLabel = "Analysing…",
 }: {
   pending: boolean;
   onSubmit: (value: TriageFormValue) => void;
   /** A record carried over from a PDF extraction, to be checked and corrected. */
   initial?: Record<string, any> | null;
+  /** The pathway reuses this form, where the action is not "analyse". */
+  submitLabel?: string;
+  pendingLabel?: string;
 }) {
   const seed = seedFrom(initial);
   const [text, setText] = useState<Record<string, string>>(seed.text);
   const [ecgFlags, setEcgFlags] = useState<Record<string, boolean>>(seed.ecgFlags);
   const [historyFlags, setHistoryFlags] = useState<Record<string, boolean>>(seed.historyFlags);
   const [ecgPerformed, setEcgPerformed] = useState(seed.ecgPerformed);
+
+  // useState reads its initialiser once, so a new `initial` -- a preset being
+  // chosen, or a fresh PDF extraction -- would otherwise leave every field
+  // showing the previous record. Keyed on identity, so typing does not reset.
+  const [seededFrom, setSeededFrom] = useState(initial);
+  if (initial !== seededFrom) {
+    const next = seedFrom(initial);
+    setSeededFrom(initial);
+    setText(next.text);
+    setEcgFlags(next.ecgFlags);
+    setHistoryFlags(next.historyFlags);
+    setEcgPerformed(next.ecgPerformed);
+  }
 
   function set(key: string, value: string) {
     setText((previous) => ({ ...previous, [key]: value }));
@@ -294,7 +312,7 @@ export function TriageForm({
       </Callout>
 
       <Button className="w-full" loading={pending} onClick={() => onSubmit(build())}>
-        {pending ? "Analysing…" : "Analyse record"}
+        {pending ? pendingLabel : submitLabel}
       </Button>
     </div>
   );

@@ -54,7 +54,9 @@ export function VerdictBanner({
 
         <div className="mt-3 grid gap-5 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] sm:items-center">
           {headline && (
-            <p className="display text-[1.35rem] leading-snug text-ink">{headline}</p>
+            <p className="display text-[1.75rem] font-semibold leading-tight text-ink">
+              {headline}
+            </p>
           )}
           {confidence && (
             <div>

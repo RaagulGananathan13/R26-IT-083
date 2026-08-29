@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardBody, CardHeader } from "@/components/ui";
+import { frame } from "@/components/ui";
 import { cn, decimal } from "@/lib/format";
 
 interface Token {
@@ -27,20 +27,23 @@ export function TextAttribution({
   complaint,
   tokens,
   modalityNote,
+  bare,
 }: {
   complaint: string;
   tokens: Token[];
   modalityNote?: string;
+  bare?: boolean;
 }) {
+  const { Frame, FrameHeader, FrameBody } = frame(bare);
   if (!complaint && tokens.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader
+    <Frame>
+      <FrameHeader
         title="Chief-complaint attribution"
         description="Clinical-lexicon matches in the triage free text. At the triage-desk horizon this channel carries 31.3 % of the model's attribution."
       />
-      <CardBody className="space-y-4">
+      <FrameBody className="space-y-4">
         {complaint && (
           <blockquote className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm leading-relaxed text-ink">
             {highlight(complaint, tokens)}
@@ -89,8 +92,8 @@ export function TextAttribution({
             {modalityNote}
           </p>
         )}
-      </CardBody>
-    </Card>
+      </FrameBody>
+    </Frame>
   );
 }
 

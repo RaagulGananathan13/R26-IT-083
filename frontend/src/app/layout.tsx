@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { DisclaimerBar } from "@/components/layout/DisclaimerBar";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
 
 import "./globals.css";
 
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+    { media: "(prefers-color-scheme: light)", color: "#f9fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0e13" },
   ],
 };
 
@@ -39,13 +39,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <DisclaimerBar />
-            <main className="flex-1 overflow-y-auto scrollbar-thin">{children}</main>
-          </div>
-        </div>
+        {/* Document flow rather than a fixed-height flex shell: the rail is
+            sticky, so the page scrolls as one surface and long findings tables
+            are not trapped in an inner scroller with its own scrollbar. */}
+        <TopBar />
+        <DisclaimerBar />
+        <main className="mx-auto w-full max-w-[88rem] px-5 py-8 sm:px-8 sm:py-10">
+          {children}
+        </main>
       </body>
     </html>
   );

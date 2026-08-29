@@ -45,13 +45,24 @@ export function ClassDistribution({
               <div className="flex items-baseline justify-between gap-3">
                 <span
                   className={cn(
-                    "text-sm",
-                    isPredicted ? "font-semibold text-ink" : "text-ink-muted",
+                    // The predicted class carries the answer, so it is set
+                    // larger than the classes it was chosen over rather than
+                    // only bolder -- weight alone does not survive a projector.
+                    isPredicted
+                      ? "text-base font-semibold text-ink"
+                      : "text-sm text-ink-muted",
                   )}
                 >
                   {FULL[name] ?? name}
                 </span>
-                <span className="tabular text-xs text-ink-muted">{percent(value, 2)}</span>
+                <span
+                  className={cn(
+                    "tabular",
+                    isPredicted ? "text-sm font-semibold text-ink" : "text-xs text-ink-muted",
+                  )}
+                >
+                  {percent(value, 2)}
+                </span>
               </div>
               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
                 <div

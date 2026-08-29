@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Card, CardBody, CardHeader, Segmented } from "@/components/ui";
+import { Segmented, frame } from "@/components/ui";
 import { cn } from "@/lib/format";
 
 type Mode = "original" | "overlay" | "heatmap";
@@ -32,13 +32,17 @@ export function GradCamViewer({
   heatmapBase64,
   target = "Cardiomegaly",
   caveat,
+  bare,
 }: {
   /** Object URL of the uploaded study, kept client-side. */
   originalUrl: string | null;
   heatmapBase64: string | null;
   target?: string;
   caveat?: string;
+  /** Render without card chrome, for nesting inside another panel. */
+  bare?: boolean;
 }) {
+  const { Frame, FrameHeader, FrameBody } = frame(bare);
   const [mode, setMode] = useState<Mode>("overlay");
   const [opacity, setOpacity] = useState(0.7);
 
@@ -46,8 +50,8 @@ export function GradCamViewer({
   const heatmapUrl = `data:image/png;base64,${heatmapBase64}`;
 
   return (
-    <Card>
-      <CardHeader
+    <Frame>
+      <FrameHeader
         title="Grad-CAM focus map"
         description={`Gradient of the ${target.toLowerCase()} logit, back-propagated to the final convolutional stage.`}
         actions={
@@ -59,7 +63,7 @@ export function GradCamViewer({
           />
         }
       />
-      <CardBody className="space-y-3">
+      <FrameBody className="space-y-3">
         <div className="image-frame">
           {originalUrl ? (
             <img
@@ -119,7 +123,7 @@ export function GradCamViewer({
           {caveat ??
             "Grad-CAM shows where the model looked, not whether it was right. Repeatability on chest radiographs was measured at SSIM 0.12, so read this as a sanity check — did it attend to the cardiac silhouette? — never as localisation evidence."}
         </p>
-      </CardBody>
-    </Card>
+      </FrameBody>
+    </Frame>
   );
 }

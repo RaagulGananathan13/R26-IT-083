@@ -67,7 +67,7 @@ export default function AssessmentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-6">
+    <div>
       <Hero
         eyebrow="Across components"
         title="Multi-modal assessment"

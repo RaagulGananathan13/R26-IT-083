@@ -12,6 +12,10 @@ import type {
   ComponentInfo,
   Envelope,
   HealthReport,
+  PathwayContext,
+  PathwayDefinition,
+  PathwayResponse,
+  StageRunResponse,
   TriagePdfResponse,
 } from "@/lib/types";
 
@@ -142,4 +146,62 @@ export function runAssessment(input: AssessmentInput): Promise<AssessmentRespons
   if (input.echoFile) form.append("echo_file", input.echoFile);
   if (input.triage) form.append("triage_json", JSON.stringify(input.triage));
   return request<AssessmentResponse>("/assessment", { method: "POST", body: form });
+}
+
+/* ---- clinical pathway ------------------------------------------------- */
+
+/**
+ * Walk one patient through the six gated stages of the clinical workflow.
+ *
+ * Same payload as `runAssessment`, different semantics: `/assessment` runs the
+ * modalities in parallel and reduces their verdicts, while this runs them in
+ * clinical order and lets each result decide whether the next stage happens.
+ * The ED record is required because Component 04 is stages 1, 4 and 6.
+ */
+export function runPathway(input: AssessmentInput): Promise<PathwayResponse> {
+  const form = new FormData();
+  form.append("patient_id", input.patientId || "anonymous");
+  if (input.cxrFile) form.append("cxr_file", input.cxrFile);
+  if (input.cxrView) form.append("cxr_view", input.cxrView);
+  if (input.ecgDat) form.append("ecg_dat_file", input.ecgDat);
+  if (input.ecgHea) form.append("ecg_hea_file", input.ecgHea);
+  if (input.echoFile) form.append("echo_file", input.echoFile);
+  if (input.triage) form.append("triage_json", JSON.stringify(input.triage));
+  return request<PathwayResponse>("/pathway", { method: "POST", body: form });
+}
+
+/** The static stage map, so the console can render the pathway before any upload. */
+export const getPathwayDefinition = () =>
+  request<PathwayDefinition>("/pathway/definition");
+
+export interface StageInput {
+  stageId: string;
+  context?: PathwayContext | null;
+  triage?: Record<string, unknown> | null;
+  cxrFile?: File | null;
+  cxrView?: string | null;
+  ecgDat?: File | null;
+  ecgHea?: File | null;
+  echoFile?: File | null;
+}
+
+/**
+ * Advance the pathway by exactly one stage.
+ *
+ * `context` is produced by the server and handed straight back. The console
+ * never reads it: which stage comes next is a routing decision, and duplicating
+ * that here would be a second copy of the pathway free to disagree with the
+ * engine's.
+ */
+export function runPathwayStage(input: StageInput): Promise<StageRunResponse> {
+  const form = new FormData();
+  form.append("stage_id", input.stageId);
+  if (input.context) form.append("context_json", JSON.stringify(input.context));
+  if (input.triage) form.append("triage_json", JSON.stringify(input.triage));
+  if (input.cxrFile) form.append("cxr_file", input.cxrFile);
+  if (input.cxrView) form.append("cxr_view", input.cxrView);
+  if (input.ecgDat) form.append("ecg_dat_file", input.ecgDat);
+  if (input.ecgHea) form.append("ecg_hea_file", input.ecgHea);
+  if (input.echoFile) form.append("echo_file", input.echoFile);
+  return request<StageRunResponse>("/pathway/stage", { method: "POST", body: form });
 }

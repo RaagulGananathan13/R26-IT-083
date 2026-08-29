@@ -2,11 +2,11 @@
   "name": "cvxai-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "Clinical console for R26-IT-083 — Explainable AI System for Cardiovascular Disease Detection and Diagnosis",
+  "description": "Clinical console for R26-IT-083 \u2014 Explainable AI System for Cardiovascular Disease Detection and Diagnosis",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next start -p 3001",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },

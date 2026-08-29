@@ -1,7 +1,7 @@
 export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Callout } from "./Callout";
-export { Card, CardBody, CardHeader } from "./Card";
+export { Card, CardBody, CardHeader, frame } from "./Card";
 export { Checkbox, Field, Input, Select, Textarea } from "./Field";
 export { FileDrop } from "./FileDrop";
 export { Hero } from "./Hero";

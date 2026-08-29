@@ -39,6 +39,11 @@ export function EchoViewer({
   const uncertainty = raw.uncertainty ?? {};
   const members = (raw.ensemble ?? []) as { run: string; ef: number }[];
   const muted = !isActionable(result.reliability.actionability);
+  // Present only for bundled EchoNet studies, where a human tracing exists.
+  const truth = raw.ground_truth_ef as
+    | { ef: number; predicted_ef: number; absolute_error: number;
+        within_interval: boolean; grade?: string; source?: string }
+    | undefined;
   const position = (value: number) => `${Math.min(100, Math.max(0, value))}%`;
 
   return (
@@ -49,6 +54,43 @@ export function EchoViewer({
           description="Operational grade against the clinical reference. The two answer different questions: published boundaries score higher overall accuracy while abandoning the minority classes."
         />
         <CardBody className={cn("space-y-6", muted && "not-actionable")}>
+          {/* The measured EF beside the estimated one, for bundled EchoNet
+              studies. Shown only where a human tracing exists -- an uploaded
+              clip has no reference, and a number beside a prediction is read as
+              the answer whether or not it belongs to that patient. */}
+          {truth && (
+            <div className="grid gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3 sm:grid-cols-3">
+              <div>
+                <p className="eyebrow">Measured EF</p>
+                <p className="tabular mt-0.5 text-lg font-semibold text-ink">
+                  {decimal(truth.ef, 1)} %
+                </p>
+              </div>
+              <div className="sm:border-l sm:border-line sm:pl-4">
+                <p className="eyebrow">Model estimate</p>
+                <p className="tabular mt-0.5 text-lg font-semibold text-ink">
+                  {decimal(truth.predicted_ef, 1)} %
+                </p>
+              </div>
+              <div className="sm:border-l sm:border-line sm:pl-4">
+                <p className="eyebrow">Difference</p>
+                <p
+                  className={cn(
+                    "tabular mt-0.5 text-lg font-semibold",
+                    truth.within_interval ? "text-verdict-actionable" : "text-verdict-caution",
+                  )}
+                >
+                  {decimal(truth.absolute_error, 1)} pts
+                </p>
+                <p className="mt-0.5 text-2xs text-ink-faint">
+                  {truth.within_interval
+                    ? "inside the 95 % interval"
+                    : "outside the 95 % interval"}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-baseline gap-3">
             <span className="tabular display text-5xl leading-none text-ink">
               {decimal(ef, 1)}
@@ -144,7 +186,7 @@ export function EchoViewer({
               loop
               muted
               playsInline
-              className="w-full rounded-xl border border-line bg-black"
+              className="mx-auto block max-h-[26rem] w-full max-w-[36rem] rounded-xl border border-line bg-black object-contain"
             />
           </CardBody>
         </Card>

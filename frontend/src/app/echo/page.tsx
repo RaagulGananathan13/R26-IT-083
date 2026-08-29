@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import type { EchoCam } from "@/components/clinical";
 import {
+  AnalysisSplit,
+  EchoGradCam,
   EchoViewer,
   ErrorNotice,
   ExplanationPanel,
   FindingsGrid,
-  ModelCardPanel,
+  LoadedStudy,
   RawPayload,
   StudyGrid,
   StudyLayout,
@@ -66,8 +69,18 @@ export default function EchoPage() {
         "MAE 3.98 EF points",
       ]}
     >
-      <StudyGrid>
+      <StudyGrid wide={Boolean(result && !pending)}>
         <div className="space-y-4">
+          {result && !pending ? (
+            <LoadedStudy
+              name={file?.name ?? "Echocardiogram"}
+              detail={`${result.headline}`}
+              onReset={() => {
+                setFile(null);
+                reset();
+              }}
+            />
+          ) : (
           <Card>
             <CardHeader title="Study" />
             <CardBody className="space-y-4">
@@ -98,7 +111,10 @@ export default function EchoPage() {
               )}
             </CardBody>
           </Card>
+          )}
 
+          {!(result && !pending) && (
+            <>
           <Callout tone="neutral" title="At the level of human disagreement">
             Mean absolute error is 3.98 EF points against reported inter-observer
             variability of 4–5 points. A difference of that size between this estimate
@@ -110,6 +126,8 @@ export default function EchoPage() {
             0.929 while worst-class recall falls, because the minority classes occupy the
             boundary region abstention removes.
           </Callout>
+            </>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -120,9 +138,18 @@ export default function EchoPage() {
             <div className="space-y-4">
               <VerdictBanner reliability={result.reliability} headline={result.headline} />
 
-              <div className="rise-in-1">
-                <EchoViewer result={result} videoUrl={videoUrl} />
-              </div>
+              {/* The recording and its measurements beside the frames the
+                  estimate leant on, so a weak-looking pump can be checked
+                  against where the model was actually looking. */}
+              <AnalysisSplit
+                className="rise-in-1"
+                left={<EchoViewer result={result} videoUrl={videoUrl} />}
+                right={
+                  <EchoGradCam
+                    cam={(result.explanation.gradcam as EchoCam | undefined) ?? null}
+                  />
+                }
+              />
 
               <div className="rise-in-2 space-y-4">
                 <FindingsGrid
@@ -132,7 +159,6 @@ export default function EchoPage() {
                   description="From the ordered-cutpoint head, which guarantees rank consistency by construction rather than repairing it afterwards."
                 />
                 <ExplanationPanel explanation={result.explanation} title="Method" />
-                <ModelCardPanel model={result.model} />
                 <RawPayload payload={result.raw} />
                 <p className="text-2xs text-ink-faint">
                   {duration(result.elapsed_ms)} · request {result.request_id}
