@@ -1,37 +1,23 @@
 """
-Per-projection operating points — the Stage 9A contribution, in the live system.
+Picks the decision threshold based on how the X-ray was taken.
 
-WHAT THIS IS
-------------
-Chest radiographs are taken posteroanterior (PA, patient standing) or
-anteroposterior (AP, patient too ill to stand, portable/bedside). AP magnifies
-the cardiac silhouette because the heart sits anterior, further from the
-detector.
+Background: chest X-rays come in two types. PA means the patient stood up in the
+radiology department. AP means a portable machine came to their bed, which
+happens when they are too sick to walk. On an AP film the heart sits further
+from the detector, so it looks bigger than it really is.
 
-Clinical radiology has handled this for decades with a projection-specific
-decision rule: cardiomegaly is CTR > 0.50 on PA and > 0.55 on AP. The AI
-fairness literature does the opposite -- it tries to make models BLIND to
-projection (adversarial debiasing, gradient reversal).
+Because of that we use a different cut-off for each type:
 
-We measured that the algorithmic approach is wrong. Driving projection AUC to
-0.5000 (complete invariance, beyond the published method's 0.61) closed only
-13.3% of the AP/PA gap and cost 0.0789 AUROC. Projection-conditional thresholds
-reduced the reported disparity metric by 73.3% at ZERO accuracy cost, exceeding
-the 46.7% reported by Pereira et al. (MIDL 2023).
+    Cardiomegaly    AP 0.409   PA 0.348
 
-Our fitted thresholds land in the same direction as the clinical convention:
+Radiologists have done the same thing for decades. The textbook rule is a
+cardiothoracic ratio above 0.50 on PA but above 0.55 on AP. Our numbers were
+fitted from validation data and came out pointing the same way.
 
-    Cardiomegaly    AP 0.409   PA 0.348    ratio 1.18
-    clinical CTR    AP 0.55    PA 0.50     ratio 1.10
-
-WHAT THIS IS NOT
-----------------
-Thresholding does NOT make the model better at AP films. AUROC is computed over
-the whole ranking; a threshold is one cut through it, and cutting per group
-cannot reorder any case. We proved the discrimination gap is unchanged to
-1e-12. The AP/PA gap of 0.0639 is irreducible at the representation level --
-it reflects genuine information loss at acquisition. Hence `reliability`, which
-reports that honestly instead of hiding it.
+One thing to be clear about: changing the threshold does NOT make the model
+better on AP films. It only changes where we draw the line. The model still
+scores 0.8224 on AP and 0.8864 on PA, and that gap does not move. That is why
+this file also reports a reliability level, so the UI can be honest about it.
 """
 from __future__ import annotations
 
@@ -40,7 +26,7 @@ from pathlib import Path
 
 
 class ThresholdPolicy:
-    """Chooses the operating point, and states how much to trust the result."""
+    """Chooses the cut-off, and says how much to trust the result."""
 
     def __init__(self, path: Path, projection_auroc: dict, gap: float):
         d = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -50,11 +36,11 @@ class ThresholdPolicy:
         self.gap = gap
 
     def get(self, pathology: str, view: str | None) -> tuple[float, str]:
-        """Returns (threshold, which_table_was_used).
+        """Returns (threshold, which table it came from).
 
-        An unknown view falls back to the global threshold rather than guessing.
-        Guessing PA on a bedside film would under-call cardiomegaly on exactly
-        the patients least able to tolerate a missed diagnosis.
+        If we don't know the view we fall back to the global threshold rather
+        than guessing. Guessing PA on a bedside film would raise the bar on
+        exactly the patients we least want to miss.
         """
         v = (view or "").strip().upper()
         if v in ("AP", "PA") and pathology in self.tables[v]:
@@ -62,7 +48,7 @@ class ThresholdPolicy:
         return float(self.tables["global"].get(pathology, 0.5)), "global"
 
     def reliability(self, view: str | None) -> dict:
-        """Honest statement of expected reliability for this acquisition."""
+        """How much the user should trust this result, given the view."""
         v = (view or "").strip().upper()
         if v == "AP":
             return dict(

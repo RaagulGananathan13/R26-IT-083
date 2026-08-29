@@ -1,8 +1,8 @@
 """
-Inference service — loads both models once, exposes predict().
+Loads both models once at startup and runs predictions.
 
-Preserves the original API response shape so the existing frontend works
-unchanged, and adds three fields: `view`, `reliability`, `threshold_source`.
+Keeps the same response shape the frontend already expects, and adds a few
+extra fields on top: view, threshold, threshold_source, reliability, deferral.
 """
 from __future__ import annotations
 
@@ -21,10 +21,10 @@ from backend.services.gradcam import GradCAM, overlay_heatmap, image_to_base64
 from backend.services.thresholds import ThresholdPolicy
 from backend.services.deferral import DeferralPolicy
 
-# cxr_transforms lives in the project root. Importing it rather than
-# redefining the transform here is deliberate: the original backend defined its
-# own ImageNet normalisation, which does not match how these models were
-# trained. A silent mismatch degrades every prediction with no error.
+# cxr_transforms sits in the project root, so we add that to the path. We import
+# it instead of writing the transform out again here. The old backend had its own
+# copy using ImageNet normalisation, which is not how these models were trained,
+# and that kind of mismatch makes every prediction worse without any error.
 sys.path.insert(0, str(C.PROJECT_ROOT))
 from cxr_transforms import build_transform            # noqa: E402
 
@@ -79,12 +79,12 @@ class InferenceService:
         print("[service] ready -- %d test samples indexed" % len(self.test_index))
 
     def lookup_ground_truth(self, filename: str | None) -> str | None:
-        """Match an uploaded file to the original radiologist report.
+        """Find the real radiologist report for an uploaded file, if we have it.
 
-        Images exported by extract_review_cases.py are named <dicom_id>.png, so
-        the stem is the key. An arbitrary upload will not match, and returning
-        None is correct -- the UI then says no ground truth exists rather than
-        showing someone else's report.
+        The demo images are named <dicom_id>.png, so we just look up the
+        filename without its extension. Any other upload won't match, and
+        returning None is the right answer -- the UI then says there is no
+        ground truth, instead of showing some other patient's report.
         """
         if not filename:
             return None
@@ -95,17 +95,16 @@ class InferenceService:
     def _prepare(self, image_bytes: bytes):
         pil = Image.open(io.BytesIO(image_bytes))
         x = self.transform(pil).unsqueeze(0).to(self.device)
-        # Display copy comes from the ORIGINAL pixels, never the z-scored
-        # tensor -- z-scoring destroys absolute intensity by design, and an
-        # overlay built from it would not look like the radiograph.
+        # For display we go back to the original pixels, not the normalised
+        # tensor. Normalising throws away absolute brightness on purpose, so an
+        # overlay built from it would not look like the X-ray any more.
         disp = np.array(pil.convert("L").resize((C.IMG_SIZE, C.IMG_SIZE)))
         import cv2
         return x, cv2.cvtColor(disp, cv2.COLOR_GRAY2BGR)
 
     def predict(self, image_bytes: bytes, view: str | None = None,
                 filename: str | None = None) -> dict:
-        """Response shape matches the Component_1 UI contract, plus the
-        projection fields this deployment adds."""
+        """Run everything on one image and return the full result."""
         x, img_bgr = self._prepare(image_bytes)
 
         with torch.no_grad():
@@ -117,14 +116,15 @@ class InferenceService:
         thr, thr_src = self.policy.get("Cardiomegaly", view)
         detected = p_card >= thr
 
-        # Stage 13. The prediction is still computed and returned in full -- the
-        # deferral flag sits alongside it rather than replacing it, so the UI can
-        # show what the model would have said while marking it as not actionable.
+        # Check whether this one is too close to the line to be trusted. Note we
+        # still return the full prediction -- the flag sits next to it rather
+        # than replacing it, so the UI can show what the model thought while
+        # making clear it should not be acted on.
         defer = self.deferral.assess(p_card, thr, view)
 
-        # --- co-pathologies -------------------------------------------------
-        # The UI filters on display names with spaces ("Pleural Effusion"),
-        # not the underscored column names.
+        # --- the other 7 findings -------------------------------------------
+        # The UI matches on names with spaces ("Pleural Effusion"), so convert
+        # from the underscored column names here.
         copath = []
         for i, name in enumerate(C.LABEL_COLS):
             if name == "Cardiomegaly":
@@ -164,15 +164,15 @@ class InferenceService:
         )
 
     def _generate_report(self, x, probs, view):
-        """Returns (clean_text, raw_decode, prompt).
+        """Returns (clean text, raw text, the prompt we used).
 
-        `raw_decode` keeps BART's special tokens so the "Raw Output" view shows
-        exactly what the model emitted. In this system the two are otherwise
-        near-identical -- and that is the point. The original deployment stripped
-        artefacts like "compared to the prior study" from the OUTPUT with regex.
-        Here those phrases were removed from the training TARGETS (Stage 1), so
-        the model never learned to produce them: prior-study hallucination is
-        0.0000 across all 4,722 test reports with no post-processing at all.
+        The raw version keeps BART's special tokens so the "Raw Output" tab can
+        show exactly what came out of the model. The two look almost the same
+        here, and that is deliberate. The old system used regex to strip phrases
+        like "compared to the prior study" out of the output. We removed those
+        from the training targets instead, so the model never learned to say
+        them: 0 out of 4,722 test reports mention a prior study, with no
+        cleanup afterwards.
         """
         prompt = ""
         prompt_ids = prompt_mask = None
@@ -184,8 +184,9 @@ class InferenceService:
                 prompt_ids, prompt_mask = s11.encode_prompts(
                     [prompt], self.tokenizer, device=self.device)
             except Exception as e:
-                # Stage 11 without its prompt still produces sensible text -- the
-                # ablation measured the prompt's own contribution at +0.0023.
+                # If building the prompt fails we just generate without it. The
+                # model still writes sensible reports -- the ablation put the
+                # prompt's own contribution at only +0.0023 anyway.
                 print("[service] prompt construction failed (%s); "
                       "generating without it" % e)
                 prompt = ""

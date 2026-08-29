@@ -1,28 +1,37 @@
 """
-Report generator — Stage 11 (falls back to Stage 4).
+The report generator: turns an X-ray into a written radiology report.
 
-    ConvNeXt features (B,1024,12,12)
-      -> 144 visual tokens -> MLP projection -> (B,144,768)
-      -> BART ENCODER            <- via inputs_embeds
+The flow is:
+
+    ConvNeXt features (B, 1024, 12, 12)
+      -> flatten the 12x12 grid into 144 "visual tokens"
+      -> project them from 1024 dims to BART's 768
+      -> BART encoder            <- passed as inputs_embeds
       -> BART decoder, greedy    -> "FINDINGS: ... IMPRESSION: ..."
 
 WHY inputs_embeds AND NOT encoder_outputs
------------------------------------------
-The original deployed model (models/report_generator/best_model.pt, April 2026)
-passed projected visual features as `encoder_outputs`, which bypasses BART's
-pretrained encoder entirely. The decoder's cross-attention was pretrained to
-read encoder OUTPUTS of a particular scale and structure; handed raw projected
-convolutional features it cannot use them and falls back on its language prior.
-That model scored ROUGE-L 0.2740 -- BELOW the 0.2769 constant-string baseline --
-and fabricated a reference to a non-existent prior study in ~63% of reports.
 
-Using inputs_embeds means BART's encoder actually runs and adds its own learned
-positional embeddings, so the decoder can distinguish apex from base.
+This is the single most important detail in the file. An earlier version handed
+the projected image features straight in as `encoder_outputs`, which skips
+BART's encoder completely. The decoder's cross-attention was pretrained to read
+encoder OUTPUTS, which have a particular scale and structure. Give it raw
+convolutional features instead and it simply cannot use them, so it falls back
+on what it remembers about how radiology reports usually sound.
 
-Stage 11 additionally prepends a classifier-derived text prompt. The ablation
-showed the prompt itself contributes only +0.0023 clinical F1 (the +0.0138 gain
-came from the extra fine-tuning), so the prompt is retained for fidelity to the
-trained checkpoint rather than claimed as the source of the improvement.
+The result was a model that wrote fluent, believable reports without really
+looking at the X-ray. It scored ROUGE-L 0.2740, which is BELOW the 0.2769 you
+get from printing the same fixed paragraph for every patient, and it invented a
+reference to a prior study in about 63% of reports.
+
+Going through inputs_embeds means the encoder actually runs and adds its own
+positional embeddings, so the decoder can tell the top of the lung from the
+bottom.
+
+Stage 11 also puts a short text prompt in front, built from the classifier's
+predictions. Being honest about this: the ablation showed the prompt itself is
+worth only +0.0023 clinical F1. Most of the +0.0138 gain came from the extra
+fine-tuning. We keep the prompt because the checkpoint was trained with it, not
+because it is doing the work.
 """
 from __future__ import annotations
 
@@ -32,7 +41,7 @@ import torch.nn as nn
 
 
 class CXRReportGenerator(nn.Module):
-    """Matches Stage 4/Stage 11 checkpoints: `vision`, `proj`, `bart`."""
+    """Matches the saved Stage 4 / Stage 11 checkpoints: vision, proj, bart."""
 
     def __init__(self, decoder_name: str, proj_dropout: float = 0.1):
         super().__init__()
@@ -47,22 +56,24 @@ class CXRReportGenerator(nn.Module):
             nn.Dropout(proj_dropout), nn.Linear(d, d), nn.LayerNorm(d))
 
     def encode_image(self, images: torch.Tensor) -> torch.Tensor:
+        # 12x12 grid -> a row of 144 tokens -> translated into BART's dimension
         f = self.vision(images)                       # (B,1024,12,12)
         f = f.flatten(2).transpose(1, 2)              # (B,144,1024)
         return self.proj(f)                           # (B,144,d)
 
     def embed_prompt(self, ids: torch.Tensor) -> torch.Tensor:
-        """Embed with BART's own table, including embed_scale.
+        """Turn prompt token ids into embeddings using BART's own table.
 
-        Omitting embed_scale is silent on bart-base (scale_embedding=False) but
-        wrong on any checkpoint that sets it -- the prompt would reach the
-        encoder at a different magnitude from every other token.
+        The embed_scale bit matters. On bart-base it is off, so forgetting it
+        changes nothing and you never notice. On a checkpoint that turns it on,
+        the prompt would arrive at a different magnitude from every other token.
         """
         scale = (math.sqrt(self.bart.config.d_model)
                  if getattr(self.bart.config, "scale_embedding", False) else 1.0)
         return self.bart.model.shared(ids) * scale
 
     def build_inputs(self, images, prompt_ids=None, prompt_mask=None):
+        # Prompt tokens first (if any), then the 144 image tokens.
         vis = self.encode_image(images)
         vmask = torch.ones(vis.shape[:2], dtype=torch.long, device=vis.device)
         if prompt_ids is None or prompt_ids.numel() == 0:
@@ -75,11 +86,12 @@ class CXRReportGenerator(nn.Module):
 
     @torch.no_grad()
     def generate(self, images, prompt_ids=None, prompt_mask=None, **kw):
-        """We run BART's encoder ourselves and hand generate() its OUTPUT.
+        """Run the encoder ourselves, then let generate() decode from its output.
 
-        This is NOT the old bug. The bug passed RAW projected features as
-        encoder_outputs so the encoder never ran. Here the encoder has already
-        run; generate() simply must not run it a second time.
+        To be clear, this is NOT the old bug. The bug passed raw projected
+        features as encoder_outputs so the encoder never ran at all. Here the
+        encoder has already run on the line above; we pass its result so
+        generate() doesn't run it a second time.
         """
         from transformers.modeling_outputs import BaseModelOutput
         emb, mask = self.build_inputs(images, prompt_ids, prompt_mask)
@@ -90,7 +102,7 @@ class CXRReportGenerator(nn.Module):
 
 
 def load_report_generator(weights_path, decoder_name, device):
-    """Load Stage 11 or Stage 4. Returns (model, tokenizer, info)."""
+    """Load Stage 11 (or Stage 4). Returns (model, tokenizer, info)."""
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(decoder_name)
     m = CXRReportGenerator(decoder_name)
@@ -98,6 +110,8 @@ def load_report_generator(weights_path, decoder_name, device):
     ck = torch.load(str(weights_path), map_location="cpu", weights_only=False)
     sd = ck.get("model", ck)
     sd = {(k[7:] if k.startswith("module.") else k): v for k, v in sd.items()}
+    # Fail loudly on any mismatch. A silently half-loaded model still produces
+    # text, it is just nonsense text.
     missing, unexpected = m.load_state_dict(sd, strict=False)
     if unexpected:
         raise RuntimeError("unexpected checkpoint keys: %s" % unexpected[:6])

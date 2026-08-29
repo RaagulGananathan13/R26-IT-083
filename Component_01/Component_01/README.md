@@ -62,7 +62,23 @@ I should say up front what this is and isn't. It's a decision-support prototype.
 | Views | Frontal only (AP and PA) |
 | Labels | 8 pathologies, text-adjudicated fusion of CheXpert labels + report text |
 
-> ⚠️ MIMIC-CXR is credentialed data under a PhysioNet Data Use Agreement. No images, reports, or derived CSVs are in this repository — only code that regenerates them.
+> ### ⚠️ This folder contains credentialed data — read before sharing it
+>
+> MIMIC-CXR is released under a PhysioNet **Data Use Agreement**. This working copy
+> **does** contain MIMIC-derived material, because the demo and the analyses need it:
+>
+> | Path | What it holds |
+> |---|---|
+> | `review_cases/` | **2,017 chest X-ray images** (`.gitignore`d — excluded from version control) |
+> | `review_cases/cardio_test.csv` | **4,786 radiologist reports**, used for the Ground Truth toggle |
+> | `reports/stage12/*.txt` | 4,722 reference reports + 4,722 generated ones |
+> | `reports/stage15/study_timestamps.csv` | DICOM identifiers and study dates |
+> | `training_manifest/`, `stage1_clean/`, `stage3_labels/` | labels and cleaned report text |
+>
+> **Do not push any of these to a public repository, and do not send them to anyone
+> who is not PhysioNet-credentialed.** Everything except the Ground Truth toggle
+> works without `cardio_test.csv` — the service prints a warning and continues.
+> Code, model weights and results tables carry no such restriction.
 
 ---
 
@@ -130,7 +146,13 @@ Those tokens go into BART as **`inputs_embeds`**, and that detail matters more t
 
 An earlier version passed them as `encoder_outputs` instead, which skips BART's pretrained encoder entirely. The decoder's cross-attention was pretrained to read encoder *outputs* with a specific scale and structure — hand it raw projected convolutional features and it simply can't use them, so it falls back on its language prior. The model was writing fluent, plausible reports from memory without meaningfully looking at the X-ray. Switching to `inputs_embeds` means BART's encoder actually runs and adds its own learned positional embeddings, so the decoder can tell the apex from the base.
 
-The last ConvNeXt stage is **unfrozen at 0.1× the base learning rate**; earlier stages stay frozen. Freezing the whole trunk left too little capacity to adapt, and unfreezing all of it destroyed the features the classifier depends on.
+The vision trunk was trained in **two rounds**, and the distinction matters.
+
+**Round 1 (Stage 4)** froze the whole trunk and unfroze only the last ConvNeXt stage, at **0.1× the base learning rate**, while the projection MLP ran at **10×**. Freezing everything left too little capacity to adapt; unfreezing everything at full rate destroyed the features the classifier depends on. The trunk was initialised from the trained Stage 5 classifier, not from ImageNet.
+
+**Round 2 (Stage 11) — the shipped model — freezes nothing.** It uses discriminative learning rates instead: the trunk at `LR_VISION = 5e-6`, the projection and BART at `LR_REST = 5e-5`. The comment in the notebook is the reasoning: *the trunk is already converged; nudge only.* Slow learning is a gentler form of freezing — the trunk may move, but only in small steps.
+
+> **Verified against the checkpoint, not the code comments.** Comparing `checkpoints/stage11/best.pt` tensor-by-tensor against `checkpoints/stage5/best.pt`: **0 of 340** vision tensors are identical and **all 8** ConvNeXt children differ, against both the `model` and the `ema` weights. The shipped report generator has a fully fine-tuned trunk.
 
 Decoding is **greedy** (`num_beams=1`), `min_length=24`, `max_length=192`. I originally used beam search with 4 beams because that's the conventional choice. An ablation across six strategies showed greedy beat beam-4 on five of seven metrics, so I switched.
 
@@ -166,35 +188,82 @@ Model 2's vision encoder is loaded from Model 1's trained checkpoint rather than
 ```
 Component_01/
 │
-├── cxr_transforms.py                       # preprocessing, single source of truth
-├── chexpert_fusion.py                      # text-adjudicated label fusion
+├── README.md                          # this file
 │
-├── Stage1_Report_Target_Cleaning.ipynb     # strip prior-study language
-├── Stage2_Image_Transforms.ipynb           # normalisation experiments
-├── Stage4_Report_Generator.ipynb           # BioBART training
-├── Stage4B_Decoding_Ablation.ipynb         # greedy vs beam search
-├── Stage5_Classifier_Training.ipynb        # ConvNeXt training
+├── backend/                           # FastAPI service — the live system
+│   ├── main.py                        #   /predict · /health · /thresholds
+│   ├── config.py                      #   paths, thresholds, generation settings
+│   ├── thresholds.json                #   per-class AND per-projection cut-offs
+│   ├── models/
+│   │   ├── classifier.py              #   ConvNeXt-Base + 8-label head
+│   │   └── report_generator.py        #   vision → 144 tokens → BioBART
+│   └── services/
+│       ├── inference.py               #   loads both models, runs predict()
+│       ├── gradcam.py                 #   heat maps
+│       ├── thresholds.py              #   ⭐ Contribution 1, live
+│       └── deferral.py                #   ⭐ Contribution 3, live
 │
-├── stage6_acr.py                           # acquisition reliability  (38 tests)
-├── Stage6_Acquisition_Conditioned_Reliability.ipynb
-├── Stage6B_Validation.ipynb                # four-arm ablation
+├── frontend/                          # React + Vite UI
+│   └── src/components/                #   ReliabilityNotice · DeferralNotice · …
 │
-├── stage9_fairness.py                      # operating-point analysis (18 tests)
-├── Stage9A_Operating_Point_Fairness.ipynb
+├── cxr_transforms.py                  # preprocessing — imported by the backend
+├── stage11_conditioned.py             # report-gen architecture — imported at inference
+├── build_review.py                    # findings extractor
+├── chexpert_fusion.py                 # text-adjudicated label fusion
+├── extract_review_cases.py            # built review_cases/
+├── extract_cardiomegaly_cases.py      # built the cardiomegaly folders
 │
-├── stage9b_gradrev.py                      # gradient reversal        (28 tests)
-├── Stage9B_Gradient_Reversal.ipynb
-├── Stage9B_Lambda_Calibration.ipynb
+├── stage6_acr.py                      # acquisition reliability      (38 tests) 🔴
+├── stage9_fairness.py                 # ⭐ operating-point fairness   (18 tests)
+├── stage9b_gradrev.py                 # gradient reversal            (28 tests) 🔴
+├── stage10_conditional.py             # conditional heads            (20 tests) 🔴
+├── stage13_deferral.py                # ⭐ selective deferral         (13 tests)
+├── stage14_significance.py            # McNemar + Holm correction    (33 tests)
+├── stage15_interval.py                # ⭐ false interval change      (19 tests)
+│                                      #                        total 193 tests
+├── notebooks/                         # 13 Colab notebooks, one per stage
+│   ├── Stage1_Report_Target_Cleaning.ipynb    # strip prior-study language
+│   ├── Stage2_Image_Transforms.ipynb          # normalisation experiments
+│   ├── Stage4_Report_Generator.ipynb          # BioBART training
+│   ├── Stage4B_Decoding_Ablation.ipynb        # greedy vs beam search
+│   ├── Stage5_Classifier_Training.ipynb       # ConvNeXt training (shipped)
+│   ├── Stage11_Conditioned_Report.ipynb       # report generator (shipped)
+│   ├── Stage12_CheXbert_Evaluation.ipynb      # independent validation
+│   ├── Stage9A_Operating_Point_Fairness.ipynb # ⭐ Contribution 1
+│   └── …Stage6, Stage6B, Stage9B ×2, Stage10A # 🔴 falsified hypotheses
 │
-├── stage10_conditional.py                  # conditional heads        (20 tests)
-├── Stage10A_Feature_Probe.ipynb
+├── docs/                              # research record
+│   ├── RESULTS.md                     #   every measured number + CIs
+│   ├── MASTER_PLAN.md                 #   research plan and references
+│   ├── NOVELTY_EXPLANATION.md         #   contributions in plain language
+│   ├── MODELS_EXPLAINED.md            #   the models + the code, explained
+│   ├── PANEL_ANSWERS.md               #   prepared answers with evidence
+│   └── PROJECT_STRUCTURE.md           #   what to ship, what to leave
 │
-├── MASTER_PLAN.md                          # full research record
-├── RESULTS.md                              # results section
-└── README.md
+├── reports/                           # measured outputs
+│   ├── stage6/cache/                  #   cached predictions (val + test)
+│   ├── stage12/                       #   4,722 generated + reference reports
+│   ├── stage13/                       #   deferral results + figure
+│   ├── stage14/                       #   significance tests
+│   └── stage15/                       #   interval-change results + figure
+│
+├── review_cases/                      # 2,017 demo X-rays sorted by outcome
+├── checkpoints/                       # trained weights (stage5, stage11)
+├── training_manifest/                 # the data splits
+├── stage1_clean/  stage3_labels/      # superseded intermediates
+└── Research Paper/                    # conference paper + component write-up
 ```
 
-Data folders (`stage1_clean/`, `stage3_labels/`, `training_manifest/`) and `checkpoints/` are gitignored — they hold MIMIC-CXR derivatives and model weights.
+🔴 marks modules for **falsified** hypotheses — working code for ideas that
+turned out to be wrong. They are the evidence behind §9 of `docs/RESULTS.md` and
+are kept deliberately.
+
+`checkpoints/`, `training_manifest/`, `stage1_clean/`, `stage3_labels/`,
+`review_cases/` and `reports/stage15/study_timestamps.csv` hold MIMIC-CXR
+derivatives or model weights. **They must not be pushed to a public repository** —
+the report text and DICOM identifiers are covered by the PhysioNet Data Use
+Agreement. `review_cases/.gitignore` already excludes that folder entirely; the
+rest need excluding wherever this is version-controlled.
 
 ---
 
@@ -489,9 +558,11 @@ Full prior-art analysis is in [`MASTER_PLAN.md`](MASTER_PLAN.md); detailed resul
 
 The **code** in this repository is released under the **MIT License**.
 
-The **data is not**. MIMIC-CXR is credentialed and governed by the [PhysioNet Credentialed Health Data Use Agreement](https://physionet.org/content/mimic-cxr/view-dua/2.0.0/). No images, reports, or derived data files are distributed here. To reproduce this work you need your own PhysioNet credentialed access and completed CITI training.
+The **data is not**. MIMIC-CXR is credentialed and governed by the [PhysioNet Credentialed Health Data Use Agreement](https://physionet.org/content/mimic-cxr/view-dua/2.0.0/). To reproduce this work you need your own PhysioNet credentialed access and completed CITI training.
 
-Model weights are not distributed either, since they are derived from credentialed data.
+**Nothing MIMIC-derived may be published or redistributed** — not the images, the report text, the derived CSVs, or the model weights, which are trained on credentialed data. See the data warning near the top of this file for exactly which paths in this working copy are affected.
+
+**A working copy is not a distribution.** This folder holds that data so the demo and analyses can run; that is permitted under the DUA for a credentialed holder. Publishing it, pushing it to a public repository, or passing it to an uncredentialed person is not.
 
 ---
 

@@ -1,15 +1,21 @@
 """
-FastAPI application - Component_01 v2.
+The web API. This is the only file the frontend talks to.
 
-Serves the retrained models behind the Component_1 UI contract:
+Three endpoints:
 
-    POST /predict   file=<image>, view=<"AP"|"PA"|"">
-      -> prediction, confidence, gradcam_image, report_text, report_text_raw,
-         ground_truth_report, copathologies
-         + view, threshold, threshold_source, reliability   (new)
+    POST /predict     upload an image, optionally say whether it is AP or PA
+                      returns: prediction, confidence, gradcam_image,
+                               report_text, report_text_raw,
+                               ground_truth_report, copathologies,
+                               view, threshold, threshold_source,
+                               reliability, deferral
 
-Separate deployment. Nothing in ../../backend, ../../frontend or
-../../Component_1 is read or written.
+    GET  /health      is everything loaded, and which report model
+    GET  /thresholds  the threshold tables, including per-projection ones
+
+The models are big, so they load once at startup rather than per request.
+This is a separate deployment. It doesn't touch the older backend or frontend
+folders.
 """
 from contextlib import asynccontextmanager
 
@@ -24,6 +30,7 @@ service: InferenceService | None = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Runs once when the server starts, and once more on shutdown.
     global service
     print("=" * 64)
     print("  CardioVision AI v2  -  starting")
@@ -43,13 +50,14 @@ app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS,
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), view: str = Form(None)):
-    """Classify, explain and report on one chest X-ray.
+    """Run the whole pipeline on one chest X-ray.
 
-    `view` ("AP" or "PA") selects the projection-specific operating point.
-    Optional: omitting it uses the global threshold rather than guessing.
-    Guessing PA on a bedside film would under-call cardiomegaly on exactly the
-    patients least able to tolerate a missed diagnosis.
+    `view` is optional. If you pass "AP" or "PA" we use the threshold fitted for
+    that projection. If you leave it out we use the global one instead of
+    guessing, because guessing PA on a bedside film would raise the bar on
+    exactly the patients we least want to miss.
     """
+    # Startup can take a while on CPU, so the frontend may hit us too early.
     if service is None:
         raise HTTPException(503, "Models not loaded yet")
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -72,7 +80,7 @@ async def health():
 
 @app.get("/thresholds")
 async def thresholds():
-    """The operating points, including the per-projection ones."""
+    """Returns the thresholds we use, so the frontend can display them."""
     if service is None:
         raise HTTPException(503, "Models not loaded yet")
     return {"tables": service.policy.tables,

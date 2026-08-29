@@ -1,50 +1,50 @@
 """
-COMPONENT_01 · STAGE 11 · CLASSIFIER-CONDITIONED REPORT GENERATION
-==================================================================
+Report generation, conditioned on what the classifier found.
 
-THE MEASURED GAP THIS EXPLOITS
-------------------------------
-    report generator clinical F1                    0.5799
-    ceiling if it simply stated the classifier      0.6535
-    headroom                                        +0.0736
+WHY WE DO THIS
 
-The classifier already knows things the report generator fails to say. Its
-mean AUROC is 0.8554 (cardiomegaly 0.9189), while the generator's whole margin
-over a constant-string baseline is +0.0149 -- it is barely reading the image.
-So we stop asking the decoder to rediscover pathology from pixels and simply
-tell it what the classifier found.
+The classifier is good at spotting things (mean AUROC 0.8554, cardiomegaly
+0.9189). The report generator is much weaker -- its whole advantage over just
+printing a fixed paragraph was only +0.0149, which means it was barely reading
+the image at all.
 
-This is why Stage 10 failed and this should not: there, the classifier already
-had the projection information, so conditioning added nothing (+0.0003). Here
-there is a measured 0.0736 of information the decoder is not using.
+We measured the gap:
 
-ZERO NEW PARAMETERS
--------------------
-The prompt is plain text, tokenised and embedded through BART's OWN embedding
-table, then prepended to the projected visual tokens. Nothing is added to the
-model. Consequences that matter:
+    report generator clinical F1                  0.5799
+    what it would score if it just said what
+    the classifier already knows                  0.6535
+    so there is headroom of                       +0.0736
 
-  * the Stage 4 checkpoint loads with strict=True -- no missing keys, no fresh
-    randomly-initialised module to climb out of
-  * with an empty prompt the model is BIT-IDENTICAL to Stage 4, so any measured
-    change is attributable to the prompt and never to re-initialisation
-  * BioBART's biomedical pretraining is doing the work -- it already knows what
-    "pleural effusion" means, which a learned label embedding would have to
-    discover from scratch
+So instead of asking the decoder to work out the pathology from pixels all over
+again, we simply tell it what the classifier found, as a short line of text in
+front of the image tokens.
 
-PREDICTIONS, NOT GROUND TRUTH
------------------------------
-Training conditions on the CLASSIFIER'S predictions, not the true labels.
-Training on ground truth would teach the decoder to trust a perfect oracle it
-will never see at inference, and the mismatch would surface exactly when the
-classifier is wrong. Label dropout (see PROMPT_DROPOUT) additionally forces the
-decoder to keep reading the image rather than transcribing the prompt.
+NO NEW PARAMETERS
 
-WHAT MUST NOT REGRESS
----------------------
-Prior-study hallucination is 0.0000 and stays there: the training targets are
-still the Stage-1 cleaned corpus, so the pattern is not in the data to learn.
-The notebook measures it anyway rather than assuming it.
+The prompt is ordinary text. We tokenise it and run it through BART's own
+embedding table, then stick it in front of the visual tokens. Nothing new is
+added to the model, which has three useful consequences:
+
+  * the older checkpoint still loads with strict=True, no missing keys
+  * with an empty prompt the model is bit-for-bit the same as before, so any
+    change we measure comes from the prompt and not from some newly initialised
+    layer settling down
+  * BioBART already knows what "pleural effusion" means from its medical
+    pretraining, whereas a learned label embedding would start from nothing
+
+WE USE PREDICTIONS, NOT THE TRUE LABELS
+
+Training uses whatever the classifier actually predicted, not the ground truth.
+If we trained on ground truth the decoder would learn to trust a perfect oracle
+that does not exist at inference time, and it would fall apart precisely when
+the classifier is wrong. The dropout on the prompt (PROMPT_DROPOUT) also stops
+the decoder from just copying the prompt and ignoring the image.
+
+WHAT MUST NOT BREAK
+
+Prior-study hallucination is at 0.0000 and has to stay there. The training
+targets are still the cleaned corpus, so the pattern is not in the data for the
+model to pick up. We measure it every run rather than assuming.
 """
 from __future__ import annotations
 

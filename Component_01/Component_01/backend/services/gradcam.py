@@ -1,14 +1,16 @@
 """
-Grad-CAM for the Stage 5 ConvNeXt classifier, plus image encoding helpers.
+Grad-CAM heatmaps, plus a couple of small image helpers.
 
-Hooks the last convolutional stage (12x12x1024). The gradient of the chosen
-pathology logit is backpropagated to that layer, giving a spatial map of which
-regions drove the prediction, upsampled and overlaid on the radiograph.
+The idea: hook the last convolutional layer (a 12x12 grid, 1024 channels deep),
+push the cardiomegaly score backwards through the network, and see which parts
+of the grid pushed hardest. Scale that grid up to the full image and lay it over
+the X-ray in colour.
 
-⚠️ Grad-CAM shows WHERE the model looked, not WHETHER it was right. Arun et al.
-(Radiology: AI 2021) measured Grad-CAM repeatability at SSIM 0.12 on chest
-radiographs. Treat these overlays as a sanity check -- "did it look at the
-heart?" -- never as localisation evidence.
+A caution worth repeating: this shows WHERE the model looked, not whether it was
+right. Arun et al. (Radiology: AI, 2021) measured how repeatable Grad-CAM is on
+chest X-rays and got SSIM 0.12, which is low. Treat these overlays as a rough
+sanity check -- "did it at least look at the heart?" -- and never as proof of
+where a finding is.
 """
 from __future__ import annotations
 
@@ -25,6 +27,7 @@ class GradCAM:
         self.img_size = img_size
         self.gradients = None
         self.activations = None
+        # Hooks let us record what flows through a layer without changing it.
         target = model.features[-1]
         target.register_forward_hook(self._fwd)
         target.register_full_backward_hook(self._bwd)
@@ -36,7 +39,7 @@ class GradCAM:
         self.gradients = grad_out[0].detach()
 
     def generate(self, x: torch.Tensor, target_class: int) -> np.ndarray:
-        """Returns a (img_size, img_size) map in [0, 1]."""
+        """Returns a (img_size, img_size) map with values between 0 and 1."""
         self.model.zero_grad(set_to_none=True)
         with torch.enable_grad():
             logits = self.model(x)
@@ -47,6 +50,9 @@ class GradCAM:
         if self.gradients is None or self.activations is None:
             return np.zeros((self.img_size, self.img_size), dtype=np.float32)
 
+        # Average the gradients to get one importance weight per channel, then
+        # weight the activations by it. relu drops anything negative because we
+        # only want to show what argued FOR the diagnosis, not against it.
         w = self.gradients.mean(dim=[2, 3], keepdim=True)
         cam = F.relu((w * self.activations).sum(dim=1, keepdim=True))
         cam = cam - cam.amin()
@@ -59,6 +65,7 @@ class GradCAM:
 
 
 def overlay_heatmap(img_bgr: np.ndarray, cam: np.ndarray, alpha: float = 0.45) -> str:
+    """Blend the heatmap over the X-ray and return it as base64 PNG."""
     cam_u8 = (np.clip(cam, 0, 1) * 255).astype(np.uint8)
     heat = cv2.applyColorMap(cam_u8, cv2.COLORMAP_JET)
     h, w = img_bgr.shape[:2]

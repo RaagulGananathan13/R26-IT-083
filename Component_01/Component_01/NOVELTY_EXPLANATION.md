@@ -95,14 +95,45 @@ judgements, in exactly the same order.
 >
 > A model can look 73% "fairer" while being provably, bit-for-bit, identical.
 
+### ⚠️ Prior art — say this BEFORE the claim, not after
+
+**The technique is not mine, and I must not let anyone think I believe it is.**
+
+Per-group thresholds are **Hardt, Price & Srebro, "Equality of Opportunity in
+Supervised Learning", NeurIPS 2016**. Their post-processing method *is* exactly this:
+choose a separate threshold per group so true-positive rates match. It is one of the
+most cited papers in algorithmic fairness. Anyone on a machine-learning panel knows it.
+
+That the metric is threshold-dependent also follows from the fairness impossibility
+results (Kleinberg et al. 2016; Chouldechova 2017).
+
+**So what is left that is mine?** The empirical demonstration, on this axis, against
+this paper:
+
+- CXR **projection** (AP vs PA) as the protected axis, rather than sex or race
+- A **head-to-head** against Pereira et al. (MIDL 2023) on the metric *they* chose
+- The AUROC identity to ten decimal places, which shows the model is provably unchanged
+
+### How to say it out loud
+
+> "Using Hardt et al.'s 2016 post-processing — a method that has existed for nine years —
+> I show the standard fairness metric in chest-radiograph research is gameable at zero
+> cost. It outperforms a 2023 adversarial method on that method's own metric, while the
+> model stays bit-identical to ten decimal places. The novelty is not the technique. It
+> is that the field is still publishing expensive retraining to fix a metric a 2016
+> post-processing step trivially satisfies."
+
+That framing is **stronger** than claiming the method, because it cannot be dismissed by
+someone who knows the 2016 paper — and it turns their knowing it into support.
+
 ### Why this counts as a contribution
 
 - I **beat a peer-reviewed paper on its own chosen measurement**, for free
 - I proved **mathematically** that the improvement was meaningless
-- I searched the literature specifically for this and **did not find it published** for
-  chest X-ray projection bias
+- I searched the literature for this specific application and **did not find it
+  published** for chest X-ray projection bias
 
-**This is mine.**
+**The finding is mine. The tool is Hardt et al.'s, and I cite it.**
 
 ---
 
@@ -178,7 +209,27 @@ If the answer is **0.95** → confident yes. If it's **0.03** → confident no. 
 **0.41** when the cut-off is **0.409**? That's a coin flip wearing a lab coat. **Send that
 one to a doctor.**
 
-That part is not new — it's called selective prediction, and other people have done it.
+That part is not new — it's called selective prediction (Chow 1970; El-Yaniv & Wiener,
+JMLR 2010), and other people have done it.
+
+### ⚠️ And the closest prior art is a paper that found the OPPOSITE
+
+**Jones, Sagawa, Koh, Kumar & Liang, "Selective Classification Can Magnify Disparities
+Across Groups", ICLR 2021.** They show that deferring the least-confident cases often
+*widens* the gap between groups, because the worse-off group contributes most of the
+deferred cases and what remains is even more skewed.
+
+**Cite this. It does not weaken my result — it is the reason my result is interesting.**
+
+Their finding is about *uniform* deferral: one confidence cut-off for everyone. That is
+exactly my variant **C**, and it behaves exactly as they describe — the gap barely moves
+(6.68 → 6.28). My variant **D** makes the deferral rate itself group-conditional, and the
+gap closes (6.68 → 0.78).
+
+So the honest positioning is: *Jones et al. showed selective classification can magnify
+disparities; this shows that making the deferral budget group-conditional reverses that
+on a real clinical axis.* Complementary, not contradictory — and far harder to attack
+than pretending the paper does not exist.
 
 ### 🔑 The new part
 

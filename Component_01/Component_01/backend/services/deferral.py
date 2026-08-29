@@ -1,29 +1,28 @@
 """
-Selective deferral — the Stage 13 policy in the live system.
+Decides when the model should refuse to answer and ask for a radiologist.
 
-WHAT IT DOES
-------------
-Declines to answer when the prediction sits too close to the operating point,
-and refers the case to a radiologist instead. "Too close" is projection-specific:
+If a prediction sits very close to the decision threshold, the model is
+basically guessing. Rather than commit, we flag it for review.
 
-    AP (bedside)   margin cutoff 0.2247   ->  77% of films answered
-    PA (standing)  margin cutoff 0.0029   ->  99.7% answered
+How close counts as "too close" depends on the view:
 
-That asymmetry is the whole point, and it was fitted, not chosen. AP films carry
-less usable information (Stage 9: AUROC 0.8224 vs 0.8864), so the system must be
-correspondingly more reluctant to commit on them. Deferring the same fraction of
-both leaves the AP/PA accuracy gap completely intact -- measured 6.68 -> 6.28.
-Deferring per projection closes it: 6.68 -> 0.78 at 85.8% coverage.
+    AP (bedside)   cutoff 0.2247   ->  we answer about 77% of these
+    PA (standing)  cutoff 0.0029   ->  we answer about 99.7% of these
 
-WHAT IT DOES NOT DO
--------------------
-Deferral does not improve the model. It changes which cases the model answers.
-Accuracy on the answered subset is NOT the system's accuracy, and every number
-this module reports carries its coverage for exactly that reason.
+That difference is the whole point, and it came out of the validation data
+rather than being picked by hand. AP films carry less usable information (AUROC
+0.8224 vs 0.8864), so the model should be more reluctant to commit on them.
 
-The cutoffs were fitted on validation (n=4,474) and frozen before test was
-touched. If deferral_policy.json is missing the service runs normally with
-deferral disabled -- a missing analysis file must never take the demo down.
+We tested the obvious alternative first. Deferring the same share of both types
+barely helps the AP/PA accuracy gap at all (6.68 -> 6.28 points). Deferring more
+on AP closes it (6.68 -> 0.78).
+
+Worth remembering: this does not make the model more accurate. It changes which
+cases the model is willing to answer. So any accuracy number from this has to be
+quoted together with its coverage.
+
+If the policy file is missing we just run with deferral switched off. A missing
+analysis file should never take the whole demo down.
 """
 from __future__ import annotations
 
@@ -32,7 +31,7 @@ from pathlib import Path
 
 
 class DeferralPolicy:
-    """Decides whether the system should answer, or refer to a radiologist."""
+    """Decides whether to answer, or hand the case to a radiologist."""
 
     def __init__(self, path: Path):
         self.enabled = False
@@ -57,11 +56,11 @@ class DeferralPolicy:
                  100 * (self.coverage or 0)))
 
     def assess(self, prob: float, threshold: float, view: str | None) -> dict:
-        """Returns the deferral decision for one prediction.
+        """Work out whether this one prediction is too close to call.
 
-        An unspecified projection is never deferred. Guessing a cutoff would
-        either defer PA films that did not need it, or -- worse -- answer AP
-        films that did.
+        If the view wasn't given we never defer. Picking a cutoff by guessing
+        would either flag PA films that were fine, or worse, wave through AP
+        films that should have been checked.
         """
         if not self.enabled:
             return dict(active=False, defer=False)
@@ -72,6 +71,7 @@ class DeferralPolicy:
                         reason="projection not specified; answering with the "
                                "global operating point")
 
+        # How far the score sits from the line. Small margin = coin flip.
         margin = abs(float(prob) - float(threshold))
         cut = self.cutoff[v]
         defer = margin < cut

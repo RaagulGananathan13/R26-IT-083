@@ -1,16 +1,16 @@
 """
-Stage 5 classifier — ConvNeXt-Base, 8 pathologies.
+The cardiomegaly classifier (ConvNeXt-Base, 8 pathologies).
 
-Architecture verified against checkpoints/stage5/best.pt:
+This has to match the saved checkpoint exactly:
     classifier.0 = LayerNorm(1024)
     classifier.2 = Linear(1024, 512)
     classifier.5 = Linear(512, 8)
 
-DO NOT rebuild this from torchvision's ConvNeXt with a swapped head.
-torchvision applies `classifier` to the 4-D (B,1024,1,1) avgpool output; Stage 5
-flattens FIRST. nn.LayerNorm(1024) on a 4-D tensor normalises the last dimension
-(size 1) instead of the channels -- it does not raise, it silently returns wrong
-numbers that still look like probabilities.
+IMPORTANT: don't rebuild this by taking torchvision's ConvNeXt and swapping the
+head. torchvision keeps the pooled output as (B, 1024, 1, 1) and we flatten it
+first. If you skip the flatten, LayerNorm(1024) ends up normalising a dimension
+of size 1. It won't crash. You just get wrong numbers that still look like
+probabilities, which is much worse.
 """
 from __future__ import annotations
 
@@ -20,7 +20,10 @@ from torchvision import models
 
 
 class CXRClassifier(nn.Module):
-    """ConvNeXt-Base + multi-label head. `features` is the Grad-CAM hook point."""
+    """ConvNeXt-Base with a small multi-label head on top.
+
+    Grad-CAM hooks into `features`, so don't rename it.
+    """
 
     def __init__(self, num_labels: int = 8, p_drop: float = 0.3):
         super().__init__()
@@ -33,19 +36,22 @@ class CXRClassifier(nn.Module):
             nn.GELU(), nn.Dropout(p_drop * 0.66), nn.Linear(512, num_labels))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # look at the image -> pool it down -> flatten -> predict 8 scores
         return self.classifier(self.avgpool(self.features(x)).flatten(1))
 
 
 def load_classifier(weights_path, device, num_labels: int = 8) -> CXRClassifier:
-    """Load Stage 5 strictly, then apply EMA weights.
+    """Load the trained weights, then overwrite them with the EMA copy.
 
-    EMA is not optional. Stage 5 selected its checkpoint on, and reported
-    0.8554 with, the EMA weights. Loading only `model` silently serves a
-    different, worse model than the one every number in the write-up describes.
+    The EMA step is not optional. Training picked the best checkpoint using the
+    EMA weights, and every result we report comes from those. If you load only
+    the "model" weights you get a different (worse) model with no warning.
     """
     m = CXRClassifier(num_labels)
     ck = torch.load(str(weights_path), map_location="cpu", weights_only=False)
 
+    # The label order in the checkpoint must match config. If it doesn't, every
+    # column would be shifted and the predictions would be quietly wrong.
     got = ck.get("pathologies")
     if got is not None:
         from backend.config import LABEL_COLS
@@ -55,9 +61,11 @@ def load_classifier(weights_path, device, num_labels: int = 8) -> CXRClassifier:
                 "silently permuted.\n  checkpoint: %s\n  config    : %s"
                 % (list(got), list(LABEL_COLS)))
 
+    # Training used DataParallel, which prefixes every key with "module."
     sd = {(k[7:] if k.startswith("module.") else k): v for k, v in ck["model"].items()}
     m.load_state_dict(sd, strict=True)
 
+    # Now swap in the EMA weights on top.
     n_ema = 0
     if ck.get("ema"):
         msd = m.state_dict()

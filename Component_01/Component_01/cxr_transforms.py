@@ -1,9 +1,10 @@
 """
-COMPONENT_01 · STAGE 2 · CXR TRANSFORM PIPELINE (single source of truth)
+How a chest X-ray gets prepared before it goes into the model.
 
-Import from EVERY entry point — classifier training, report-gen training,
-evaluation, and the backend. Defining transforms in a second file is exactly how
-train/inference skew is reintroduced.
+Everything imports from this one file -- classifier training, report generator
+training, evaluation, and the backend. If you define the transforms somewhere
+else as well, training and inference drift apart and the model quietly gets
+worse. So: one file, imported everywhere.
 
     from cxr_transforms import build_transform
     train_tf = build_transform("train")
@@ -51,12 +52,14 @@ class CLAHE:
 
 class PerImageZScore:
     """
-    Normalise each image by ITS OWN mean/std, then replicate to 3 channels.
-    (1,H,W) in [0,1] -> (3,H,W) with per-image mean ~0, std ~1.
+    Normalise each image using its own mean and standard deviation, then copy it
+    into 3 channels because ConvNeXt expects colour input.
+    (1,H,W) in [0,1] -> (3,H,W) with mean about 0 and std about 1.
 
-    The std>_EPS guard matters: a constant frame would otherwise yield NaN and
-    silently poison training. The corpus has none, but an uploaded image at
-    inference carries no such guarantee.
+    The std > _EPS check matters. A completely flat image has zero standard
+    deviation, and dividing by that gives NaN, which then spreads through
+    everything without raising an error. Our dataset has no such images, but an
+    uploaded file might.
     """
     def __init__(self, out_channels: int = 3):
         self.out_channels = out_channels
@@ -73,9 +76,10 @@ class PerImageZScore:
 def build_transform(split: str, img_size: int = IMG_SIZE,
                     use_clahe: bool = USE_CLAHE, normalize: str = "per_image"):
     """
-    split     : "train" (augmented) | "val"/"test"/"eval"/"inference" (deterministic)
-    normalize : "per_image" (Stage 2 default) | "dataset" | "imagenet" (legacy only)
-    returns   : Compose -> (3, img_size, img_size) float32
+    split     : "train" adds augmentation. "val"/"test"/"eval"/"inference" don't.
+    normalize : "per_image" is what we use. "dataset" and "imagenet" are kept
+                for comparison only -- imagenet measured 4.4x worse.
+    returns   : a Compose that gives you (3, img_size, img_size) float32
     """
     split = split.lower()
     if split not in {"train", "val", "test", "eval", "inference"}:
@@ -83,14 +87,17 @@ def build_transform(split: str, img_size: int = IMG_SIZE,
     if normalize not in {"per_image", "dataset", "imagenet"}:
         raise ValueError(f"unknown normalize {normalize!r}")
 
-    # Resize is applied in EVERY split. No-op for the 384x384 corpus, correct for
-    # arbitrary uploads, and it removes the train/inference skew by construction.
+    # Resize runs on every split. It does nothing for our 384x384 dataset, but
+    # it handles odd-sized uploads and guarantees train and inference match.
     ops = [ToGrayscalePIL(), transforms.Resize((img_size, img_size))]
     if use_clahe:
         ops.append(CLAHE())
     if split == "train":
-        # Geometric only. No flip (laterality is diagnostic).
-        # No ColorJitter/Autocontrast: intensity IS the signal for edema/opacity.
+        # Small geometric changes only.
+        # No horizontal flip: that would put the heart on the wrong side, which
+        # is a real condition and not something the model should learn to ignore.
+        # No brightness/contrast jitter either, because brightness IS the signal
+        # for things like edema and lung opacity.
         ops.append(transforms.RandomAffine(
             degrees=AUG_DEGREES, translate=AUG_TRANSLATE, scale=AUG_SCALE,
             interpolation=transforms.InterpolationMode.BILINEAR, fill=0))
@@ -107,7 +114,8 @@ def build_transform(split: str, img_size: int = IMG_SIZE,
 
 
 def transform_config(**kw) -> dict:
-    """Serialisable record of the active config — save alongside checkpoints."""
+    """A plain dict of the current settings. Save it next to the checkpoint so
+    you can always tell how a model was trained."""
     cfg = dict(stage=2, img_size=IMG_SIZE, normalize=kw.get("normalize", "per_image"),
                use_clahe=kw.get("use_clahe", USE_CLAHE), aug_degrees=AUG_DEGREES,
                aug_translate=list(AUG_TRANSLATE), aug_scale=list(AUG_SCALE),
