@@ -1,0 +1,127 @@
+{
+  "overall": "PASS_WITH_WARNINGS",
+  "scope": "full_dataset",
+  "n_manifest_usable_selected": 10030,
+  "n_integrity_checked": 10030,
+  "n_valid_caches": 10030,
+  "n_bad_caches": 0,
+  "cache_failure_counts": {},
+  "bad_cache_examples": [],
+  "clip_len_min": 28,
+  "clip_len_median": 171,
+  "clip_len_max": 1002,
+  "norm_pixel_mean": 0.128799,
+  "norm_pixel_std": 0.195979,
+  "recomputed_train_pixel_mean": 0.129821,
+  "recomputed_train_pixel_std": 0.196355,
+  "norm_stats_videos": 512,
+  "norm_stats_pixels": 51380224,
+  "drift_mean": 0.001022,
+  "drift_std": 0.000376,
+  "mean_drift_tolerance": 0.02,
+  "std_drift_tolerance": 0.02,
+  "geometry_version_expected": "echonet_dynamic_no_long_axis_v1",
+  "keyframe_geometry_versions_found": [
+    "echonet_dynamic_no_long_axis_v1"
+  ],
+  "manifest_geometry_versions_found": [
+    "echonet_dynamic_no_long_axis_v1"
+  ],
+  "keyframe_geometry_version_ok": true,
+  "manifest_geometry_version_ok": true,
+  "geometry_version_ok": true,
+  "sampler_clip_len": 32,
+  "sampler_period": 2,
+  "sampler_native_frame_coverage": 62,
+  "sampler_eval_views": 5,
+  "train_cycle_sampler": {
+    "n_train_with_keyframes": 7460,
+    "n_containable": 7455,
+    "n_uncontainable": 5,
+    "n_invalid_keyframes": 0,
+    "containment_checks": 44730,
+    "containment_hits": 44730,
+    "containment_rate": 1.0,
+    "index_failures": 0,
+    "uncontainable_examples": [
+      {
+        "FileName": "0X31B3F20AC08B5491",
+        "transition_frames": 65,
+        "configured_coverage": 62
+      },
+      {
+        "FileName": "0X3EB0FC2695B0AB5F",
+        "transition_frames": 72,
+        "configured_coverage": 62
+      },
+      {
+        "FileName": "0X4BBA9C8FB485C9AB",
+        "transition_frames": 71,
+        "configured_coverage": 62
+      },
+      {
+        "FileName": "0X551E297304F24B60",
+        "transition_frames": 64,
+        "configured_coverage": 62
+      },
+      {
+        "FileName": "0X5789708D8B711CE9",
+        "transition_frames": 76,
+        "configured_coverage": 62
+      }
+    ],
+    "invalid_keyframe_examples": []
+  },
+  "label_free_eval_sampler": {
+    "n_eval_videos": 2565,
+    "n_index_failures": 0,
+    "uniform_coverage_hits": 2565,
+    "uniform_coverage_rate": 1.0,
+    "n_diversity_possible": 2546,
+    "n_diverse": 2546,
+    "diversity_rate": 1.0,
+    "failure_examples": []
+  },
+  "visual_qa_examples": [
+    {
+      "ef_class": 0,
+      "FileName": "0X77D12C545D5C9ACD",
+      "clip": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class0_Severe_30_clip.png",
+      "motion": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class0_Severe_30_motion.png",
+      "contours": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class0_Severe_30_ed_es_contours.png"
+    },
+    {
+      "ef_class": 1,
+      "FileName": "0X7B73DF444BEF7269",
+      "clip": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class1_Moderate_30-40_clip.png",
+      "motion": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class1_Moderate_30-40_motion.png",
+      "contours": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class1_Moderate_30-40_ed_es_contours.png"
+    },
+    {
+      "ef_class": 2,
+      "FileName": "0X5295198F216052C5",
+      "clip": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class2_Mild_40-55_clip.png",
+      "motion": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class2_Mild_40-55_motion.png",
+      "contours": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class2_Mild_40-55_ed_es_contours.png"
+    },
+    {
+      "ef_class": 3,
+      "FileName": "0X2A20552783F445AE",
+      "clip": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class3_Normal_55_clip.png",
+      "motion": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class3_Normal_55_motion.png",
+      "contours": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz\\class3_Normal_55_ed_es_contours.png"
+    }
+  ],
+  "visual_qa_errors": [],
+  "represented_classes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "viz_dir": "C:\\Users\\dviya\\Desktop\\Component_03\\Dilukshan\\preprocessing\\artifacts\\viz",
+  "warnings": [
+    "5 train ED/ES transitions exceed the fixed 32x2 coverage and use best-effort subwindows"
+  ],
+  "elapsed_sec": 10.2
+}

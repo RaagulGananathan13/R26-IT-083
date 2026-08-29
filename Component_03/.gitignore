@@ -37,11 +37,19 @@ Dilukshan/training/outputs/**
 !Dilukshan/training/outputs/**/config.json
 !Dilukshan/training/outputs/**/train_log.csv
 !Dilukshan/training/outputs/**/*.png
-!Dilukshan/training/outputs/ensemble_report.json
+# Top-level result reports. Globbed rather than named one by one, so a new
+# ablation's report is published by default instead of being silently ignored
+# until someone notices it missing from the repository.
+!Dilukshan/training/outputs/ensemble_report*.json
+!Dilukshan/training/outputs/robustness*.json
+!Dilukshan/training/outputs/selective_report.json
+!Dilukshan/training/outputs/single_*.json
 
 # Preprocessing artifacts: keep stats, drop the giant manifests
 Dilukshan/preprocessing/artifacts/manifest.csv
 Dilukshan/preprocessing/artifacts/camus_manifest.csv
+# ...and the pre-repair backups repair_manifest_paths.py leaves behind
+*.absolute.bak
 
 # ============================================================================
 #  Python

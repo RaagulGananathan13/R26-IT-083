@@ -54,6 +54,11 @@ def parse_args():
                     help="tau for logit-adjusted training (Menon et al. 2021); "
                          "shifts logits by tau*log(class_prior) to lift rare/middle "
                          "classes. 0 disables. Typical 0.5-1.5.")
+    ap.add_argument("--backbone", choices=["r2plus1d_18", "r3d_18", "mc3_18"],
+                    default=None,
+                    help="spatio-temporal backbone. r2plus1d_18 (default) is the "
+                         "shipped choice and EchoNet's; r3d_18 is the un-factorised "
+                         "baseline it was designed to beat, at matched capacity.")
     ap.add_argument("--no-pretrained", action="store_true")
     ap.add_argument("--no-amp", action="store_true")
     mode = ap.add_mutually_exclusive_group()
@@ -120,6 +125,17 @@ def main():
                      f"to {requested_version!r} on --resume/--calibrate-only; the saved "
                      f"checkpoint is a {CFG.model_version!r} network.")
         CFG.model_version = requested_version
+
+    # Backbone. Guarded exactly like model_version: swapping the architecture
+    # under an existing checkpoint would make its weights unloadable, so only a
+    # fresh run may choose one from the CLI.
+    if a.backbone is not None:
+        if (a.resume or a.calibrate_only) and a.backbone != CFG.backbone:
+            sys.exit(f"[run_train] cannot change backbone from {CFG.backbone!r} to "
+                     f"{a.backbone!r} on --resume/--calibrate-only; the saved "
+                     f"checkpoint is a {CFG.backbone!r} network. Start a fresh "
+                     f"--run-name instead.")
+        CFG.backbone = a.backbone
 
     # Extra co-training manifests (e.g. CAMUS). Only override when explicitly
     # given, so a resume keeps whatever the snapshot recorded.

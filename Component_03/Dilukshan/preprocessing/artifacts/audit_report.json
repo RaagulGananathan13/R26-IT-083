@@ -1,0 +1,12 @@
+{
+  "n_labelled": 10030,
+  "n_on_disk": 10030,
+  "n_missing_files": 0,
+  "n_unreadable": 0,
+  "n_resolution_outliers": 0,
+  "n_metadata_mismatch": 6,
+  "n_orphans": 0,
+  "orphan_examples": [],
+  "resolution_outlier_examples": [],
+  "elapsed_sec": 4.1
+}

@@ -1,9 +1,11 @@
 """
 UEF-Net :: Uncertainty-aware Ordinal Ejection-Fraction Network
 ==============================================================
-Shared R(2+1)D-18 spatio-temporal backbone (Kinetics-pretrained, EchoNet's
-proven choice), with the stem adapted to N-channel (grayscale + motion) input,
-feeding two heads:
+Shared 18-layer spatio-temporal backbone (Kinetics-pretrained), with the stem
+adapted to N-channel (grayscale + motion) input,
+feeding two heads.  R(2+1)D-18 is the default and EchoNet's proven choice;
+r3d_18 and mc3_18 are selectable via --backbone so the choice can be
+tested rather than assumed.  Heads:
 
   * Regression head  -> standardized EF  (drives MAE)
   * CORAL ordinal head -> K-1 rank-consistent cumulative logits P(y>k)
@@ -57,14 +59,44 @@ class OrderedCoralHead(nn.Module):
         return self.score(x) - self.cutpoints().unsqueeze(0)
 
 
+#: Backbones this network can be built on.  All three are 18-layer, Kinetics-400
+#: pretrained, expose the same `stem[0]` conv and the same 512-d `fc` input, so
+#: the stem adaptation and every head below work unchanged across them.
+#:
+#: r2plus1d_18  the shipped choice.  Factorises each 3-D convolution into a
+#:              spatial (1,d,d) then temporal (t,1,1) step, which matches how
+#:              ejection fraction is defined -- a temporal quantity computed
+#:              from spatial structure.  Ouyang et al. found it best for EF on
+#:              this dataset, and keeping it makes our MAE comparable to theirs.
+#: r3d_18       full 3-D convolution: the un-factorised baseline R(2+1)D was
+#:              designed to beat (Tran et al., CVPR 2018).  Nearly matched in
+#:              capacity (33.4 M vs 31.5 M), so a comparison isolates the
+#:              factorisation rather than confounding it with model size.
+#: mc3_18       mixed 3-D early / 2-D late.  Included for completeness, but at
+#:              11.7 M parameters a comparison against it conflates architecture
+#:              with capacity and should be read with that in mind.
+_BACKBONES = {
+    "r2plus1d_18": ("r2plus1d_18", "R2Plus1D_18_Weights"),
+    "r3d_18": ("r3d_18", "R3D_18_Weights"),
+    "mc3_18": ("mc3_18", "MC3_18_Weights"),
+}
+
+
 def _build_backbone(cfg, legacy_stem: bool = False):
-    from torchvision.models.video import r2plus1d_18, R2Plus1D_18_Weights
+    import torchvision.models.video as tvv
+
     backbone = getattr(cfg, "backbone", "r2plus1d_18")
-    if backbone != "r2plus1d_18":
-        raise ValueError(f"unsupported backbone={backbone!r}; expected 'r2plus1d_18'")
-    weights = R2Plus1D_18_Weights.KINETICS400_V1 if cfg.pretrained else None
+    if backbone not in _BACKBONES:
+        raise ValueError(
+            f"unsupported backbone={backbone!r}; expected one of "
+            f"{sorted(_BACKBONES)}")
+    factory_name, weights_name = _BACKBONES[backbone]
+    factory = getattr(tvv, factory_name)
+    weights_enum = getattr(tvv, weights_name)
+
+    weights = weights_enum.KINETICS400_V1 if cfg.pretrained else None
     try:
-        m = r2plus1d_18(weights=weights)
+        m = factory(weights=weights)
         loaded = weights is not None
     except Exception as e:                     # offline / download blocked
         if weights is not None and getattr(cfg, "require_pretrained", False):
@@ -73,7 +105,7 @@ def _build_backbone(cfg, legacy_stem: bool = False):
                 "Download/cache them first or explicitly use --no-pretrained for a smoke test."
             ) from e
         print(f"[model][WARN] pretrained weights unavailable ({e}); random init.")
-        m = r2plus1d_18(weights=None)
+        m = factory(weights=None)
         loaded = False
 
     # adapt stem conv (3->in_channels) preserving pretrained response magnitude
@@ -103,7 +135,7 @@ def _build_backbone(cfg, legacy_stem: bool = False):
                 new.bias.copy_(old.bias)
     m.stem[0] = new
 
-    feat_dim = m.fc.in_features                  # 512
+    feat_dim = m.fc.in_features                  # 512 for all three
     m.fc = nn.Identity()
     return m, feat_dim, loaded
 

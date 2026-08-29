@@ -356,6 +356,7 @@ Every design decision was measured on data never used to fit it.
 | **Ensembling 2 → 3 seeds** | MAE 3.994, min-rec 0.711 | MAE 3.979, min-rec 0.723 | −0.015 / +0.012 | ✅ Fully |
 | **C4 — CAMUS co-training** | Moderate 0.53 | Moderate 0.62 | +0.09 | ⚠️ Matched epochs across runs, not single-variable |
 | **Deferred vs immediate re-weighting** | MAE 5.44 | MAE 4.29 | −1.15 | ✅ Fully |
+| **Backbone R(2+1)D-18 → R3D-18**, 3 seeds each | acc 0.7298, bal-acc 0.7366 | acc 0.7063, bal-acc 0.7145 | −0.0235 / −0.0221 — **significant**, p = 0.0064 / 0.0310 | ✅ **Fully** — three matched seeds per architecture, every hyperparameter inherited from the baseline snapshot, verified by a fail-closed parity audit (`run_backbone_ensemble.py`) |
 
 ### 8.1 Minimum-recall progression
 
@@ -374,7 +375,7 @@ Every design decision was measured on data never used to fit it.
 | `uefnet_v3b` | 2024 | 0.701 | 3.888 | 0.72 / 0.71 / 0.70 / 0.71 |
 | `uefnet_v3c` | 777 | 0.697 | 4.045 | 0.72 / 0.71 / 0.70 / 0.70 |
 
-Members agree closely, and `reg_operational_expanded` was independently selected as the winning strategy in all three — evidence that C5 is not a fitting artefact. Repeating calibration reproduced results bit-for-bit.
+Members agree closely on metrics. Strategy selection, however, is **not** unanimous: `uefnet_v3` and `uefnet_v3b` select `reg_operational_thresholds` (affine EF calibration with searched thresholds), while `uefnet_v3c` selects `reg_operational_expanded`. The shipped three-seed ensemble — whose calibration is fitted on the pooled member predictions rather than inherited from any one member — selects `reg_operational_expanded`, and that is what the §7 headline reflects (`outputs/ensemble_report.json`). C5's benefit should therefore be read from the controlled before/after comparisons in §8 and §8.1, not from unanimity across members. Repeating calibration reproduced results bit-for-bit.
 
 ---
 
