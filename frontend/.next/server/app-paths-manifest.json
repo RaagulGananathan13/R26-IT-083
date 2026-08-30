@@ -1,0 +1,5 @@
+{
+  "/api/demo/catalog/route": "app/api/demo/catalog/route.js",
+  "/page": "app/page.js",
+  "/cxr/page": "app/cxr/page.js"
+}
