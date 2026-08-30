@@ -1,0 +1,871 @@
+================================================================================
+       PTB-XL DATASET LABELING GUIDE — COMPONENT 2: ARRHYTHMIA CLASSIFICATION
+       Complete Step-by-Step Process for 5-Class Multi-Label ECG Classification
+================================================================================
+
+Written for: Research Project — Component 2 (ECG Superclass Classification)
+Target Dataset: PTB-XL (Physikalisch-Technische Bundesanstalt, Berlin)
+Total Records: 21,837 clinical ECG recordings
+Objective: Assign each ECG record one or more of 5 superclass labels —
+           NORM, MI, STTC, CD, HYP
+
+================================================================================
+SECTION 1 — UNDERSTANDING WHAT "LABELING" MEANS IN THIS PROJECT
+================================================================================
+
+Before touching any file or spreadsheet, you must understand what the labeling
+task actually is. In most machine learning projects, labeling means a human
+manually reading through raw data and assigning categories. For example,
+a team of workers looking at images of cats and dogs and writing "cat" or "dog"
+for each one. That is called manual annotation.
+
+Your project is different. The PTB-XL dataset was already annotated by real
+cardiologists in Germany who physically examined each ECG and wrote clinical
+diagnoses. The raw labels already exist inside the dataset files. What YOU
+are doing is not labeling from scratch. What you are doing is a process called
+LABEL MAPPING or LABEL TRANSFORMATION.
+
+The cardiologists wrote extremely specific diagnoses. There are 71 unique SCP
+(Standard Communications Protocol) diagnostic codes in the dataset. These are
+granular, specific codes like "IMI" (inferior myocardial infarction), "LBBB"
+(left bundle branch block), "LAD" (left axis deviation), "LVH" (left ventricular
+hypertrophy), and so on. Each one of these 71 codes is very specific.
+
+Your model does NOT need to learn 71 specific categories. Your model needs to
+learn 5 broad superclasses: NORM, MI, STTC, CD, and HYP.
+
+So your labeling job is: take the 71 specific cardiologist codes and group them
+(map them) into the 5 superclasses your model will be trained on.
+
+This mapping is not guesswork. The PTB-XL dataset creators (Wagner et al., 2020)
+already published the official mapping. Your job is to understand that mapping,
+apply it correctly to your data, and produce a final labeled CSV that your model
+can consume. Every step of this is explained below.
+
+================================================================================
+SECTION 2 — WHAT FILES EXIST IN THE PTB-XL DATASET AND WHAT EACH ONE CONTAINS
+================================================================================
+
+When you download the PTB-XL dataset from PhysioNet, you receive a folder
+structure with several types of files. You must understand each one before
+labeling.
+
+FILE TYPE 1 — ptbxl_database.csv
+---------------------------------
+This is the master spreadsheet. It contains one row for every ECG recording
+in the dataset. There are 21,837 rows (one per patient visit / recording).
+The important columns for your labeling work are:
+
+  ecg_id          → A unique number for each recording (1 to 21,837)
+  patient_id      → Links to the patient (one patient can have multiple ECGs)
+  age             → Patient age in years (you will use this as a model input)
+  sex             → Patient sex — 0 = male, 1 = female
+  height          → Patient height in cm
+  weight          → Patient weight in kg
+  scp_codes       → THIS IS THE MOST IMPORTANT COLUMN FOR LABELING. It contains
+                    the cardiologist diagnoses in a Python dictionary format.
+                    It looks like this:
+                    {'NORM': 100.0}
+                    or
+                    {'IMI': 80.0, 'LVH': 20.0}
+                    or
+                    {'LBBB': 100.0, 'STTC': 50.0}
+                    The keys are the SCP diagnostic codes. The values (numbers)
+                    are confidence percentages — how sure the annotating
+                    cardiologist was about that particular diagnosis.
+  report          → The full clinical text report written by the cardiologist
+                    in GERMAN (e.g. "Sinusrhythmus. Normales EKG.")
+  validated_by_human → A flag (True or False) indicating if a second cardiologist
+                    also validated this record. Records with True are higher
+                    quality. You should prefer these for training.
+  filename_lr     → File path to the LOW-RESOLUTION signal (100 Hz version)
+  filename_hr     → File path to the HIGH-RESOLUTION signal (500 Hz version)
+                    YOU WILL USE THE HIGH-RESOLUTION VERSION (500 Hz) because
+                    your model processes 5,000 samples per lead.
+  strat_fold      → A number from 1 to 10. This is a pre-assigned fold number
+                    for cross-validation. The PTB-XL authors specifically
+                    designed folds 1-8 for TRAINING, fold 9 for VALIDATION,
+                    and fold 10 for TESTING. Use these exact splits — do not
+                    randomly split the data yourself, because random splits
+                    might accidentally put ECGs from the same patient in both
+                    training and test sets (data leakage).
+
+FILE TYPE 2 — scp_statements.csv
+----------------------------------
+This is the LOOKUP TABLE that explains every SCP diagnostic code. It has 71 rows,
+one per diagnostic code. The critical columns are:
+
+  Unnamed: 0 (or "code")  → The SCP code string, e.g. "NORM", "IMI", "LBBB"
+  superclass              → The 5-class label this code belongs to.
+                            THIS IS YOUR MAPPING KEY.
+                            Values are: "NORM", "MI", "STTC", "CD", "HYP"
+                            Some codes have no superclass — they belong to
+                            "FORM" (form-based features) or "RHYTHM" categories
+                            that are outside your 5-class scope.
+  description             → Plain English description of what the code means
+  diagnostic              → 1 if this code is a diagnostic statement (relevant
+                            to your task), 0 if it is a rhythm/form annotation
+  diagnostic_class        → Same as superclass for diagnostic codes
+
+FILE TYPE 3 — Signal .dat Files (inside records100 and records500 folders)
+---------------------------------------------------------------------------
+These are the actual ECG waveform files. Each ECG has:
+  - A .dat file: binary file containing the raw signal values
+  - A .hea file: header file describing the format, leads, sampling rate, scale
+
+The folder records100 contains 100Hz versions (for lighter tasks).
+The folder records500 contains 500Hz versions (for your full-resolution model).
+
+You will NOT modify these signal files during labeling. They stay as-is.
+Your labeling work only touches the CSV files and produces a final output CSV.
+
+================================================================================
+SECTION 3 — THE COMPLETE MAPPING: WHICH SCP CODES BELONG TO WHICH SUPERCLASS
+================================================================================
+
+This is the exact mapping you must apply. Every SCP code from the scp_codes
+column of ptbxl_database.csv must be classified into one of these 5 superclasses
+(or discarded if it belongs to a non-diagnostic category like rhythm/form).
+
+The source of this mapping is scp_statements.csv — the official lookup table
+provided by the PTB-XL dataset authors. Do not invent your own mapping.
+Use the official one. Below is a reference version so you understand what
+falls into each bucket:
+
+SUPERCLASS: NORM (Normal ECG)
+------------------------------
+SCP codes that map to NORM:
+  NORM  — Normal sinus rhythm, no abnormalities
+
+This is the simplest superclass. If the only code in scp_codes is NORM with
+high confidence, the ECG is electrically healthy. Approximately 9,528 records
+fall here.
+
+SUPERCLASS: MI (Myocardial Infarction)
+----------------------------------------
+SCP codes that map to MI include (but are not limited to):
+  IMI   — Inferior myocardial infarction (affecting the bottom wall)
+  AMI   — Anterior myocardial infarction (affecting the front wall)
+  LMI   — Lateral myocardial infarction (affecting the side wall)
+  ASMI  — Anteroseptal myocardial infarction
+  ILMI  — Inferolateral myocardial infarction
+  IPLMI — Inferoposterolateral MI
+  PMI   — Posterior myocardial infarction
+  IPMI  — Inferoposterior MI
+  ALMI  — Anterolateral MI
+  INJAS — Injury in anterior/septal leads (subendocardial)
+  INJIN — Injury in inferior leads
+  INJIL — Injury in inferolateral leads
+  INJLA — Injury in lateral leads
+  ... and other infarction and injury codes
+
+Key understanding: These all represent either current or past myocardial damage.
+The heart muscle was or is being injured due to blocked coronary arteries.
+The specific anatomical location (inferior, anterior, lateral, posterior) differs
+but all are classified under the MI superclass.
+
+SUPERCLASS: STTC (ST/T-wave Change)
+--------------------------------------
+SCP codes that map to STTC include:
+  NST_  — Non-specific ST changes
+  ISC_  — Ischemic ST changes
+  ISCA  — Ischemia, anterolateral
+  ISCI  — Ischemia, inferolateral
+  STD_  — ST depression (non-specific)
+  VCLVH — Voltage criteria for LVH causing ST changes
+  ANEUR — Cardiac aneurysm (ST changes)
+  INVT  — Inverted T-waves
+  QWAVE — Abnormal Q-waves
+  NT_   — Non-specific T-wave changes
+  ... and other ST/T morphology codes
+
+Key understanding: These represent warning-level changes — the ECG is not normal
+but has not yet met the full threshold for myocardial infarction. Ischaemia
+(insufficient blood supply) is the most common driver.
+
+SUPERCLASS: CD (Conduction Disturbance)
+-----------------------------------------
+SCP codes that map to CD include:
+  LBBB  — Left bundle branch block
+  RBBB  — Right bundle branch block
+  ILBBB — Incomplete left bundle branch block
+  IRBBB — Incomplete right bundle branch block
+  LPFB  — Left posterior fascicular block
+  LAFB  — Left anterior fascicular block (hemiblock)
+  AVB   — AV block (general)
+  AVB1  — First degree AV block
+  AVB2  — Second degree AV block
+  CLBBB — Complete LBBB
+  CRBBB — Complete RBBB
+  WPW   — Wolff-Parkinson-White (pre-excitation)
+  1AVB  — First degree AV block
+  2AVB  — Second degree AV block
+  3AVB  — Complete (third degree) AV block
+  ... and other conduction pathway codes
+
+Key understanding: These all mean the electrical signal is travelling through
+the heart abnormally — either through a blocked bundle branch, a slowed AV node,
+or an abnormal accessory pathway (WPW). The heart muscle itself may be healthy
+but the wiring is faulty.
+
+SUPERCLASS: HYP (Hypertrophy)
+-------------------------------
+SCP codes that map to HYP include:
+  LVH   — Left ventricular hypertrophy
+  RVH   — Right ventricular hypertrophy
+  LAO/LAE — Left atrial enlargement
+  RAO/RAE — Right atrial enlargement
+  SEHYP — Septal hypertrophy
+  LVOLT — Low voltage (sometimes associated with hypertrophy patterns)
+  ... and other chamber enlargement codes
+
+Key understanding: These mean the heart walls or chambers have grown abnormally
+thick or enlarged, usually from chronic pressure overload (hypertension, valve
+disease, pulmonary disease).
+
+CODES THAT DO NOT MAP TO ANY SUPERCLASS (discard from classification):
+-----------------------------------------------------------------------
+Some codes in scp_codes belong to rhythm descriptions or form descriptions, not
+diagnostic superclasses. For example:
+  SR    — Sinus rhythm (this is normal rhythm, not a pathology)
+  AFIB  — Atrial fibrillation (this is a rhythm, not a superclass in PTB-XL)
+  SVT   — Supraventricular tachycardia (rhythm)
+  SBRAD — Sinus bradycardia (rhythm)
+  PVC   — Premature ventricular contractions (rhythm/form)
+  PAC   — Premature atrial contractions (rhythm/form)
+
+These are real clinical findings, but in the PTB-XL framework they are classified
+as RHYTHM or FORM annotations, not as DIAGNOSTIC superclass annotations. When you
+check scp_statements.csv for these codes, the "superclass" column will be empty
+or null. This means you IGNORE these codes during your 5-class label assignment.
+The record may still receive a label from its other codes — but these rhythm/form
+codes do not contribute to the 5-class labels.
+
+================================================================================
+SECTION 4 — HOW CONFIDENCE SCORES WORK AND YOUR THRESHOLD DECISION
+================================================================================
+
+Look back at the scp_codes column. Each diagnostic code has a number next to it,
+like {'IMI': 80.0, 'LVH': 20.0}. That number is the confidence percentage —
+two cardiologists annotated each record, and the number reflects their agreement
+level.
+
+  100.0 = Both cardiologists agreed. Very high confidence.
+   80.0 = Strong agreement.
+   50.0 = Moderate confidence — one may have been uncertain.
+   20.0 = Low confidence — possibly a minor or incidental finding.
+    0.0 = Present but considered incidental or very uncertain.
+
+YOUR DECISION: What confidence threshold do you use to count a code as "positive"?
+
+The standard academic practice used by most papers on PTB-XL is:
+
+  Use a threshold of >= 100.0 for TRAINING labels
+  This means you only count a code as positive (include its superclass as a
+  label) if the confidence is exactly 100, meaning BOTH cardiologists fully
+  agreed on this diagnosis.
+
+WHY NOT LOWER THRESHOLDS?
+
+Using a lower threshold (like >= 50) includes uncertain diagnoses. This adds
+noise to your training labels. When a cardiologist wrote 20% confidence on LVH,
+they were saying "maybe, but I'm not sure." Training on uncertain labels teaches
+the model to be uncertain too. For your initial model, use 100% confidence labels
+only — they are the cleanest.
+
+HOWEVER — one important nuance:
+
+For your EVALUATION (test set performance), you can also evaluate at 50%
+threshold to see how the model performs on uncertain cases. Some published
+papers report results at both thresholds. This is a methodological choice you
+document in your thesis.
+
+PRACTICAL RULE YOU WILL APPLY:
+For each record, look at every code in scp_codes. For each code that has
+confidence >= 100, look up its superclass in scp_statements.csv. If it maps to
+one of your 5 superclasses, mark that superclass as 1 (positive) for this record.
+If no code maps to any of the 5 superclasses at >= 100 confidence, you may
+either exclude this record from training OR mark it as all-zeros (ambiguous).
+Most papers exclude ambiguous records or use them only in the test set.
+
+================================================================================
+SECTION 5 — THE MULTI-LABEL STRUCTURE: WHAT YOUR FINAL LABEL LOOKS LIKE
+================================================================================
+
+Because this is multi-label classification (a patient can have more than one
+superclass), your labels are NOT single numbers. They are BINARY VECTORS of
+length 5. This is also called a "multi-hot" encoding.
+
+For each ECG record, your final label is a row of 5 binary values:
+
+  [NORM, MI, STTC, CD, HYP]
+
+Each value is either 0 (absent) or 1 (present).
+
+Examples:
+
+  A completely healthy ECG:
+  [1, 0, 0, 0, 0]
+  → NORM is present, nothing else.
+
+  A patient with a current heart attack and early ischaemia:
+  [0, 1, 1, 0, 0]
+  → MI and STTC are both present simultaneously.
+
+  A patient with a bundle branch block AND thickened walls:
+  [0, 0, 0, 1, 1]
+  → CD and HYP are both positive.
+
+  A patient with a previous heart attack and thickened walls showing ischaemia:
+  [0, 1, 1, 0, 1]
+  → MI, STTC, and HYP are all positive.
+
+  A pathological ECG with no clean superclass mapping:
+  [0, 0, 0, 0, 0]
+  → All zeros — this record is ambiguous or its codes only map to rhythm/form.
+  → Consider excluding from training.
+
+IMPORTANT CLARIFICATION about NORM co-occurring with others:
+
+In theory NORM should not co-occur with pathological classes. If an ECG is
+normal, it should not also have MI. In practice, a small number of records
+might have NORM co-annotated with other findings — usually this means the
+NORM annotation was for one part of the reading and another pathology was for
+a different finding. In most published work, if NORM co-occurs with a
+pathological class, NORM is dropped from that record's labels (the pathology
+takes priority). Apply this rule: if a record has both NORM=1 and any of
+MI/STTC/CD/HYP=1, set NORM=0 for that record.
+
+================================================================================
+SECTION 6 — CLASS DISTRIBUTION AND WHAT TO EXPECT FROM YOUR LABELED DATA
+================================================================================
+
+After you apply the labeling process, here is approximately what you will find
+in terms of how many records fall into each superclass (using the >= 100%
+confidence threshold, validated records only):
+
+  NORM  → approximately 9,500 records  (most common — ~44% of dataset)
+  MI    → approximately 5,100 records  (~24% of dataset)
+  STTC  → approximately 5,200 records  (~24% of dataset)
+  CD    → approximately 4,700 records  (~22% of dataset)
+  HYP   → approximately 2,600 records  (~12% of dataset — fewest)
+
+TOTAL unique records with at least one label ≈ 17,000 to 18,000 records
+(Not 21,837 because ~3,000+ records have only rhythm/form codes or very low
+confidence codes that don't pass the threshold.)
+
+NOTE: These counts sum to more than 21,837 because multi-label records are
+counted in multiple superclasses simultaneously. The sum of all class counts
+reflects the total number of positive label slots, not total records.
+
+CLASS IMBALANCE WARNING:
+HYP has roughly one-third as many samples as NORM. This is class imbalance.
+Your model will naturally be biased toward NORM because it sees more of those
+examples. You must address this in your training strategy:
+
+  Option 1 — Weighted Loss: Give HYP a higher weight in the loss function so
+  mistakes on HYP are penalised more heavily.
+
+  Option 2 — Oversampling: Duplicate HYP records during training to artificially
+  balance the class frequency.
+
+  Option 3 — Report per-class metrics: Report AUROC and F1 score per class, not
+  just overall accuracy, so the reader can see performance on all 5 classes
+  individually including the rare ones.
+
+Document this class imbalance in your methodology section. It is expected and
+acknowledged in all PTB-XL papers.
+
+================================================================================
+SECTION 7 — YOUR DATA SPLIT: TRAINING, VALIDATION, AND TEST
+================================================================================
+
+DO NOT randomly split the data. PTB-XL provides a pre-assigned column called
+"strat_fold" with values 1 through 10. Use it exactly as the dataset authors
+intended:
+
+  TRAINING SET:   Folds 1, 2, 3, 4, 5, 6, 7, 8 (about 17,441 records)
+  VALIDATION SET: Fold 9 (about 2,193 records)
+  TEST SET:       Fold 10 (about 2,203 records)
+
+WHY NOT RANDOM SPLITS?
+
+The strat_fold splits were designed to prevent data leakage. A single patient
+can have multiple ECG recordings taken on different days. If you randomly split,
+ECG recording #1 from a patient might be in training and recording #2 from the
+same patient might be in testing. The model would effectively be "tested on
+someone it already saw," which inflates your metrics and produces overly
+optimistic results. The strat_fold splits ensure that all recordings from the
+same patient stay in the same fold.
+
+By using fold 10 as your test set, you can also directly compare your results
+against other papers that used the same split. This makes your results
+scientifically reproducible and comparable.
+
+================================================================================
+SECTION 8 — THE GERMAN REPORT COLUMN AND WHAT TO DO WITH IT
+================================================================================
+
+The "report" column in ptbxl_database.csv contains the full clinical text
+written by a German cardiologist. Examples of what this text looks like:
+
+  "Sinusrhythmus. Normales EKG."
+  (Translation: "Sinus rhythm. Normal ECG.")
+
+  "Linksschenkelblock. Verdacht auf Vorderwandinfarkt."
+  (Translation: "Left bundle branch block. Suspected anterior wall infarction.")
+
+  "ST-Senkung in V4-V6. Linksventrikuläre Hypertrophie."
+  (Translation: "ST depression in V4-V6. Left ventricular hypertrophy.")
+
+Your ClinicalBERT text modality is trained on English. You must translate all
+these reports to English before your model can process them.
+
+HOW THIS AFFECTS LABELING:
+
+The report column is used as a third input modality in your model. It is not
+directly used for generating your training labels — your labels come entirely
+from the scp_codes column. But the report text, once translated, becomes an
+input feature.
+
+TRANSLATION APPROACH:
+
+Use the deep-translator Python library, specifically its GoogleTranslator function
+with source='de' (German) and target='en' (English). This is machine translation —
+not perfect, but acceptable for research. You must declare this in your
+methodology.
+
+After translation, you add a new column to your working dataframe called
+"report_en" containing the English-translated report. Keep the original "report"
+column as well for reference.
+
+AT INFERENCE TIME (when a new patient uploads their ECG):
+Your system generates an ECG report automatically from the signal features. This
+generated report is written directly in English by your inference pipeline. The
+translation step only applies to the PTB-XL training data, not to real-world use.
+
+Document this sentence in your methodology section exactly:
+"ECG reports in the PTB-XL training set were machine-translated from German to
+English using GoogleTranslator prior to ClinicalBERT tokenisation. Reports
+generated at inference time are produced directly in English."
+
+================================================================================
+SECTION 9 — YOUR FINAL LABELED CSV: EXACT COLUMN STRUCTURE
+================================================================================
+
+After completing all labeling steps, you produce one master CSV file.
+Call it: ptbxl_labeled_final.csv
+
+This file has one row per ECG record (those that passed your threshold).
+The columns are:
+
+  ecg_id          → Unique record ID from original dataset
+  patient_id      → Patient identifier (for split verification)
+  filename_hr     → File path to the 500Hz .dat file
+  age             → Patient age (model input)
+  sex             → Patient sex — 0 male, 1 female (model input)
+  height          → Patient height in cm (model input)
+  weight          → Patient weight in kg (model input)
+  report_en       → English-translated ECG report text (model input)
+  strat_fold      → Fold assignment 1-10 (for train/val/test split)
+  label_NORM      → 0 or 1 — is NORM present?
+  label_MI        → 0 or 1 — is MI present?
+  label_STTC      → 0 or 1 — is STTC present?
+  label_CD        → 0 or 1 — is CD present?
+  label_HYP       → 0 or 1 — is HYP present?
+  validated       → 0 or 1 — was this record validated by a second cardiologist?
+
+This CSV becomes the single source of truth for your entire modeling pipeline.
+Training, validation, testing, and explainability analyses all read from this one
+file.
+
+================================================================================
+SECTION 10 — RECORDS TO EXCLUDE AND RECORDS TO KEEP: EXACT RULES
+================================================================================
+
+Apply these rules in order to decide which records to include in your final CSV:
+
+RULE 1 — EXCLUDE records where ALL scp_codes entries have confidence < 100
+--------------------------------------------------------------------------
+If every code in scp_codes is below 100% confidence, you have no clean labels
+for this record. These are genuinely uncertain ECGs. Exclude them from training.
+You can optionally include them in a separate "uncertain" CSV for later analysis
+but do not use them in model training.
+
+RULE 2 — EXCLUDE records where ALL codes map to RHYTHM or FORM (non-diagnostic)
+--------------------------------------------------------------------------------
+If the only codes in scp_codes are rhythm-type codes (SR, AFIB, SBRAD, etc.) or
+form-type codes, and none of them map to your 5 superclasses, then this record
+has no superclass label. Exclude from training.
+
+RULE 3 — KEEP records where at least one code maps to a superclass at >= 100
+-----------------------------------------------------------------------------
+These are your labeled records. Process them through the full mapping.
+
+RULE 4 — SET NORM to 0 if any pathological class is also 1
+------------------------------------------------------------
+As explained in Section 5. NORM cannot co-exist with disease classes.
+If a record has NORM=1 and also MI=1, set NORM=0.
+
+RULE 5 — KEEP records with validated_by_human = True preferentially
+---------------------------------------------------------------------
+You do not have to discard unvalidated records, but note the ratio in your
+methodology. Some papers train only on validated records for the highest
+label quality. For a research thesis, mention: "X% of training records were
+validated by a second cardiologist. Unvalidated records were included in
+training but analyses were also performed on validated-only subsets."
+
+================================================================================
+SECTION 11 — VERIFYING YOUR LABELS ARE CORRECT: SANITY CHECKS
+================================================================================
+
+After you have generated your labeled CSV, you must verify it before training.
+Here are the sanity checks to perform:
+
+SANITY CHECK 1 — COUNT TOTAL RECORDS PER CLASS
+-----------------------------------------------
+Sum the label_NORM, label_MI, label_STTC, label_CD, label_HYP columns.
+Compare to expected approximate counts from Section 6 above.
+If any class count is dramatically different (e.g. MI shows only 100 records
+or STTC shows 15,000 records), something went wrong in your mapping.
+
+SANITY CHECK 2 — INSPECT MULTI-LABEL COMBINATIONS
+---------------------------------------------------
+Count how many records have exactly 1 label, exactly 2 labels, 3 labels, etc.
+A healthy distribution looks roughly like:
+
+  1 label only:  approximately 75-80% of records
+  2 labels:      approximately 15-20% of records
+  3+ labels:     approximately 2-5% of records
+  0 labels:      should be 0 (all such records were excluded in Section 10)
+
+If you see 30% of records with 3+ labels, your threshold is too permissive.
+If you see 95% with exactly 1 label, your threshold may be too strict.
+
+SANITY CHECK 3 — RANDOM MANUAL INSPECTION
+------------------------------------------
+Pick 10 to 20 records at random. For each one, look at the raw scp_codes value.
+Then look at your assigned labels. Manually verify that the mapping was applied
+correctly. For example:
+
+  Raw scp_codes: {'LBBB': 100.0}
+  Expected label: label_CD = 1, all others = 0
+  If your CSV shows label_CD = 1: CORRECT
+  If your CSV shows anything else: your mapping code has a bug.
+
+  Raw scp_codes: {'IMI': 100.0, 'LVH': 100.0}
+  Expected label: label_MI = 1, label_HYP = 1, all others = 0
+  If your CSV shows label_MI = 1, label_HYP = 1: CORRECT
+
+Do at least 20 of these manual checks before proceeding to model training.
+
+SANITY CHECK 4 — FOLD DISTRIBUTION
+------------------------------------
+Check that each fold has a roughly proportional share of each class.
+For example, NORM records should be distributed across folds 1-10 in proportion
+to each fold's size. If fold 10 has zero NORM records, something went wrong with
+the split. The strat_fold column is pre-stratified by the dataset authors,
+so this should already be balanced, but verify it.
+
+SANITY CHECK 5 — NO DATA LEAKAGE ACROSS SPLITS
+------------------------------------------------
+Verify that no patient_id appears in both the training set (folds 1-8) and the
+test set (fold 10). This is almost guaranteed by the strat_fold design, but
+verify it once for your own confidence and to state it explicitly in your
+methodology.
+
+================================================================================
+SECTION 12 — THE COMPLETE LABELING PROCESS: STEP-BY-STEP SUMMARY
+================================================================================
+
+This is a clean summary of every step in order. Use this as your checklist.
+
+STEP 1 — DOWNLOAD THE DATASET
+  Go to PhysioNet (physionet.org). Search for "PTB-XL".
+  Download all files. You need:
+  - ptbxl_database.csv (the master spreadsheet)
+  - scp_statements.csv (the SCP code lookup table)
+  - records500/ folder (contains all 500Hz .dat and .hea signal files)
+  Total download size is approximately 2.5 GB.
+
+STEP 2 — READ ptbxl_database.csv
+  Load the master spreadsheet into your analysis environment.
+  Confirm it has 21,837 rows.
+  Confirm the columns listed in Section 3 are present.
+
+STEP 3 — READ scp_statements.csv
+  Load the SCP lookup table.
+  Keep only rows where the "diagnostic" column equals 1.
+  From those rows, keep the code name and its "superclass" value.
+  You now have a dictionary: {SCP_CODE: SUPERCLASS}.
+  For example: {"LBBB": "CD", "IMI": "MI", "LVH": "HYP", "NORM": "NORM", ...}
+  Codes with no superclass value (null/empty) are rhythm or form codes — exclude.
+
+STEP 4 — PARSE THE scp_codes COLUMN
+  The scp_codes column is stored as a string in the format of a Python dictionary.
+  Convert this string into an actual dictionary for each row.
+  You now have for each row: a dictionary of {code: confidence} pairs.
+
+STEP 5 — APPLY THE CONFIDENCE THRESHOLD
+  For each record, filter the scp_codes dictionary to keep only codes where
+  the confidence value is >= 100.
+  Discard codes below this threshold.
+  If no codes remain after filtering, mark this record for exclusion.
+
+STEP 6 — MAP CODES TO SUPERCLASSES
+  For each remaining code in the filtered dictionary, look it up in the
+  SCP-to-superclass dictionary from Step 3.
+  If it maps to a superclass, add that superclass to a "positive classes" set
+  for this record.
+  If it does not map to any superclass (rhythm/form code), ignore it.
+
+STEP 7 — APPLY NORM CORRECTION
+  For any record where the positive classes set contains both NORM and any
+  pathological class (MI, STTC, CD, or HYP), remove NORM from the set.
+  NORM cannot co-exist with pathological findings.
+
+STEP 8 — CHECK FOR EMPTY CLASS SETS
+  If after Steps 5-7 a record has an empty positive classes set (no superclass
+  could be assigned), mark this record for exclusion.
+
+STEP 9 — BUILD THE BINARY LABEL COLUMNS
+  For each remaining record, create 5 binary columns:
+  label_NORM = 1 if NORM is in the positive class set, else 0
+  label_MI   = 1 if MI is in the positive class set, else 0
+  label_STTC = 1 if STTC is in the positive class set, else 0
+  label_CD   = 1 if CD is in the positive class set, else 0
+  label_HYP  = 1 if HYP is in the positive class set, else 0
+
+STEP 10 — TRANSLATE REPORTS FROM GERMAN TO ENGLISH
+  For each record, take the "report" column text (German).
+  Run it through GoogleTranslator with source='de', target='en'.
+  Store the result in a new column called "report_en".
+  Handle any errors (empty reports, translation failures) by storing an empty
+  string in "report_en" for those records.
+
+STEP 11 — ASSEMBLE THE FINAL LABELED CSV
+  Keep the columns listed in Section 9:
+  ecg_id, patient_id, filename_hr, age, sex, height, weight, report_en,
+  strat_fold, label_NORM, label_MI, label_STTC, label_CD, label_HYP, validated
+
+STEP 12 — RUN ALL SANITY CHECKS
+  Perform all 5 sanity checks from Section 11.
+  Fix any issues found.
+
+STEP 13 — SAVE THE FINAL FILE
+  Save as: ptbxl_labeled_final.csv
+  This is your definitive labeled dataset. Your model will read from this file.
+
+================================================================================
+SECTION 13 — HOW LABELS CONNECT TO YOUR MODEL ARCHITECTURE
+================================================================================
+
+Your model is designed around this labeling structure. Here is how each piece
+connects:
+
+The 5 binary label columns [label_NORM, label_MI, label_STTC, label_CD, label_HYP]
+become your ground-truth target vector Y for every training record.
+
+Your model outputs a vector of 5 numbers between 0 and 1.
+This is achieved by placing 5 sigmoid neurons at the final layer.
+Sigmoid is used (NOT softmax) because sigmoid treats each class independently —
+a value of 0.91 for MI and 0.67 for STTC simply means both classes are present
+with those confidence levels. Softmax would force the 5 values to sum to 1,
+which is only appropriate for single-label problems.
+
+The loss function used during training is Binary Cross-Entropy (BCE) Loss,
+applied independently to each of the 5 output neurons. The total loss per
+sample is the sum of the 5 individual BCE values. This is the standard loss
+for multi-label classification.
+
+At inference time, you apply a threshold (commonly 0.5) to each output:
+  If sigmoid output for MI > 0.5 → predict MI=1 (positive)
+  If sigmoid output for MI <= 0.5 → predict MI=0 (negative)
+
+This threshold can be tuned per class on your validation set to maximise F1 score
+for each class individually. In practice, a threshold of 0.5 works well for
+high-frequency classes (NORM, MI, STTC) but may need lowering for rare classes
+(HYP) to catch more true positives.
+
+The class distribution imbalance (Section 6) means you should use weighted BCE,
+where HYP samples receive a higher weight in the loss function because the model
+will see fewer HYP examples. A simple weight formula is:
+  weight for class C = (total samples) / (number of positive samples in class C)
+
+This is a standard technique and is documented in your methodology.
+
+================================================================================
+SECTION 14 — METHODOLOGY STATEMENTS FOR YOUR RESEARCH PAPER / THESIS
+================================================================================
+
+Your research document must contain explicit statements about the labeling
+process. Here are the recommended exact sentences to include:
+
+FOR THE DATASET SECTION:
+"The PTB-XL dataset (Wagner et al., 2020) was used for model training and
+evaluation. It contains 21,837 12-lead ECG recordings sampled at 500Hz, each
+annotated by two cardiologists using SCP-ECG diagnostic codes."
+
+FOR THE LABELING APPROACH:
+"Raw SCP diagnostic codes were mapped to five superclasses (NORM, MI, STTC, CD,
+HYP) using the official mapping provided in scp_statements.csv. Only codes with
+an annotator confidence of 100% were used to assign positive class labels,
+ensuring that only unanimously agreed-upon diagnoses contributed to training
+targets. Records where no code achieved 100% confidence in any of the five
+superclasses were excluded from the training and validation sets."
+
+FOR THE MULTI-LABEL FORMULATION:
+"Each ECG record was assigned a binary label vector of length 5, one element per
+superclass. A multi-hot encoding was used, allowing multiple classes to be
+simultaneously positive for a single record. Ground truth labels were constructed
+such that the NORM label was set to zero for any record also positive for one or
+more pathological classes (MI, STTC, CD, or HYP)."
+
+FOR THE DATA SPLIT:
+"The pre-stratified fold assignments provided by the PTB-XL authors were used
+without modification: folds 1-8 for training, fold 9 for validation, and fold 10
+for testing. This stratification ensures that all recordings from a single patient
+are confined to a single fold, preventing data leakage across splits."
+
+FOR THE REPORT TRANSLATION:
+"ECG reports in the PTB-XL training set were machine-translated from German to
+English using the GoogleTranslator API prior to ClinicalBERT tokenisation. Reports
+generated at inference time are produced directly in English by the signal
+processing pipeline and do not require translation."
+
+FOR THE CLASS IMBALANCE:
+"Class imbalance was observed in the training set, with NORM being the most
+frequent superclass (approximately 9,500 records) and HYP being the least
+frequent (approximately 2,600 records). Weighted binary cross-entropy loss was
+applied during training, with per-class weights inversely proportional to class
+frequency, to mitigate the effect of this imbalance on model optimisation."
+
+================================================================================
+SECTION 15 — COMMON MISTAKES AND HOW TO AVOID THEM
+================================================================================
+
+MISTAKE 1 — Using softmax instead of sigmoid
+---------------------------------------------
+If you accidentally use softmax at the output layer, the model will predict
+exactly one class per ECG. This is wrong for multi-label classification. A patient
+with MI and HYP simultaneously will never be correctly predicted. Always use
+sigmoid with binary cross-entropy loss.
+
+MISTAKE 2 — Randomly splitting the data instead of using strat_fold
+---------------------------------------------------------------------
+A random 80/10/10 split will likely put multiple recordings from the same patient
+in different splits. This is data leakage and will give you overly optimistic
+test metrics. Always use the strat_fold column as described.
+
+MISTAKE 3 — Including low-confidence labels (using threshold < 100)
+---------------------------------------------------------------------
+If you use all scp_codes entries regardless of confidence, your training labels
+will be noisy. The model will learn from uncertain diagnoses and performance will
+degrade. Stick to >= 100 confidence for training labels.
+
+MISTAKE 4 — Forgetting to translate the German reports
+-------------------------------------------------------
+If you feed raw German text to ClinicalBERT, the model will not understand it.
+ClinicalBERT was pre-trained on English clinical notes. Untranslated German input
+will produce meaningless embeddings and that modality will contribute nothing
+useful to the final classification.
+
+MISTAKE 5 — Treating this as a single-label problem
+-----------------------------------------------------
+If you pick only the highest-confidence code as the one label for each record,
+you throw away valid co-existing diagnoses. A patient with MI and HYP becomes just
+MI. This significantly distorts your training data and produces a model that
+systematically misses secondary diagnoses.
+
+MISTAKE 6 — Forgetting to handle records with all-zero labels
+--------------------------------------------------------------
+After applying the threshold, some records will have no superclass label. If you
+include these in training with all-zero labels, you are teaching the model that
+certain ECG patterns predict "nothing" — which is inaccurate since those patterns
+actually predict uncertain or rhythm-type findings. Exclude these records from
+training rather than including them with all-zero labels.
+
+MISTAKE 7 — Ignoring class imbalance during training
+------------------------------------------------------
+Training on imbalanced classes without weighted loss will cause the model to
+perform poorly on HYP. Your overall accuracy will look acceptable because HYP
+is rare and not predicting it barely affects accuracy. But your HYP AUROC and F1
+will be very low. Weight the loss. Report per-class metrics.
+
+================================================================================
+SECTION 16 — WHAT THE LABELED DATA ENABLES IN YOUR FULL PIPELINE
+================================================================================
+
+Once your labeling is complete and ptbxl_labeled_final.csv exists, here is how
+every downstream component of your model uses it:
+
+THE 1D CNN (ECG signal encoder):
+Reads filename_hr to load the .dat file. Gets the 12-lead signal as a 5000x12
+array. Computes gradient saliency maps against the predicted classes. Your labels
+define what the model is trying to predict.
+
+THE MLP (demographic encoder):
+Reads age, sex, height, weight from your CSV. These 4 features are normalised
+(age divided by 100, height/weight standardised) before entering the MLP.
+
+THE ClinicalBERT (text encoder):
+Reads report_en from your CSV. Tokenises the English text and produces a
+language embedding. Attention weights are computed per token.
+
+THE FUSION LAYER AND CLASSIFIER:
+Concatenates the 3 encoder outputs. Passes through a final layer with 5 sigmoid
+neurons. The training loss compares this output against your 5 binary label columns.
+
+THE EVALUATION:
+At test time (fold 10), the model's outputs are compared against your label columns.
+You compute:
+  - AUROC per class (area under the ROC curve)
+  - F1 score per class
+  - Macro-averaged AUROC (average across all 5 classes)
+  - Hamming loss (fraction of individual labels that are wrong)
+  - Sample-averaged precision and recall
+
+All of these metrics are possible only because your labels are correct, clean,
+and consistently structured.
+
+================================================================================
+FINAL NOTE — YOUR LABELING IS A RESEARCH CONTRIBUTION IN ITSELF
+================================================================================
+
+Do not think of labeling as a trivial preprocessing step. The decisions you make
+here — which confidence threshold to use, how to handle NORM co-occurrence,
+whether to weight the loss — are methodological choices that affect every number
+in your results section. Document each decision, explain why you made it, and
+cite the original PTB-XL paper (Wagner et al., 2020, Scientific Data) when
+describing the dataset and its annotation structure.
+
+Your labeled CSV is a cleaned, structured, research-ready version of a publicly
+available dataset. Other researchers who read your paper should be able to
+reproduce your exact labeled dataset by following your methodology description,
+which is why every choice must be explicitly stated.
+
+================================================================================
+REFERENCE
+================================================================================
+
+Primary dataset citation:
+Wagner, P., Strodthoff, N., Bousseljot, R., Samek, W., & Schaeffter, T. (2020).
+PTB-XL, a large publicly available electrocardiography dataset.
+Scientific Data, 7(1), 154.
+https://doi.org/10.1038/s41597-020-0495-6
+
+Dataset download:
+https://physionet.org/content/ptb-xl/1.0.3/
+
+SCP-ECG standard reference:
+ISO 11073-91064 / EN 1064 Standard Communications Protocol for Computer-Assisted
+Electrocardiography
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+Total sections: 16
+Total labeling steps: 13
+Document purpose: Finalized methodology guide for PTB-XL dataset labeling
+For: Research project Component 2 — ECG Arrhythmia Superclass Classification
+================================================================================
