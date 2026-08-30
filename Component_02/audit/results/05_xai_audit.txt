@@ -1,0 +1,44 @@
+
+==============================================================================
+  1+2. DELETION / INSERTION FAITHFULNESS (Grad-CAM, temporal)
+==============================================================================
+  n = 40 test records, target = highest-probability detected class
+   masked%   DEL Grad-CAM   DEL random |   INS Grad-CAM   INS random
+  --------------------------------------------------------------------
+        0%         0.7570       0.7570 |         0.3569       0.3569
+       10%         0.6059       0.7414 |         0.5270       0.3897
+       20%         0.4915       0.7206 |         0.5922       0.4206
+       30%         0.4172       0.6898 |         0.6298       0.4730
+       50%         0.3738       0.5925 |         0.6766       0.6023
+       70%         0.3626       0.4617 |         0.7075       0.6962
+       90%         0.3585       0.3847 |         0.7401       0.7442
+
+  Deletion AUC  (LOWER is better): Grad-CAM 0.3933 vs random 0.5368   -> FAITHFUL
+  Insertion AUC (HIGHER is better): Grad-CAM 0.5751 vs random 0.5039   -> FAITHFUL
+
+==============================================================================
+  3. MODEL-RANDOMISATION SANITY CHECK (Adebayo et al. 2018)
+==============================================================================
+  Spearman(heatmap_trained, heatmap_random_head) over 20 records: 0.163
+  Interpretation: |rho| near 1 means the explanation is insensitive to the
+  classifier weights -> it reflects signal energy, not the diagnosis.
+  VERDICT: passes (heatmap depends on the trained head)
+
+==============================================================================
+  4. INTEGRATED-GRADIENTS STABILITY (lead ranking)
+==============================================================================
+  Spearman(30 steps, 200 steps) : 0.999   (app.py ships steps=30)
+  Top-1 lead agreement 30 vs 200: 19/20
+  Spearman(zero baseline, mean baseline): 0.999
+  IG completeness relative error: 35.6%
+
+  A completeness error above ~5% means 30 steps is too coarse; the per-lead
+  percentages shown in the UI are then not the attributions they claim to be.
+  Also note app.py takes abs() before summing over time, which discards sign,
+  so a lead that ARGUES AGAINST the diagnosis is displayed as 'important'.
+
+==============================================================================
+  5. SUMMARY
+==============================================================================
+  The repository reports NO XAI evaluation of any kind. The numbers above are
+  the first faithfulness evidence for this system and belong in the thesis.

@@ -1,0 +1,116 @@
+Parsed 1711 records from the shipped audit dump
+
+==============================================================================
+  1. TIER 3 (BioBART SMOOTHER) — DOES IT DO ANYTHING?
+==============================================================================
+  Tier 3 byte-identical to Tier 2                 :   404 / 1711 (23.6%)
+  Identical after strip/lowercase                 :   404 (23.6%)
+  Tier 3 = Tier 2 with leading chars CLIPPED OFF  :   974 (56.9%)   <-- corruption, not smoothing
+  Tier 3 has leading whitespace                   :   608 (35.5%)
+  Genuinely rewritten (new wording)               :   333 (19.5%)
+
+  VERDICT: Tier 3 is effectively an IDENTITY FUNCTION plus a truncation bug.
+  It adds no linguistic value and cannot be defended as a research contribution
+  in its current state. Every 'natural prose' claim rests on Tier 2 templates.
+
+  Examples where Tier 3 genuinely changed the text:
+    ECG 116  detected=['NORM', 'STTC']
+      T2: ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for a defined abnormality. Non-specific ST-s
+      T3: Graphic atrial fibrillation. Minor non-specific findings are present but do not meet criteria for a defined abnormality. Non-specific ST-segment and T
+      similarity: 0.903
+    ECG 162  detected=['STTC', 'CD', 'HYP']
+      T2: Diffuse ST-segment and T-wave changes are identified. Ischaemia, metabolic disturbance, or drug effect should be excluded. Conduction delay is detecte
+      T3: Diffuse ST-segment and T-wave changes are identified. Ischaemia, metabolic disturbance, or drug effect should be excluded. Conduction delay is detecte
+      similarity: 0.855
+    ECG 172  detected=['MI', 'CD']
+      T2: ST-segment morphology raises concern for possible myocardial infarction. Clinical correlation and further evaluation are advised. Conduction delay is 
+      T3: ST-segment morphology raises concern for possible myocardial infarction. Clinical correlation and further evaluation are advised. Conduction delay is 
+      similarity: 0.999
+    ECG 180  detected=['CD', 'HYP']
+      T2: Conduction delay is detected, consistent with bundle branch block or intraventricular conduction disturbance. Cardiology referral is recommended. Bord
+      T3: Conduction delay is detected, consistent with bundle branch block or intraventricular conduction disturbance. Cardiology referral is recommended. Bord
+      similarity: 0.833
+    ECG 271  detected=['MI', 'STTC', 'HYP']
+      T2: ST-segment morphology raises concern for possible myocardial infarction. Clinical correlation and further evaluation are advised. Diffuse ST-segment a
+      T3: ST-segment morphology raises concern for possible myocardial infarction. Clinical correlation and further evaluation are advised. Diffuse ST-seal and 
+      similarity: 0.793
+    ECG 274  detected=['MI', 'STTC']
+      T2: ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. Non-specific ST-se
+      T3: -segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. Non-specific ST-seal
+      similarity: 0.544
+
+==============================================================================
+  2. TIER 3 CLINICAL-CONTENT PRESERVATION
+==============================================================================
+  Records where Tier 3 DROPPED a clinical concept present in Tier 2: 103
+    dropped: {'NORM': 37, 'STTC': 65, 'HYP': 1}
+    added  : {}
+
+  There is NO automated entailment/containment check in the codebase that
+  verifies Tier 3 preserves Tier 2's findings. The safety claim
+  ('it never sees the raw ECG so it cannot hallucinate') is not equivalent to
+  'it cannot drop or distort a finding' — a seq2seq paraphraser can do both.
+
+==============================================================================
+  3. TIER 2 SELF-CONTRADICTION AND INCONCLUSIVE RATE
+==============================================================================
+  Records where NORM co-fires with an abnormality: 99 (5.8%)
+  Records where NOTHING crossed threshold        : 15 (0.9%)
+
+  Example (ECG 38, detected=['NORM', 'CD']):
+    "ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for a defined abnormality. Conduction delay is detected, consistent with bundle branch block or intraventricular conduction disturbance. Cardiology referral is recommended. Clinical correlation "
+    -> The nurse is told the ECG is normal AND that there is a conduction
+       disturbance requiring cardiology referral, in the same paragraph.
+
+  Detected-label combinations that co-fire with NORM:
+    CD, NORM                        55
+    NORM, STTC                      38
+    MI, NORM                         5
+    HYP, NORM                        1
+
+==============================================================================
+  4. REPORT EXPRESSIVENESS
+==============================================================================
+  Distinct Tier 2 reports produced over 1711 patients : 63
+  Distinct REAL cardiologist reports in the same set  : 1055
+  Theoretical maximum for the template engine         : 2^5 severity-gated combos x 2 tiers = 3^5 - 1 = 242
+
+  Most frequent Tier 2 outputs:
+      587x  The ECG is within normal limits. Sinus rhythm is present with no significant abnormalities detected. No furthe...
+      155x  Diffuse ST-segment and T-wave changes are identified. Ischaemia, metabolic disturbance, or drug effect should ...
+      148x  Conduction delay is detected, consistent with bundle branch block or intraventricular conduction disturbance. ...
+      108x  ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for ...
+       93x  Non-specific ST-segment and T-wave changes are noted. Clinical context is required for definitive interpretati...
+
+==============================================================================
+  5. CONTENT GAP vs. A REAL NURSE / TRIAGE REPORT
+==============================================================================
+  heart rate (bpm)                              present in     0 / 1711 reports
+  rhythm classification (AF/flutter/etc.)       present in     0 / 1711 reports
+  PR / QRS / QT intervals                       present in     0 / 1711 reports
+  QRS axis                                      present in     0 / 1711 reports
+  patient age / sex                             present in   192 / 1711 reports
+  risk score / triage level                     present in     0 / 1711 reports
+  lead-level localisation (anterior/inferior)   present in     0 / 1711 reports
+  model uncertainty statement                   present in     0 / 1711 reports
+  signal-quality statement                      present in     0 / 1711 reports
+
+  NEVER present in any report: ['heart rate (bpm)', 'rhythm classification (AF/flutter/etc.)', 'PR / QRS / QT intervals', 'QRS axis', 'risk score / triage level', 'lead-level localisation (anterior/inferior)', 'model uncertainty statement', 'signal-quality statement']
+  The deliverable is described as a 'Cardiac Risk Reporting System' but no
+  risk stratification, no measured interval, and no demographic context is
+  emitted anywhere in the pipeline.
+
+==============================================================================
+  6. WHY THE REPORTED ROUGE NUMBERS ARE NOT COMPARABLE
+==============================================================================
+  Real reports containing the word 'normal': 1121 (65.5%)
+  Real reports that are non-English (Swedish/German fragments):
+    89 (5.2%)
+      ECG 157: sinusrytm extrem vÄnster el-axel sosom vid vÄnster frÄmre hemiblock ofÖrÄndrat jmf med ekg
+      ECG 160: sinusrytm vÄnster el-axel t-fÖrÄndring, sÅsom vid hÖg lateral myocardial affection
+      ECG 162: sinusrytm extremely vÄnster el-axel ospecifikt skÄnkelblock
+
+  ROUGE-L 0.43 for the 'legacy' free-text tier is inflated by the ~41% of
+  records whose reference is literally 'sinus rhythm normal ekg' — a 4-token
+  string the decoder memorised. Reporting it as report-generation quality
+  overstates the system. Report ROUGE stratified by NORM vs abnormal instead.

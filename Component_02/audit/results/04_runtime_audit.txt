@@ -1,0 +1,81 @@
+
+==============================================================================
+  1. COLD START — importing app.py as the demo does
+==============================================================================
+  app.py imported successfully in 26.3s
+  RSS after load: 1567 MB (delta 1539 MB)
+  thresholds in use: [0.5007, 0.5568, 0.5771, 0.4811, 0.6457]
+
+==============================================================================
+  2. LATENCY OF run_analysis() (single 10 s ECG, CPU)
+==============================================================================
+  ECG 9: total 11.77s
+    classifier forward      :   0.02s
+    Grad-CAM                :   0.06s
+    Integrated Gradients    :   1.83s   (30 backward passes)
+    matplotlib 12-lead plot :   5.22s
+    Tier-3 BioBART smoother :   2.55s
+    Legacy free generation  :   1.49s   <-- runs on EVERY request
+  The legacy free-text tier is described as 'ablation only' yet is executed
+  on every single request in run_analysis(), and is returned as 'report'.
+
+==============================================================================
+  3. TIER-3 SMOOTHER WITH THE CURRENT GUARD
+==============================================================================
+  [NORM only]
+    RAW BioBART out :  ECG is within normal limits. Sinus rhythm is present with no significant abnormalities detected. No further immediate action is r
+    after guard     : The ECG is within normal limits. Sinus rhythm is present with no significant abnormalities detected. No further immediate action i
+    identical to template after guard: True
+  [MI high]
+    RAW BioBART out : -segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended. 
+    after guard     : ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended
+    identical to template after guard: True
+  [NORM+CD (contradiction)]
+    RAW BioBART out : ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for a defined abnormalit
+    after guard     : ECG shows predominantly normal features. Minor non-specific findings are present but do not meet criteria for a defined abnormalit
+    identical to template after guard: True
+  [MI+STTC+HYP]
+    RAW BioBART out : ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended
+    after guard     : ST-segment changes are present and are consistent with myocardial infarction. Urgent clinical and cardiology review is recommended
+    identical to template after guard: False
+  [inconclusive]
+    RAW BioBART out :  findings exceeded the diagnostic threshold. ECG interpretation is inconclusive — manual review by a clinician is required.
+    after guard     : No findings exceeded the diagnostic threshold. ECG interpretation is inconclusive — manual review by a clinician is required.
+    identical to template after guard: True
+
+  4/5 cases collapse back to the template -> Tier 3 contributes nothing.
+
+==============================================================================
+  4. UPLOAD PATH (/predict) vs CACHED PATH — unit & gain consistency
+==============================================================================
+  record            : records500/00000/00009_hr
+  fs                : 500 Hz   n_sig=12   len=5000
+  units             : {'mV'}
+  sig_name order    : ['I', 'II', 'III', 'AVR', 'AVL', 'AVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+  app assumes order : ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+  ORDER MATCH       : False
+  max|upload - cached| = 0.000e+00  (should be ~0)
+  probs via upload path : [80.2, 14.9, 22.0, 25.5, 10.6]
+  probs via cached path : [80.2, 14.9, 22.0, 25.5, 10.6]
+
+==============================================================================
+  5. UPLOAD-PATH ROBUSTNESS PROBES
+==============================================================================
+  (records100 not downloaded — /predict silently resamples ANY length to 5000,
+   so a 30 s strip is compressed 3x and a 2.5 s strip stretched 4x with no warning)
+  same ECG in microvolts (x1000): probs = [0.0, 0.0, 100.0, 0.0, 100.0]  detected=['STTC', 'HYP']
+  -> no unit/gain sanity check exists; a uV file yields a confident wrong report
+  lead-count check present in /predict: yes (rejects !=12)
+  lead-ORDER check present            : NO
+  sampling-rate check present         : NO
+  signal-quality / flatline check     : NO
+  filename sanitisation (secure_filename) on upload: NO -> path traversal
+
+==============================================================================
+  6. CONCURRENCY — shared Grad-CAM state under Flask's threaded server
+==============================================================================
+  app.gradcam is a single module-level object storing .activations/.gradients.
+  Flask's dev server is threaded by default, so two simultaneous requests
+  interleave forward/backward hooks on the SAME object.
+  4 concurrent Grad-CAM calls -> exceptions: none raised
+  heatmaps that DIFFER from the sequential result: [1, 0, 2] -> RACE CONFIRMED
