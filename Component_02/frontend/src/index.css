@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Design brief: this must read as clinical review software, not a dashboard.
+  Rules followed throughout:
+    - light by default; dark is opt-in, not the identity
+    - colour carries meaning only. Red means act now, nowhere else.
+    - numbers are monospace, tabular, right-aligned
+    - dense over airy: a reviewer scans, they do not browse
+    - no emoji, no gradients, no decorative shadows
+    - the ECG trace is the primary artefact and gets the most space
+*/
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  --color-ink-50:  #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+  --color-ink-950: #060b16;
+
+  /* Clinical severity. Used ONLY for severity. */
+  --color-crit:   #b91c1c;
+  --color-urgent: #c2410c;
+  --color-review: #a16207;
+  --color-clear:  #15803d;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    @apply bg-ink-100 text-ink-900 font-sans text-[13px] leading-snug;
+  }
+  .dark body { @apply bg-ink-950 text-ink-100; }
+
+  table { @apply w-full border-collapse; }
+  th {
+    @apply text-left font-semibold text-[10px] uppercase tracking-[0.06em]
+           text-ink-500 border-b border-ink-200 py-1.5 px-2;
+  }
+  .dark th { @apply text-ink-400 border-ink-800; }
+  td { @apply py-1.5 px-2 border-b border-ink-100 align-middle; }
+  .dark td { @apply border-ink-800/70; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { @apply bg-ink-300 rounded; }
+  .dark ::-webkit-scrollbar-thumb { @apply bg-ink-700; }
+}
+
+@layer components {
+  /* Flat panel with a titled header bar — the standard clinical module. */
+  .panel {
+    @apply bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800;
+  }
+  .panel-head {
+    @apply px-3 py-1.5 border-b border-ink-200 dark:border-ink-800
+           bg-ink-50 dark:bg-ink-950/60 text-[10px] font-bold uppercase
+           tracking-[0.09em] text-ink-600 dark:text-ink-400
+           flex items-center justify-between gap-2;
+  }
+  .num { @apply font-mono tabular-nums text-right; }
+  .tag {
+    @apply inline-block text-[10px] font-semibold uppercase tracking-[0.04em]
+           px-1.5 py-px border;
+  }
+  .kv { @apply flex items-baseline justify-between gap-3 py-[3px]; }
+  .kv > dt { @apply text-ink-500 dark:text-ink-400 text-[11px]; }
+  .kv > dd { @apply font-mono tabular-nums text-[12px]; }
+}
