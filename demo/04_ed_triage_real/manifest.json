@@ -1,0 +1,60 @@
+{
+  "source": "MIMIC-IV-ED via Component 04 features_H24.parquet",
+  "fold": "test",
+  "governance": "Credentialed data under a PhysioNet DUA. Do not commit, publish or share these files.",
+  "note": "The outcome is recorded here and not in the PDFs, so the extractor and model never receive the answer.",
+  "selection": "Chosen from the held-out test fold as records the system reads and classifies correctly. This is a demonstration set, not a performance estimate: the published figures (subtyping macro-F1 0.7448, UA recall 80.0 %) are measured over all 30,452 test rows, not these.",
+  "classes_covered": [
+    "NSTEMI",
+    "No_ACS",
+    "STEMI"
+  ],
+  "classes_absent": [
+    "UA"
+  ],
+  "classes_absent_note": "Unstable angina does not appear. Across 60 of the 111 UA records in the test fold, not one survived the PDF round trip as UA. This is a property of the channel, not a tuning problem: the published UA recall of 80.0 % at H=24 is measured over the component's full 228-feature vector, while a triage document carries only what a clinician writes down. UA is defined by a NORMAL troponin plus clinical suspicion, so it is exactly the class whose evidence a short text record fails to carry -- reconstructed from a document these rows resolve to STEMI or No_ACS instead. Use the synthetic sample_03_unstable_angina.pdf to demonstrate the UA pathway.",
+  "records": [
+    {
+      "file": "real_no_acs_01.pdf",
+      "true_label": "No_ACS",
+      "stay_id": 30224706,
+      "subject_id": 12691410,
+      "sections": 6
+    },
+    {
+      "file": "real_no_acs_02.pdf",
+      "true_label": "No_ACS",
+      "stay_id": 34635733,
+      "subject_id": 13371327,
+      "sections": 6
+    },
+    {
+      "file": "real_nstemi_01.pdf",
+      "true_label": "NSTEMI",
+      "stay_id": 33589230,
+      "subject_id": 15007699,
+      "sections": 6
+    },
+    {
+      "file": "real_nstemi_02.pdf",
+      "true_label": "NSTEMI",
+      "stay_id": 31345963,
+      "subject_id": 17804953,
+      "sections": 6
+    },
+    {
+      "file": "real_stemi_01.pdf",
+      "true_label": "STEMI",
+      "stay_id": 35682206,
+      "subject_id": 17246950,
+      "sections": 6
+    },
+    {
+      "file": "real_stemi_02.pdf",
+      "true_label": "STEMI",
+      "stay_id": 34300804,
+      "subject_id": 15037474,
+      "sections": 6
+    }
+  ]
+}

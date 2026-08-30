@@ -1,0 +1,76 @@
+{
+ "measured_at": "2026-08-18T16:14:05",
+ "cohorts": {
+  "cxr": {
+   "dataset": "MIMIC-CXR / MIMIC-CXR-JPG",
+   "institution": "Beth Israel Deaconess Medical Center, Boston, USA",
+   "identifier_space": "MIMIC subject_id",
+   "patients": 24493,
+   "studies": 45558
+  },
+  "triage": {
+   "dataset": "MIMIC-IV-ED / Hosp / ECG",
+   "institution": "Beth Israel Deaconess Medical Center, Boston, USA",
+   "identifier_space": "MIMIC subject_id",
+   "patients": 107391,
+   "studies": 203016
+  },
+  "ecg": {
+   "dataset": "PTB-XL",
+   "institution": "Physikalisch-Technische Bundesanstalt, Germany",
+   "collected": "1989-1996",
+   "identifier_space": "PTB-XL ecg_id / patient_id (unlinkable to MIMIC)",
+   "patients": 18885,
+   "studies": 21799
+  },
+  "echo": {
+   "dataset": "EchoNet-Dynamic (+ CAMUS, train only)",
+   "institution": "Stanford Medicine, USA; CHU Saint-Etienne, France",
+   "identifier_space": "anonymised study hash (unlinkable to MIMIC)",
+   "patients": null,
+   "studies": 10030
+  }
+ },
+ "pairs": {
+  "cxr+triage": {
+   "linkable": true,
+   "reason": "Both derive from MIMIC-IV and share the subject_id space.",
+   "shared_patients": 19979,
+   "share_of_cxr_cohort": 0.8157,
+   "share_of_ed_cohort": 0.186,
+   "paired_study_feasible": true,
+   "caveat": "Patient-level overlap is necessary but not sufficient. A valid paired study additionally needs temporal linkage -- the radiograph must fall inside the ED stay window -- which has not been established here."
+  },
+  "cxr+ecg": {
+   "linkable": false,
+   "reason": "Different institutions and identifier spaces; no shared patient identifier exists, so the overlap is zero by construction rather than merely unmeasured.",
+   "shared_patients": 0,
+   "paired_study_feasible": false
+  },
+  "cxr+echo": {
+   "linkable": false,
+   "reason": "Different institutions and identifier spaces; no shared patient identifier exists, so the overlap is zero by construction rather than merely unmeasured.",
+   "shared_patients": 0,
+   "paired_study_feasible": false
+  },
+  "ecg+echo": {
+   "linkable": false,
+   "reason": "Different institutions and identifier spaces; no shared patient identifier exists, so the overlap is zero by construction rather than merely unmeasured.",
+   "shared_patients": 0,
+   "paired_study_feasible": false
+  },
+  "ecg+triage": {
+   "linkable": false,
+   "reason": "Different institutions and identifier spaces; no shared patient identifier exists, so the overlap is zero by construction rather than merely unmeasured.",
+   "shared_patients": 0,
+   "paired_study_feasible": false
+  },
+  "echo+triage": {
+   "linkable": false,
+   "reason": "Different institutions and identifier spaces; no shared patient identifier exists, so the overlap is zero by construction rather than merely unmeasured.",
+   "shared_patients": 0,
+   "paired_study_feasible": false
+  }
+ },
+ "conclusion": "A four-modality cohort does not exist and cannot be constructed from these datasets: Components 02 and 03 come from different institutions, countries and decades than Components 01 and 04, with no linkable identifier. One pair IS linkable -- Components 01 and 04 share 19979 patients (81.6 % of the radiograph cohort) -- so a two-modality paired study is feasible future work, subject to temporal linkage. No joint model is trained or claimed here."
+}
