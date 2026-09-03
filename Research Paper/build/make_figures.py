@@ -21,6 +21,7 @@ from matplotlib.patches import Rectangle, FancyArrowPatch
 import json
 import re
 import numpy as np
+from loaders import unsafe_answer_rates, c4_horizon
 
 ROOT = r"c:\Users\94775\Desktop\box\R26-IT-083"
 
@@ -155,64 +156,77 @@ def down(ax, x, y1, y2, lw=0.7):
                                  shrinkA=0, shrinkB=0, zorder=3))
 
 
+def right(ax, x1, x2, y, lw=0.7):
+    ax.add_patch(FancyArrowPatch((x1, y), (x2, y), arrowstyle="-|>",
+                                 mutation_scale=5.5, linewidth=lw, color=K,
+                                 shrinkA=0, shrinkB=0, zorder=3))
+
+
 # --------------------------------------------------------------------------
 def figure1():
-    """Layered block diagram: inputs, models, abstention rules, service."""
-    fig, ax = plt.subplots(figsize=(3.4, 2.72))
+    """The framework as one horizontal pipeline, with the four modalities
+    shown underneath as instantiations of the same path."""
+    fig, ax = plt.subplots(figsize=(3.4, 2.35))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
 
-    lane = [
-        ("Chest\nradiograph", "ConvNeXt-B", "per-group\nthreshold,\ndeferral"),
-        ("12-lead\nECG", "1-D ResNet", "quality gate,\nconformal\nzones"),
-        ("Echo\nvideo", "R(2+1)D-18", "conformal\ninterval,\nvariance"),
-        ("ED triage\nrecord", "LightGBM", "horizon H,\nconstrained\nreferral"),
-    ]
-    n = len(lane)
-    gap = 0.018
+    # ---- the pipeline: one row, left to right, identical for every modality
+    stages = ["Input", "Prediction", "Reliability\nassessment",
+              "Explanation", "Decision /\nabstention"]
+    n = len(stages)
+    gap = 0.021
     w = (1.0 - (n - 1) * gap) / n
-    xs = [i * (w + gap) for i in range(n)]
+    y, h = 0.735, 0.175
+    for i, lab in enumerate(stages):
+        x = i * (w + gap)
+        box(ax, x, y, w, h)
+        ax.text(x + w / 2, y + h / 2, lab, ha="center", va="center",
+                fontsize=5.4, linespacing=1.25, zorder=4)
+        if i:
+            right(ax, x - gap - 0.001, x + 0.004, y + h / 2)
 
-    rows = [(0.845, 0.135, 0, 5.6),
-            (0.665, 0.100, 1, 5.8),
-            (0.420, 0.150, 2, 5.4)]
-    for y, h, idx, fs in rows:
-        for i, x in enumerate(xs):
-            box(ax, x, y, w, h)
-            ax.text(x + w / 2, y + h / 2, lane[i][idx], ha="center",
-                    va="center", fontsize=fs, linespacing=1.30, zorder=4)
-
-    for x in xs:
-        down(ax, x + w / 2, 0.843, 0.769)
-        down(ax, x + w / 2, 0.663, 0.572)
-        down(ax, x + w / 2, 0.418, 0.342)
-
-    for y, lab in ((0.9125, "inputs"), (0.715, "models"),
-                   (0.5125, "abstention")):
-        ax.text(-0.020, y, lab, rotation=90, ha="center", va="center",
-                fontsize=5.0)
-
-    box(ax, 0, 0.235, 1.0, 0.105)
-    ax.text(0.5, 0.2875, "Adapter layer  |  module sandbox", ha="center",
-            va="center", fontsize=6.2, zorder=4)
-    ax.text(0.5, 0.252, "each component's own frozen rule, run by its own code",
-            ha="center", va="center", fontsize=5.1, zorder=4)
-    down(ax, 0.5, 0.233, 0.175)
-
-    box(ax, 0, 0.068, 1.0, 0.105, lw=1.3)
-    ax.text(0.5, 0.1405, "Reliability envelope", ha="center", va="center",
+    # ---- the contract, spanning the width, fed by the decision stage
+    cy, ch = 0.545, 0.125
+    box(ax, 0, cy, 1.0, ch, lw=1.3)
+    ax.text(0.5, cy + 0.082, "Reliability contract", ha="center", va="center",
             fontsize=6.2, fontweight="bold", zorder=4)
-    ax.text(0.5, 0.093,
+    ax.text(0.5, cy + 0.036,
             "actionable | caution | deferred | withheld | unavailable",
-            ha="center", va="center", fontsize=5.2, zorder=4)
-    down(ax, 0.5, 0.066, 0.052)
+            ha="center", va="center", fontsize=5.0, zorder=4)
+    down(ax, 1.0 - w / 2, y - 0.003, cy + ch + 0.005)
 
-    box(ax, 0.235, 0.0, 0.53, 0.050)
-    ax.text(0.5, 0.025, "Clinical console", ha="center", va="center",
-            fontsize=6.0, zorder=4)
+    ax.text(0.5, 0.495, "the same path instantiated four times",
+            ha="center", va="top", fontsize=5.0, style="italic")
 
-    fig.subplots_adjust(left=0.040, right=0.995, top=0.995, bottom=0.005)
+    # ---- four instantiations: what fills the slots in each modality
+    lane = [
+        ("Chest\nradiograph", "ConvNeXt-B\n+ BioBART", "per-group\nthreshold"),
+        ("12-lead\nECG", "1-D ResNet-SE\n+ 1-D ResNet", "conformal\nzones"),
+        ("Echo\nvideo", "UEF-Net\nR(2+1)D-18", "interval,\nvariance"),
+        ("ED triage\nrecord", "LightGBM\n+ XGBoost", "horizon H,\nreferral"),
+    ]
+    m = len(lane)
+    lg = 0.018
+    lw_ = (1.0 - (m - 1) * lg) / m
+    rows = [(0.315, 0.095, 0), (0.178, 0.095, 1), (0.041, 0.095, 2)]
+    for ry, rh, idx in rows:
+        for i in range(m):
+            x = i * (lw_ + lg)
+            box(ax, x, ry, lw_, rh)
+            ax.text(x + lw_ / 2, ry + rh / 2, lane[i][idx], ha="center",
+                    va="center", fontsize=4.7, linespacing=1.25, zorder=4)
+    for i in range(m):
+        x = i * (lw_ + lg) + lw_ / 2
+        down(ax, x, 0.313, 0.277)
+        down(ax, x, 0.176, 0.140)
+
+    for ry, rh, lab in ((0.315, 0.095, "input"), (0.178, 0.095, "model"),
+                        (0.041, 0.095, "reliability")):
+        ax.text(-0.017, ry + rh / 2, lab, rotation=90, ha="center",
+                va="center", fontsize=4.6)
+
+    fig.subplots_adjust(left=0.035, right=0.997, top=0.994, bottom=0.012)
     fig.savefig(os.path.join(OUT, "fig1_architecture.png"))
     plt.close(fig)
 
@@ -342,7 +356,81 @@ def figure4():
 
 
 figure1()
-figure2()
-figure3()
-figure4()
+
+
+def figure_uar():
+    """(a) unsafe answer rate before and after abstention, (b) the disclosure
+    horizon. Two panels in one float, so the page budget holds."""
+    fig, axes = plt.subplots(1, 2, figsize=(3.4, 1.62),
+                             gridspec_kw={"width_ratios": [1.75, 1.0]})
+    fig.subplots_adjust(left=0.115, right=0.985, top=0.845, bottom=0.30,
+                        wspace=0.42)
+
+    # ---- (a) unsafe answer rate ------------------------------------------
+    ax = axes[0]
+    data = unsafe_answer_rates()
+    order = [("C1", "answer all"), ("C1", "uniform"), ("C1", "per group"),
+             ("C3", "answer all"), ("C3", "selective"),
+             ("C4", "answer all"), ("C4", "selective")]
+    xs, uar, cov, lab, col = [], [], [], [], []
+    pos, prev = 0.0, None
+    for comp, arm in order:
+        if prev is not None and comp != prev:
+            pos += 0.5
+        c, acc = dict(data[comp])[arm]
+        xs.append(pos)
+        uar.append(100 * c * (1 - acc))
+        cov.append(100 * c)
+        lab.append({"answer all": "all", "uniform": "unif.",
+                    "per group": "group", "selective": "sel."}[arm])
+        col.append("white" if arm == "answer all" else
+                   (FAINT if arm == "uniform" else BLUE))
+        pos += 1.0
+        prev = comp
+    bars = ax.bar(xs, uar, width=0.8, color=col, edgecolor=K, linewidth=0.55,
+                  zorder=2)
+    bars[1].set_hatch("////")
+    for x, u, c in zip(xs, uar, cov):
+        ax.text(x, u + 0.6, "%.0f" % c, ha="center", va="bottom", fontsize=4.2,
+                zorder=4)
+    grid(ax)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(lab, fontsize=4.5)
+    ax.set_ylabel("unsafe answer rate (%)", fontsize=5.4)
+    ax.set_ylim(0, 33)
+    ax.set_yticks([0, 10, 20, 30])
+    ax.tick_params(axis="y", labelsize=5.2, length=2)
+    ax.tick_params(axis="x", length=0)
+    for x, name in ((1.0, "C1"), (3.9, "C3"), (6.4, "C4")):
+        ax.text(x, 31.8, name, ha="center", va="top", fontsize=5.0)
+    ax.set_title("(a)  cost of abstaining", fontsize=5.8, pad=3)
+
+    # ---- (b) disclosure horizon ------------------------------------------
+    ax = axes[1]
+    H = [0, 6, 24]
+    screen, ua, labs = c4_horizon(tuple(H))
+    ax.plot(H, screen, marker="s", markersize=2.4, color=BLUE, linewidth=1.0,
+            linestyle="-", zorder=3)
+    ax.plot(H, ua, marker="o", markersize=2.4, color=RED, linewidth=1.0,
+            linestyle="--", zorder=3)
+    ax.plot(H, labs, marker="^", markersize=2.4, color=GREEN, linewidth=1.0,
+            linestyle=":", zorder=3)
+    ax.annotate("AUROC", (0.5, 1.02), fontsize=4.3, color=BLUE)
+    ax.annotate("UA recall", (6.5, 0.42), fontsize=4.3, color=RED)
+    ax.annotate("labs", (0.5, 0.14), fontsize=4.3, color=GREEN)
+    grid(ax)
+    ax.set_xticks(H)
+    ax.set_xticklabels(["0", "6", "24"], fontsize=5.2)
+    ax.set_xlabel("horizon $H$ (h)", fontsize=5.4)
+    ax.set_xlim(-2, 26)
+    ax.set_ylim(-0.06, 1.22)
+    ax.set_yticks([0.0, 0.5, 1.0])
+    ax.tick_params(axis="y", labelsize=5.2, length=2)
+    ax.set_title("(b)  disclosure horizon", fontsize=5.8, pad=3)
+
+    fig.savefig(os.path.join(OUT, "fig3_uar.png"))
+    plt.close(fig)
+
+
+figure_uar()
 print("written to", OUT)

@@ -9,8 +9,7 @@ import paper_content as C
 PAPER_DIR = r"c:\Users\94775\Desktop\box\R26-IT-083\Research Paper"
 TEX_DIR = os.path.join(PAPER_DIR, "latex")
 os.makedirs(os.path.join(TEX_DIR, "figures"), exist_ok=True)
-for f in ("fig1_architecture.png", "fig2_per_class.png",
-          "fig3_training.png", "fig4_results.png"):
+for f in ("fig1_architecture.png", "fig3_uar.png"):
     shutil.copyfile(os.path.join(PAPER_DIR, "figures", f),
                     os.path.join(TEX_DIR, "figures", f))
 

@@ -27,7 +27,8 @@ MACHINE_USER = os.environ.get("USERNAME") or "user"
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAPER_DIR = r"c:\Users\94775\Desktop\box\R26-IT-083\Research Paper"
 FIG_DIR = os.path.join(PAPER_DIR, "figures")
-OUT = os.path.join(PAPER_DIR, "Conference_Paper_DoubleBlind.docx")
+OUT = os.path.join(PAPER_DIR,
+                   "Reliability-Aware_Clinical_AI_Cross-Modality_Contract.docx")
 
 PAGE_W, PAGE_H = 595.30, 841.90
 M_TOP, M_BOT, M_SIDE = 54.0, 72.0, 45.35

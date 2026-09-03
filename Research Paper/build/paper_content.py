@@ -1,732 +1,700 @@
 # -*- coding: utf-8 -*-
-"""Content of the conference paper (double-blind submission version).
-
-Single source of truth. build_docx.py and build_tex.py both render this, so the
-Word file and the LaTeX source cannot drift apart.
-
-ANONYMOUS = True renders the double-blind author block required by the
-compliance guidelines. Set it to False and fill in AUTHORS for camera-ready.
-
-Block grammar
--------------
-("H1", title)                      numbered I, II, III ...
-("H2", title)                      numbered A, B, C ... within the section
-("P",  text)                       body paragraph
-("EQ", (unicode_form, latex_form)) numbered equation
-("LIST", [item, ...])              tight bullet list
-("FIG", (file, caption, span))     span=True -> figure across both columns
-("TABLE", dict)                    span=False -> table inside one column
-
-Inline markup
--------------
-  *word*    italic
-  ^{x}      superscript
-  [[n]]     citation n
-"""
+"""Single source of truth for the paper. Rendered by build_docx.py and build_tex.py."""
 
 ANONYMOUS = True
 
-TITLE = ("A Reliability-Aware Explainable AI System for "
-         "Cardiovascular Disease Detection and Diagnosis")
+TITLE = 'Reliability-Aware Clinical AI: A Cross-Modality Contract for Cardiovascular Decision Support'
 
-# Used only when ANONYMOUS is False (camera-ready).
-AUTHORS = [
-    ("Author One", "Department", "Institution", "City, Country", "email"),
-]
+AUTHORS = [('Author One', 'Department', 'Institution', 'City, Country', 'email')]
 
 ABSTRACT = (
-    "A machine-learning model placed in a clinical workflow returns a "
-    "probability, and the software around it usually treats every probability "
-    "as equally trustworthy. Our measurements say otherwise. We present a "
-    "decision-support system over chest radiographs, 12-lead "
-    "electrocardiograms, echocardiogram video and emergency-department triage "
-    "records, in which each component carries an explicit rule for declining "
-    "to answer and each rule is tested against a control. On radiographs, a "
-    "covariate stored in the image metadata costs "
-    "0.0639 AUROC; group-wise thresholds cut the reported true-positive-rate "
-    "disparity by 73.3 % at no cost in AUROC, and group-conditional deferral "
-    "closed a 6.68 point accuracy gap to within sampling noise of zero, where "
-    "uniform deferral did not. On electrocardiograms, a conformal layer gives "
-    "rule-in and rule-out decisions under a stated miss-rate bound that holds "
-    "for the population and fails inside 9 of 23 sex and age subgroups, which "
-    "group-conditional calibration repairs in 22 of 23. On echocardiograms, "
-    "ordinal supervision derived from the label's own measurement noise "
-    "reaches 3.979 points of mean absolute error and 0.723 worst-class recall "
-    "under an 11 to 1 imbalance. On triage records, admitting a feature only "
-    "when it existed at the decision time gives AUROC 0.9560 at 99.41 % "
-    "negative predictive value. Four further ablations turn the same standard "
-    "on our own design choices, and three come back negative, including a "
-    "network component of ours that costs 0.0042 macro-AUROC."
+"Clinical machine learning is typically reported as a single accuracy "
+    "figure, and the software around the model then treats every prediction as "
+    "equally trustworthy. We contend that a deployed model must also indicate "
+    "whether each prediction is reliable enough to act on, and we make that "
+    "statement a first-class output. We describe a reliability contract: a "
+    "modality-independent mapping from a prediction, its uncertainty, its input "
+    "quality and its validity conditions onto five ordered decision states, "
+    "actionable, caution, deferred, withheld and unavailable, so that a caller "
+    "applies a single rule across every modality. Using four distinct "
+    "cardiovascular cohorts, chest radiographs (MIMIC-CXR), 12-lead "
+    "electrocardiograms (PTB-XL), echocardiogram video (EchoNet-Dynamic with "
+    "CAMUS) and emergency-department triage records (MIMIC-IV-ED), we "
+    "instantiate the contract and test each mechanism against a control that "
+    "keeps the procedure and removes the signal. Three findings recur. "
+    "Group-conditional deferral reduces the 6.68-point accuracy gap caused by "
+    "acquisition metadata to -0.62, whereas uniform deferral of the same budget "
+    "does not. A conformal guarantee that holds over the population fails "
+    "inside 9 of 23 sex and age subgroups, which group-conditional calibration "
+    "repairs in 22 of 23. Admitting a feature only once it existed at the "
+    "decision time moves screening AUROC from 0.8763 to 0.9560 and exposes a "
+    "label-circularity path we would otherwise have reported as accuracy. Under "
+    "one common metric, the unsafe answer rate, abstention lowers unsafe "
+    "answers in every component where coverage is measurable. Four ablations of "
+    "our own design choices return three negative results."
 )
 
-INDEX_TERMS = ("abstention, ablation, chest radiography, class imbalance, "
-               "clinical decision support, conformal prediction, covariate "
-               "shift, data leakage, echocardiography, electrocardiography")
+INDEX_TERMS = (
+"abstention, clinical decision support, conformal prediction, covariate "
+    "shift, data leakage, model reliability, selective prediction, subgroup "
+    "validity, trustworthy AI"
+)
 
 BODY = [
-
-    # ------------------------------------------------------------------ I
-    ("H1", "Introduction"),
+    ('H1', 'Introduction'),
 
     ("P",
-     "A patient who arrives at an emergency department with chest pain "
-     "generates four very different kinds of data within a day. A triage nurse "
-     "records vital signs and a free-text complaint. An electrocardiogram is "
-     "recorded within ten minutes [[1]], because a blocked artery has to be "
-     "found before any blood test can come back. A chest radiograph is taken "
-     "early, mainly to rule out causes that are not cardiac at all [[2]]. "
-     "Blood is drawn and repeated, and an ultrasound scan of the beating heart "
-     "is booked. Each has become a machine-learning problem in its own right, "
-     "and in each case the published result is normally one accuracy figure on "
-     "one dataset."),
+"In a single day, a patient with chest pain who arrives at an emergency "
+     "department produces four distinct kinds of data: a triage record of vital "
+     "signs and a free-text complaint, an electrocardiogram within ten minutes "
+     "[[1]], a chest radiograph taken early to rule out causes that are not "
+     "cardiac [[2]], and an ultrasound scan of the beating heart. Each has "
+     "become a machine-learning problem in its own right, and in each case the "
+     "published result is typically one accuracy figure on one dataset."
+     ),
 
     ("P",
-     "One figure is a poor description of a model that is about to sit behind "
-     "an API. It says nothing about the inputs on which the model is weakest, "
-     "and here those inputs are not rare corner cases. We measured four. Our "
-     "chest-radiograph classifier is 0.0639 AUROC worse on images taken at the "
-     "bedside than on images taken standing, a covariate shift driven by a "
-     "field in the image metadata; the bedside view is used when the patient "
-     "is too ill to stand, so the model is weakest on the sickest patients. A "
-     "conformal guarantee on our electrocardiogram classifier holds over the "
-     "test set as a whole and fails inside 9 of 23 sex and age subgroups. Our "
-     "echocardiogram model is weakest on the most severe cases, 5.9 % of the "
-     "training data. And a triage model can look excellent because it read a "
-     "feature that did not exist yet: in the raw records that blood test was "
-     "taken a median of 21.75 hours after the decision it claims to support. "
-     "That one is not hypothetical. An audit of an earlier version of our own "
-     "triage component found it reading its label out of a comorbidity "
-     "column, and we rebuilt it from the raw tables."),
+"A model that is about to sit behind an API is poorly described by one "
+     "figure. It says nothing about the inputs on which the model is weakest, "
+     "and in each of our four tasks those inputs are not rare corner cases but "
+     "the sickest patients, an identifiable subgroup, the most severe grades, or "
+     "a feature that did not exist when the decision was made. Table I names all "
+     "four with the mechanism each one motivated. One is worth stating here, "
+     "because it is why this paper exists: an audit of an earlier version of our "
+     "own triage component found it reading its label out of a comorbidity "
+     "column, and we rebuilt it from the raw tables."
+     ),
 
     ("P",
-     "These four problems have separate literatures, but the engineering "
-     "response is the same each time: the model has to expose when it should "
-     "not be believed, in a form the calling code can branch on. So "
-     "we built each component around a rule that declines to commit, tested "
-     "that rule against a control which keeps the procedure and removes the "
-     "signal, and reduced the four rules to one field at the service boundary. "
-     "We then turned the same discipline on our own design choices. The "
-     "contributions are:"),
+"Although the literature for each of these four issues is separate, the "
+     "engineering response is the same each time: the model must expose when it "
+     "should not be believed, in a form the calling code can branch on. We "
+     "therefore treat reliability as the object of study rather than a property "
+     "of any one network, and ask three questions. *RQ1*, can reliability-aware "
+     "mechanisms reduce clinically important failure modes without materially "
+     "reducing predictive performance? *RQ2*, can mechanisms as different as a "
+     "group threshold, a conformal zone, a prediction interval and a disclosure "
+     "horizon be represented by one contract? *RQ3*, does reliability-aware "
+     "abstention produce safer decisions than answering everything, or than "
+     "deferring uniformly? The contributions are:"
+     ),
 
     ("LIST", [
-        "four detection models, one per modality, each carrying an abstention "
-        "rule fitted on validation data and frozen before the test split was "
-        "opened;",
-
-        "one measured failure mode per modality, each with a control arm: "
-        "acquisition shift, subgroup validity of a conformal guarantee, silent "
-        "input corruption, inputs outside the label space, tail shrinkage "
-        "under imbalance, and temporal leakage;",
-
-        "four ablations of our own design decisions, three of them negative "
-        "results we report rather than bury, including one network "
-        "component that measurably costs accuracy;",
-
-        "a reliability contract mapping four incompatible vocabularies onto "
-        "five actionability levels, and a gated six-stage traversal over it.",
+"a *reliability contract*: five ordered decision states and a "
+        "modality-independent rule for assigning them, so heterogeneous uncertainty "
+        "vocabularies are reduced to a single field a caller can branch on without "
+        "understanding how any component works;"
+        ,
+"a cross-modality evaluation of that contract on four distinct "
+        "cardiovascular cohorts under a single measure, the unsafe answer rate, "
+        "reported next to coverage so the cost of abstaining is priced rather than "
+        "concealed;"
+        ,
+"controlled reliability experiments, one measured failure mode per "
+        "modality, each with a control arm that keeps the procedure and removes the "
+        "signal: acquisition shift, subgroup validity of a conformal guarantee, "
+        "silent input corruption, open-set inputs, tail shrinkage under imbalance "
+        "and temporal leakage;"
+        ,
+"four ablations of our own design choices, three of them negative results "
+        "we report rather than bury, including a squeeze-and-excitation block that "
+        "costs accuracy."
+        ,
     ]),
 
-    # ----------------------------------------------------------------- II
-    ("H1", "Related Work"),
+    ('H1', 'Related Work'),
 
     ("P",
-     "Each modality has an established model family: convolutional "
+"Each modality has an established model family: convolutional "
      "classification over MIMIC-CXR [[3]] with a ConvNeXt backbone [[4]] and a "
      "BioBART decoder [[5]]; one-dimensional residual networks over PTB-XL "
-     "[[6]]; video regression on EchoNet-Dynamic [[7]] with an R(2+1)D "
-     "backbone [[8]], with CAMUS [[9]] as a smaller cohort richer in severe "
-     "cases; and gradient-boosted trees [[10]] with post-hoc attribution "
-     "[[11]] over emergency-department tables [[12]]. Saliency is usually "
-     "Grad-CAM [[13]]."),
+     "[[6]]; video regression on EchoNet-Dynamic [[7]] with an R(2+1)D backbone "
+     "[[8]], with CAMUS [[9]] as a smaller cohort richer in severe cases; and "
+     "gradient-boosted trees [[10]], [[11]] with post-hoc attribution [[12]] "
+     "over emergency-department tables [[13]]. Saliency is typically Grad-CAM "
+     "[[14]]."
+     ),
 
     ("P",
-     "The reliability side has its own literature, which we use rather than "
-     "reinvent. Subgroup performance gaps are well documented [[14]]; equal "
-     "opportunity [[15]] is the usual metric, and fitting one threshold per "
-     "group is the post-processing method proposed alongside it, so on this "
-     "axis we claim the measurement and not the technique. The common alternative is to train the offending factor "
-     "out of the representation, for instance with label-conditional gradient "
-     "reversal [[16]]. A separate line lets the model abstain, from the reject "
-     "option [[17]] to conformal prediction, which turns a score into a "
-     "decision carrying a finite-sample bound [[18]], [[19]], usually after "
-     "calibration [[20]]. Closest to our deferral result is [[21]], "
-     "which shows abstention can *widen* group disparities; that is what our "
-     "uniform-deferral control does, and the gap to the group-conditional "
-     "version is our result. Ordinal targets use "
-     "rank-consistent heads [[22]], and long tails with deferred re-weighting "
-     "[[23]]. Leakage, using information unavailable at prediction time, was "
-     "formalised for data mining in general [[24]]."),
+"The reliability side has its own literature, which we use rather than "
+     "reinvent. Subgroup performance gaps are established [[15]], equal "
+     "opportunity [[16]] is the standard metric, and fitting one threshold per "
+     "group is the post-processing method proposed alongside it, so on this axis "
+     "we claim the measurement and not the technique; the common alternative "
+     "trains the offending factor out of the representation [[17]]. A separate "
+     "line lets the model abstain, from the reject option [[18]] to conformal "
+     "prediction, which converts a score into a decision carrying a "
+     "finite-sample bound [[19]], [[20]], typically after calibration [[21]]. "
+     "Closest to our deferral finding is [[22]], which shows abstention can "
+     "*widen* group disparities; that is what our uniform-deferral control does, "
+     "and the gap to the group-conditional version is our result. Ordinal "
+     "targets employ rank-consistent heads [[23]], long tails deferred "
+     "re-weighting [[24]], and leakage was formalised generally [[25]]."
+     ),
 
     ("P",
-     "What we did not find was these ideas used together, across more than one "
-     "modality, with every mechanism checked against a null arm and the "
-     "guarantee reported other than marginally."),
+"What we did not find was these ideas applied together, across more than "
+     "one modality, with every mechanism tested against a null arm and the "
+     "guarantee reported other than marginally."
+     ),
 
-    # ---------------------------------------------------------------- III
-    ("H1", "System Architecture"),
+    ('H1', 'The Reliability Contract'),
 
     ("P",
-     "The system is four models behind one FastAPI process and one web console "
-     "(Fig. 1). The four share no "
-     "predictions and no features, since a cardiomegaly probability and an "
-     "ejection fraction have nothing in common. What they share is the "
-     "contract in Section IV-E."),
+"A component that cannot say when to disbelieve it forces the caller to "
+     "guess, and every caller guesses differently. The contract makes that "
+     "judgement an output. Each component keeps its own weights, uncertainty "
+     "statistic and frozen decision rule; what it must additionally emit is a "
+     "single field from five ordered states:"
+     ),
 
-    ("FIG", ("fig1_architecture.png",
-             "System architecture. Each component keeps its own weights and "
-             "its own frozen decision rule; the service applies that rule "
-             "using the component's own code and normalises the outcome.",
+    ("LIST", [
+"*actionable*, the component stands behind the result and the measured "
+        "reliability we report for this kind of input applies;"
+        ,
+"*caution*, the answer still stands, but a validity condition of that "
+        "measurement does not hold here, so reliability is lower than headline;"
+        ,
+"*deferred*, the component declines to commit and the case is referred;"
+        ,
+"*withheld*, output was suppressed because a quality or verification gate "
+        "rejected the input, so no probability is released at all;"
+        ,
+"*unavailable*, the component could not run on this input."
+        ,
+    ]),
+
+    ("P",
+"The states are ordered from most to least usable, and that ordering is the "
+     "whole interface: a caller applies one rule, do not act on a result that is "
+     "not actionable, without knowing what a projection, a conformal zone or a "
+     "disclosure horizon is. Assignment is a precedence cascade over four "
+     "signals a component already computes: whether it ran, *r*; whether the "
+     "input passed its quality and verification gates, *q*; an uncertainty "
+     "statistic *u* against a threshold *tau* fitted on validation and frozen; "
+     "and whether the validity conditions of the reported reliability hold here, "
+     "*v*. Numbering the states 0 to 4 in the order above, component *m* returns"
+     ),
+
+    ("EQ", ('a_m = max( 0, 1[¬v_m], 2·1[¬q_m], 3·1[u_m < τ_m], 4·1[¬r_m] ) ,',
+            'a_m \\;=\\; \\max\\!\\bigl(0,\\; \\mathbf{1}[\\neg v_m],\\; 2\\cdot\\mathbf{1}[\\neg q_m],\\; 3\\cdot\\mathbf{1}[u_m < \\tau_m],\\; 4\\cdot\\mathbf{1}[\\neg r_m]\\bigr),')),
+
+    ("P",
+"so the least usable applicable state wins, and no component can be made to "
+     "appear safer by an ordering accident. Over the set *M*(*x*) of components "
+     "that saw patient *x*, the assessment takes the same maximum,"
+     ),
+
+    ("EQ", ('a(x) = max_{m ∈ M(x)}  a_m(x) ,',
+            'a(x) \\;=\\; \\max_{m \\in \\mathcal{M}(x)} a_m(x),')),
+
+    ("P",
+"which aggregates and deliberately does not fuse. Substituting a component "
+     "alters only what fills *u*, *q* and *v*; Section IV gives four such "
+     "substitutions. States are returned as a normal response rather than an "
+     "error status, since turning a safety mechanism into an error forces "
+     "callers into retry loops around it."
+     ),
+
+    ("FIG", ('fig1_architecture.png',
+             'The framework. One path runs left to right for every modality; the four cardiovascular components are instantiations of it, differing only in what fills the uncertainty, quality and validity slots.',
              False)),
 
     ("P",
-     "Getting four independently written codebases into one process was not "
-     "free. Their top-level module names collide, so a plain import hands one "
-     "component another's configuration object and the first symptom is a "
-     "wrong number rather than an exception. Each therefore runs inside a "
-     "module sandbox that installs its own search path and then lifts its "
-     "modules back out, asserting that every name resolved to the intended "
-     "owner. No component logic is reimplemented in the service: thresholds, "
-     "calibration maps, conformal bounds and decision rules are read from each "
-     "component's frozen artefacts and applied by its own code."),
+"Aggregating rather than fusing is a limitation we measured, not a "
+     "preference. Of the six cohort pairs only radiograph and triage are "
+     "linkable, both deriving from MIMIC-IV and sharing 19,979 patients, 81.6 % "
+     "of the radiograph cohort; the other five share zero by construction. No "
+     "patient carries all four studies, so this is a cross-modality framework "
+     "evaluated on four distinct cohorts, not patient-level multimodal fusion; "
+     "we train no fusion model and report no joint accuracy."
+     ),
+
+    ('H1', 'Instantiating the Contract in Four Modalities'),
 
     ("P",
-     "Above the four adapters sits a traversal engine that walks one patient "
-     "through six stages in the order the tests are actually done: triage on "
-     "arrival, electrocardiogram within ten minutes [[1]], radiograph as the "
-     "rule-out step [[2]], triage again when the blood test returns, the "
-     "ultrasound, and triage once more at the end. Three results end the walk "
-     "early because they make the remaining tests pointless, and every routing "
-     "decision records the values it rests on. A stage with no study is marked "
-     "not supplied, never read as a negative finding."),
+"Each subsection fills the same four slots for one modality: the quality "
+     "gate *q*, the uncertainty statistic *u* and its frozen threshold, the "
+     "validity condition *v*, and the control arm the mechanism is tested "
+     "against. The models are standard; the reliability machinery around them is "
+     "the contribution."
+     ),
+
+    ('H2', 'Covariate Shift from Acquisition Metadata'),
 
     ("P",
-     "The multi-modal endpoint aggregates rather than fuses: it reduces the "
-     "four verdicts to their worst case and claims no joint performance. That "
-     "restraint is measured. Of the six cohort pairs only radiograph and "
-     "triage are linkable, both deriving from MIMIC-IV, sharing 19,979 "
-     "patients or 81.6 % of the radiograph cohort; the other five share zero "
-     "by construction, since PTB-XL, EchoNet-Dynamic and CAMUS come from "
-     "different hospitals, countries and decades. A patient-level "
-     "four-modality dataset cannot be built from these sources, so no fusion "
-     "model was trained."),
-
-    # ----------------------------------------------------------------- IV
-    ("H1", "Methods"),
-
-    ("H2", "Covariate Shift from Acquisition Metadata"),
-    ("P",
-     "A ConvNeXt-Base backbone [[4]] with a two-layer head produces eight "
-     "sigmoid outputs from a 384 by 384 image, standardised per image rather "
-     "than with ImageNet statistics, which are wrong for a single-channel "
-     "radiograph. Grad-CAM [[13]] is taken at the last feature block, and a "
-     "BioBART decoder [[5]] over 144 visual tokens writes a draft report. The "
-     "interesting part is not the network. Every radiograph carries a metadata "
+"A ConvNeXt-Base backbone [[4]] produces eight sigmoid outputs from a 384 "
+     "by 384 image; Grad-CAM [[14]] is taken at the final feature block, and a "
+     "BioBART decoder [[5]] drafts report text we do not evaluate here. The "
+     "network is not the interesting part. Each radiograph carries a metadata "
      "field *g* in {AP, PA} recording how it was taken; the two groups are not "
-     "the same distribution, so one operating point for both is a modelling "
-     "error. Following [[15]], we fit one per group on validation data only,"),
+     "the same distribution, so a single operating point for both is a modelling "
+     "error. Following [[16]], we fit one per group on validation only,"
+     ),
 
-    ("EQ", ("τ_g = arg max_τ F1( y_g , [ p_g ≥ τ ] ) ,",
-            r"\tau_g \;=\; \arg\max_{\tau}\; F_1\!\left(y_g,\; "
-            r"\mathbf{1}[\,p_g \ge \tau\,]\right),")),
-
-    ("P",
-     "and apply the threshold belonging to the image's own group at inference. "
-     "Ranking quality cannot change under (1), because AUROC is computed over "
-     "the whole ordering and cutting each group at a different point reorders "
-     "nothing; we checked numerically, and the AUROC difference was zero to "
-     "twelve decimal places. On top of the threshold, a selective rule hands "
-     "the case to a radiologist when the prediction sits too close to the "
-     "operating point,"),
-
-    ("EQ", ("m = | p − τ_g | ,   answer if m ≥ q_g ,   otherwise refer,",
-            r"m \;=\; \lvert p - \tau_g \rvert, \qquad "
-            r"\text{answer if } m \ge q_g, \ \text{else refer,}")),
+    ("EQ", ('τ_g = arg max_τ F1( y_g , [ p_g ≥ τ ] ) ,',
+            '\\tau_g \\;=\\; \\arg\\max_{\\tau}\\; F_1\\!\\left(y_g,\\; \\mathbf{1}[\\,p_g \\ge \\tau\\,]\\right),')),
 
     ("P",
-     "with *q*(AP) and *q*(PA) fitted on validation under one shared coverage "
-     "budget, choosing the pair that minimises the absolute accuracy "
-     "difference between groups, and then frozen. At the deployed 85 % "
-     "coverage target they are 0.2247 and 0.0029, so the system is far more "
-     "reluctant to commit on the weaker group. An image with no projection "
-     "field falls back to the global threshold."),
+"and apply the threshold belonging to the image's own group at inference. "
+     "Ranking cannot change under (3), since AUROC is computed over the whole "
+     "ordering and cutting each group at a different point reorders nothing. On "
+     "top of it a selective rule refers the case when the prediction sits too "
+     "close to the operating point,"
+     ),
 
-    ("H2", "A Guarantee, and Two Ways It Silently Stops Holding"),
+    ("EQ", ('m = | p − τ_g | ,   answer if m ≥ q_g ,   otherwise refer,',
+            'm \\;=\\; \\lvert p - \\tau_g \\rvert, \\qquad \\text{answer if } m \\ge q_g, \\ \\text{else refer,}')),
+
     ("P",
-     "A quality gate checking shape, duration, dead leads, units, amplitude, "
-     "noise and rhythm runs before the classifier, so a rejected recording "
-     "never produces a probability. Accepted recordings are band-pass filtered "
-     "from 0.5 to 40 Hz with a 50 Hz notch, resampled to 500 Hz and normalised "
-     "per lead, then classified by a one-dimensional residual network with "
-     "squeeze-and-excitation and attention pooling, followed by per-class "
-     "temperature scaling [[20]]. A triage layer turns each calibrated "
+"with *q*(AP) and *q*(PA) fitted on validation under one shared coverage "
+     "budget, choosing the pair that minimises the absolute accuracy difference "
+     "between groups, then frozen. At the deployed 85 % coverage target they are "
+     "0.2247 and 0.0029, so the system is far more reluctant to commit on the "
+     "weaker group. An image with no projection field falls back to the global "
+     "threshold."
+     ),
+
+    ('H2', 'A Guarantee, and Two Ways It Silently Stops Holding'),
+
+    ("P",
+"A quality gate checking shape, duration, dead leads, units, amplitude, "
+     "noise and rhythm runs before the classifier, so a rejected recording never "
+     "produces a probability. Accepted recordings are filtered, resampled and "
+     "normalised per lead, then classified by a one-dimensional residual network "
+     "with squeeze-and-excitation and attention pooling, followed by per-class "
+     "temperature scaling [[21]]. A triage layer converts each calibrated "
      "probability into one of three decisions under a training-conditional, or "
-     "PAC, conformal bound [[18]]. For a class with *n* calibration positives, "
-     "miss-rate budget α and confidence δ, the order statistic is"),
+     "PAC, conformal bound [[19]]. For a class with *n* calibration positives, "
+     "miss-rate budget *alpha* and confidence *delta*, the order statistic is"
+     ),
 
-    ("EQ", ("m* = max { k ≤ n :  F_Beta( α ; k , n − k + 1 ) ≥ 1 − δ } ,",
-            r"m^{*} \;=\; \max\left\{\,k \le n \;:\; "
-            r"F_{\mathrm{Beta}(k,\,n-k+1)}(\alpha) \ge 1-\delta \,\right\},")),
-
-    ("P",
-     "since the coverage of the *k*-th order statistic follows Beta(*k*, *n*−"
-     "*k*+1). The rule-out threshold is the *m**-th smallest calibration score "
-     "among positives, the rule-in threshold its mirror over the negatives at "
-     "a false-alarm budget β, and anything between them is referred. A class "
-     "with too few calibration positives is reported as unattainable rather "
-     "than approximated. Two models are served side by side, each with its own "
-     "calibrator and thresholds, and a class is ruled out only when both rule "
-     "it out; the merged rule-out set is their intersection, so the merged "
-     "miss rate is bounded by the tighter single-model bound, at the cost of "
-     "more referrals."),
+    ("EQ", ('m* = max { k ≤ n :  F_Beta( α ; k , n − k + 1 ) ≥ 1 − δ } ,',
+            'm^{*} \\;=\\; \\max\\left\\{\\,k \\le n \\;:\\; F_{\\mathrm{Beta}(k,\\,n-k+1)}(\\alpha) \\ge 1-\\delta \\,\\right\\},')),
 
     ("P",
-     "A bound like this is conditional on assumptions the input can break "
-     "without looking broken, so two checks withdraw the guarantee while "
-     "leaving the prediction in place. The first flags a swapped pair of limb "
-     "electrodes, an exact linear map of the standard lead definitions, from "
-     "the polarity of one lead and the inversion of another; the second asks "
-     "whether the rhythm is inside the label space at all, from a "
-     "beat-interval irregularity score thresholded on validation at a 5 % "
-     "false-positive budget. Either way the probabilities are still returned "
-     "and only the sentences promising a bounded miss rate are suppressed. A "
-     "final gate checks each generated sentence against the numbers that "
-     "produced it."),
-
-    ("H2", "Ordinal Targets, Noisy Labels and a Long Tail"),
-    ("P",
-     "An R(2+1)D-18 backbone [[8]] pretrained on Kinetics-400 takes 32-frame "
-     "clips of 112 by 112 pixels in two channels, grey level and a temporal "
-     "difference, with four heads: regression, an ordinal cumulative head, an "
-     "auxiliary class head and a log-variance head. The class boundaries at "
-     "30, 40 and 55 are clinical conventions, and the label they cut is itself "
-     "noisy, since two human readers typically disagree by about 4 points. "
-     "Treating it as exact throws information away, so the ordinal targets are "
-     "soft,"),
-
-    ("EQ", ("s_k = 1 − Φ( ( t_k − e ) / σ ) ,",
-            r"s_k \;=\; 1 - \Phi\!\left(\frac{t_k - e}{\sigma}\right),")),
+"since the coverage of the *k*-th order statistic follows Beta(*k*, "
+     "*n*-*k*+1). The rule-out threshold is that order statistic among the "
+     "positive calibration scores, the rule-in threshold its mirror over the "
+     "negatives, and anything between is referred. A class with too few "
+     "calibration positives is reported unattainable rather than approximated. "
+     "Two models are served side by side, each with its own calibrator, and a "
+     "class is ruled out only when both rule it out, so the merged miss rate is "
+     "bounded by the tighter single-model bound at the expense of more "
+     "referrals."
+     ),
 
     ("P",
-     "where *e* is the recorded value, *t_k* the *k*-th boundary, σ = 4 and "
-     "Φ the standard normal distribution function, so *s_k* is the "
-     "probability that the true value lies above *t_k* given a noisy "
-     "measurement. Rank consistency is structural instead of repaired "
-     "afterwards, unlike [[22]]: one severity score is compared against "
-     "cut-points that increase by construction, because each gap is a "
-     "softplus,"),
+"A bound like this depends on assumptions the input can break without "
+     "appearing broken, so two checks withdraw the guarantee while leaving the "
+     "prediction in place: one flags a swapped pair of limb electrodes from the "
+     "polarity of one lead and the inversion of another, the other asks whether "
+     "the rhythm is inside the label space at all, from an irregularity score "
+     "thresholded on validation at a 5 % false-positive budget. Either way the "
+     "probabilities are still returned and only the bounded-miss-rate claim is "
+     "withdrawn, which is the *caution* state of (1) rather than *withheld*."
+     ),
 
-    ("EQ", ("c_1 = a ,   c_k = a + Σ_{j<k} softplus( g_j ) ,   z_k = f(x) − c_k ,",
-            r"c_1 = a,\quad c_k = a + \sum_{j<k}\mathrm{softplus}(g_j),"
-            r"\quad z_k = f(x) - c_k,")),
+    ('H2', 'Ordinal Targets, Noisy Labels and a Long Tail'),
 
     ("P",
-     "so the cumulative probabilities can never cross. Training uses a "
-     "class-balanced sampler with deferred re-weighting [[23]] from epoch 15 "
-     "and an exponential moving average of the weights. The second cohort is "
-     "intensity-matched before being mixed in, because a balanced sampler "
-     "over-draws from it and would let the network use scanner brightness as a "
-     "shortcut for severity. A regressor on a skewed target also shrinks "
-     "predictions towards the mean, pushing the severe tail over the boundary "
-     "at 30, so an expansion is fitted on validation and applied without "
-     "touching the weights,"),
+"An R(2+1)D-18 backbone [[8]] takes 32-frame clips and four heads: "
+     "regression, ordinal cumulative, auxiliary class and log-variance. The "
+     "boundaries at 30, 40 and 55 are clinical conventions, and the label they "
+     "cut is itself noisy, since two readers typically disagree by about 4 "
+     "points. Treating it as exact throws information away, so the ordinal "
+     "targets are soft,"
+     ),
+
+    ("EQ", ('s_k = 1 − Φ( ( t_k − e ) / σ ) ,',
+            's_k \\;=\\; 1 - \\Phi\\!\\left(\\frac{t_k - e}{\\sigma}\\right),')),
+
+    ("P",
+"where *e* is the recorded value, *t_k* the *k*-th boundary and *sigma* = "
+     "4, so *s_k* is the probability that the true value lies above *t_k*. "
+     "Unlike [[23]], rank consistency is structural rather than repaired after "
+     "the fact: one severity score is compared against cut-points that increase "
+     "by construction, because each gap is a softplus,"
+     ),
+
+    ("EQ", ('c_1 = a ,   c_k = a + Σ_{j<k} softplus( g_j ) ,   z_k = f(x) − c_k ,',
+            'c_1 = a,\\quad c_k = a + \\sum_{j<k}\\mathrm{softplus}(g_j),\\quad z_k = f(x) - c_k,')),
+
+    ("P",
+"so the cumulative probabilities can never cross. Training uses a "
+     "class-balanced sampler with deferred re-weighting [[24]] from epoch 15. "
+     "The second cohort is intensity-matched before being blended in, since a "
+     "balanced sampler over-draws from it and would let the network use scanner "
+     "brightness as a shortcut for severity. A regressor on a skewed target also "
+     "shrinks predictions toward the mean, pushing the severe tail over the "
+     "boundary at 30, so an expansion is fitted on validation and applied "
+     "without changing the weights,"
+     ),
 
     ("EQ", ("ê' = ȳ + κ ( ê − x̄ ) ,   κ = sd(y) / sd(ê) , clipped to [1.0, 1.7],",
-            r"\hat{e}\,' \;=\; \bar{y} + \kappa\,(\hat{e}-\bar{x}),\qquad "
-            r"\kappa = \frac{\mathrm{sd}(y)}{\mathrm{sd}(\hat{e})}"
-            r"\ \text{clipped to } [1.0,\,1.7],")),
+            "\\hat{e}\\,' \\;=\\; \\bar{y} + \\kappa\\,(\\hat{e}-\\bar{x}),\\qquad \\kappa = \\frac{\\mathrm{sd}(y)}{\\mathrm{sd}(\\hat{e})}\\ \\text{clipped to } [1.0,\\,1.7],")),
 
     ("P",
-     "after which the boundaries are re-optimised on validation with a "
-     "lexicographic objective: worst-class recall, then balanced accuracy, "
-     "then macro-F1, then closeness to the clinical value. At inference a "
-     "study is sampled into ten clips and averaged over three seeds, and the "
-     "interval is split-conformal, widened by the learned aleatoric term and "
-     "by disagreement between clips."),
+"after which the boundaries are re-optimised on validation "
+     "lexicographically: worst-class recall, then balanced accuracy, then "
+     "macro-F1."
+     ),
 
-    ("H2", "An Information-Availability Contract"),
-    ("P",
-     "The rebuild of this component started from the leak described in Section "
-     "I, so every feature now declares an availability time *a(f)* relative to "
-     "arrival. At a disclosure horizon *H* the admitted feature set is"),
-
-    ("EQ", ("F_H = { f : a(f) ≤ H } ,",
-            r"\mathcal{F}_H \;=\; \{\, f \;:\; a(f) \le H \,\},")),
+    ('H2', 'An Information-Availability Contract'),
 
     ("P",
-     "and values are clipped to those recorded within *H* hours. The same "
+"The rebuild of this component started from the leak described in Section "
+     "I, so every feature declares an availability time *a(f)* relative to "
+     "arrival. At a disclosure horizon *H* the admitted feature set is"
+     ),
+
+    ("EQ", ('F_H = { f : a(f) ≤ H } ,',
+            '\\mathcal{F}_H \\;=\\; \\{\\, f \\;:\\; a(f) \\le H \\,\\},')),
+
+    ("P",
+"and values are clipped to those recorded within *H* hours. The same "
      "cohort, split and code are featurised at *H* = 0, 6 and 24 hours, making "
-     "accuracy against time a reported axis rather than an unstated "
-     "assumption. Detection is a gradient-boosted tree ensemble [[10]]; "
-     "subtyping uses one four-class model instead of a cascade, since a "
-     "cascade compounds error, a patient the screen misses never being "
-     "recoverable later. The operating point is a stated optimisation rather "
-     "than a hand-tuned multiplier,"),
+     "accuracy against time a reported axis rather than an unstated assumption. "
+     "Detection is a mean blend of a LightGBM and an XGBoost ensemble [[10]], "
+     "[[11]]; subtyping uses a single four-class model rather than a cascade, "
+     "since a cascade compounds error. The operating point is a stated "
+     "optimisation rather than a hand-tuned multiplier,"
+     ),
 
-    ("EQ", ("w* = arg max_w  macroF1( arg max_k w_k p_k )   s.t.   "
-            "min_k recall_k(w) ≥ ρ ,",
-            r"w^{*} = \arg\max_{w}\ \mathrm{macroF_1}"
-            r"\!\left(\arg\max_k w_k p_k\right)\ \ \text{s.t.}\ \ "
-            r"\min_k \mathrm{recall}_k(w) \ge \rho,")),
+    ("EQ", ('w* = arg max_w  macroF1( arg max_k w_k p_k )   s.t.   min_k recall_k(w) ≥ ρ ,',
+            'w^{*} = \\arg\\max_{w}\\ \\mathrm{macroF_1}\\!\\left(\\arg\\max_k w_k p_k\\right)\\ \\ \\text{s.t.}\\ \\ \\min_k \\mathrm{recall}_k(w) \\ge \\rho,')),
 
     ("P",
-     "with the recall floor ρ = 0.75, solved on validation over bootstrap "
-     "resamples and then frozen. A case whose top-two margin falls below the "
-     "(1 − *C*) quantile of the validation margins is referred to a "
-     "clinician instead of being subtyped. Results are reported on the "
-     "intended-use population, meaning visits with a cardiac complaint or an "
-     "early electrocardiogram order; both are observable at triage, so this is "
+"with the recall floor *rho* = 0.75, solved on validation over bootstrap "
+     "resamples and frozen. A case whose top-two margin falls below the (1 - "
+     "*C*) quantile is referred to a clinician rather than subtyped. Results are "
+     "reported on the intended-use population, visits with a cardiac complaint "
+     "or an early electrocardiogram order, both observable at triage, so this is "
      "selection, not leakage. A separate head asks which wall of the heart the "
-     "infarct involves. That label is absent from the processed tables and was "
-     "rebuilt from diagnosis codes, which needs both the ICD-9 and ICD-10 "
-     "vocabularies since the cohort straddles the transition almost evenly."),
+     "infarct involves."
+     ),
 
-    ("H2", "One Reliability Contract"),
-    ("P",
-     "The four mechanisms speak four vocabularies: an acquisition group and a "
-     "deferral margin; a conformal zone and a withdrawn guarantee; a "
-     "prediction interval and two kinds of variance; a disclosure horizon and "
-     "a referral. The service maps them onto one enumerated field: "
-     "*actionable* when the component stands behind the result, *caution* when "
-     "it stands but measured reliability is lower for this input, *deferred* "
-     "when it declines to commit, *withheld* when output was suppressed after "
-     "a quality or verification failure, and *unavailable* when it could not "
-     "run. A client then applies one rule, do not act on a result that is not "
-     "actionable, without knowing anything about projections, conformal zones "
-     "or horizons. A component that declines to answer returns a normal "
-     "response, not an error, because turning a safety mechanism into an error "
-     "status pushes callers into retry loops."),
-
-    # ------------------------------------------------------------------ V
-    ("H1", "Experimental Setup"),
+    ('H1', 'Experimental Setup'),
 
     ("P",
-     "Splits are patient-disjoint throughout: MIMIC-CXR-JPG [[3]] 36,362 / "
-     "4,474 / 4,722 images, with 2,891 bedside and 1,831 standing in the test "
-     "fold and the positive class enriched to 50.4 %; the official PTB-XL "
-     "[[6]] folds, 13,801 / 1,709 / 1,711 recordings, keeping only codes at "
-     "full likelihood; EchoNet-Dynamic [[7]] 7,465 / 1,288 / 1,277 studies, "
-     "severity classes at 5.9 / 7.2 / 18.0 / 68.9 %, with 1,000 CAMUS [[9]] "
-     "clips added to training only; and MIMIC-IV-ED [[12]] 142,111 / 30,453 / "
-     "30,452 stays grouped by patient, 2.65 % positive. Each test split was "
-     "evaluated once, and every decision rule in Section IV was fitted on "
-     "validation and frozen before that split was opened. Two components were "
-     "trained on an NVIDIA L4 and two on an RTX 4060 laptop GPU. Metrics "
-     "follow the task: AUROC, sensitivity, "
+"Four public cohorts are used, every split patient-disjoint and quoted as "
+     "train / validation / test. C1: MIMIC-CXR-JPG [[3]], 36,362 / 4,474 / 4,722 "
+     "images, the test fold containing 2,891 bedside and 1,831 standing films, "
+     "positive class enriched to 50.4 %. C2: the official PTB-XL [[6]] folds, "
+     "13,801 / 1,709 / 1,711 recordings, keeping only codes at full likelihood. "
+     "C3: EchoNet-Dynamic [[7]], 7,465 / 1,288 / 1,277 studies, severity classes "
+     "at 5.9 / 7.2 / 18.0 / 68.9 %, plus 1,000 CAMUS [[9]] clips in training "
+     "only. C4: MIMIC-IV-ED [[13]], 142,111 / 30,453 / 30,452 stays grouped by "
+     "patient, 2.65 % positive. Each test split was evaluated once, and every "
+     "decision rule in Section IV was fitted on validation and frozen before "
+     "that split was opened. Metrics follow the task: AUROC, sensitivity, "
      "specificity and true-positive-rate disparity between acquisition groups "
-     "[[15]] for C1; per-class recall and NPV, the precision of the negative "
-     "class, with the empirical miss rate against the promised bound for C2; "
-     "mean absolute error, R^{2} and minimum per-class recall for C3; AUROC, "
-     "NPV and minimum per-class recall for C4. "
-     "Coverage, the fraction of cases answered rather than deferred, is quoted "
-     "beside every selective number, because accuracy on the answered subset "
-     "is not the accuracy of the system."),
+     "[[16]] for C1; per-class recall and NPV with the empirical miss rate "
+     "against the promised bound for C2; mean absolute error, R^{2} and minimum "
+     "per-class recall for C3; AUROC, NPV and minimum per-class recall for C4. "
+     "Coverage is quoted beside every selective number, since accuracy on the "
+     "answered subset is not the accuracy of the system."
+     ),
 
     ("P",
-     "Differences are tested, not eyeballed. Two decision rules scoring the "
-     "same items are compared with McNemar's test [[25]] in its mid-*p* form "
-     "with Holm correction [[26]] inside each family, and differences of gaps "
-     "or of aggregate metrics with a paired bootstrap of 10,000 resamples in "
-     "which both systems use identical indices. Subgroup miss rates use exact "
-     "binomial tests with Wilson intervals and Holm correction across all 23 "
-     "cells; triage intervals are cluster bootstraps resampled by patient."),
+"Differences are tested rather than eyeballed. Two rules scoring the same "
+     "items are compared using McNemar's test [[26]] in mid-*p* form with Holm "
+     "correction [[27]] within each family; gaps and aggregate metrics use a "
+     "paired bootstrap of 10,000 resamples on identical indices. Subgroup miss "
+     "rates use exact binomial tests with Wilson intervals across all 23 cells; "
+     "triage intervals are cluster bootstraps resampled by patient."
+     ),
 
-    # ----------------------------------------------------------------- VI
-    ("H1", "Results"),
-
-    ("H2", "Detection Performance"),
-    ("P",
-     "Table I gives the headline test-set result per component; these are four "
-     "tasks on four cohorts, so the rows are not comparable. Three numbers are "
-     "worth adding. C1's report generator reaches a clinical-efficacy F1 of "
-     "0.5937, and invented references to earlier studies, present in 70.7 % of "
-     "the raw training reports, occur in 0 of 4,722 generated reports once the "
-     "targets are cleaned. C3 places 99.7 % of studies within one severity "
-     "class of the truth, with no severe case graded normal. C4 misses 66 of "
-     "the 763 positive cases in its intended-use population, at 18.09 alerts "
-     "per 100 patients."),
-
-    ("TABLE", {
-        "caption": "Headline test-set performance. Four tasks on four "
-                   "cohorts; rows are not comparable with each other.",
-        "span": False,
-        "cols": ["Comp.", "Task", "n", "Result"],
-        "widths": [0.09, 0.26, 0.11, 0.54],
-        "rows": [
-            ["C1", "Cardiomegaly, 7 co-findings", "4,722",
-             "AUROC 0.9189, sensitivity 92.3 %, specificity 74.0 %; mean "
-             "AUROC 0.8554 over 8 labels"],
-            ["C2", "5 ECG superclasses", "1,711",
-             "macro accuracy 0.864, recall 0.810, NPV 0.933; every class "
-             "above 0.75"],
-            ["C3", "Ejection fraction, 4 grades", "1,277",
-             "MAE 3.979 points, R^{2} 0.818, worst-class recall 0.723"],
-            ["C4", "ACS screen and subtype", "30,452",
-             "screen AUROC 0.9560, NPV 99.41 %; subtyping macro-F1 0.7448; "
-             "wall head AUROC 0.9074"],
-        ],
-    }),
+    ('H1', 'Results'),
 
     ("P",
-     "Fig. 2 breaks C1 down by finding, and the two curves do not track each "
-     "other. Pneumothorax reaches AUROC 0.9141 at 54.0 % sensitivity, because "
-     "at 3.7 % prevalence the F1-optimal cut sits high; pneumonia and "
-     "consolidation are worse on both axes. Cardiomegaly, the finding this "
-     "component is built around, is the second best of the eight rather than "
-     "the best."),
+"Results come in four parts: headline detection accuracy per component, "
+     "what each abstention rule buys against its control arm, four ablations of "
+     "our own design choices, and a check that the deployed service reproduces "
+     "the offline numbers."
+     ),
 
-    ("FIG", ("fig2_per_class.png",
-             "C1 per-finding discrimination and sensitivity on the 4,722-image "
-             "test split, ordered by AUROC. The dotted line marks 0.75.",
+    ('H2', 'Detection Performance'),
+
+    ("P",
+"Detection accuracy is a precondition rather than the contribution, so we "
+     "state it once. On its own test fold: C1 cardiomegaly AUROC 0.9189 at 92.3 "
+     "% sensitivity, n = 4,722; C2 macro accuracy 0.864 and recall 0.810, n = "
+     "1,711; C3 mean absolute error 3.979 ejection-fraction points and "
+     "worst-class recall 0.723, n = 1,277; C4 screening AUROC 0.9560 at 99.41 % "
+     "negative predictive value and subtyping macro-F1 0.7448, n = 30,452. The "
+     "rows are four tasks on four cohorts, not comparable with one another and "
+     "none compared with a published benchmark, for the split reasons in Section "
+     "VII."
+     ),
+
+    ('H2', 'One Contract, Four Instantiations'),
+
+    ("P",
+"Table I answers RQ2 in one view: four failure modes with nothing in "
+     "common, four mechanisms with nothing in common, and one contract state "
+     "emitted by each. Every mechanism is stated against a control, so the "
+     "improvement column is a difference rather than a level."
+     ),
+
+    ("TABLE", {'caption': 'The same contract instantiated four times. The action is the state the contract assigns when the mechanism fires; the improvement is measured against the control arm, never against a published benchmark.', 'span': False, 'cols': ['Comp.', 'Failure mode', 'Mechanism and action', 'Control', 'Improvement'], 'widths': [0.08, 0.2, 0.32, 0.18, 0.22], 'rows': [['C1', 'Acquisition shift, AP vs PA', 'Per-group threshold; defer inside the margin (defer, caution)', 'Uniform deferral, same budget', 'Gap 6.68 to -0.62 points'], ['C2', 'Marginal bound invalid in subgroups', 'Group-conditional conformal zones; two-model consensus (withhold, refer)', 'Marginal conformal', 'Valid in 9 of 23 cells to 22 of 23'], ['C3', 'Tail shrinkage at 11:1 imbalance', 'Ordinal head, variance expansion, boundary deferral (defer)', 'Full-coverage prediction', 'Severe recall 0.590 to 0.687'], ['C4', 'Temporal leakage', 'Disclosure horizon H; constrained decision layer (refer)', 'Horizon sweep H = 0, 6, 24 h', 'AUROC 0.8763 to 0.9560']]}),
+
+    ('H2', 'The Cost of Abstaining'),
+
+    ("P",
+"Accuracy on the answered subset flatters any system that abstains, so we "
+     "report one measure that means the same thing in every modality. The "
+     "*unsafe answer rate* is the probability that the system both answers and "
+     "is wrong, U = *c* (1 - *A*) for coverage *c* and accuracy *A* among "
+     "answered cases; a component that never abstains has U equal to its error "
+     "rate. Reported with coverage it prices abstention instead of concealing "
+     "it. Fig. 2a gives all three components. The nuance is C1: uniform deferral "
+     "reaches a marginally lower U than the group-conditional arm, 8.89 % "
+     "against 9.64 % at the same budget, yet leaves the acquisition gap intact, "
+     "which is exactly the trade the contract is meant to make visible. C3's 148 "
+     "deferred studies are genuinely the hard ones, scoring 42.6 % against 73.0 "
+     "% overall, and C4 buys its drop to 6.68 % by deferring a third of "
+     "subtyping decisions. Answering RQ3, abstention lowered the unsafe answer "
+     "rate against the answer-everything arm in all three components, and in C1 "
+     "only the group-conditional arm also removed the failure mode."
+     ),
+
+    ("FIG", ('fig3_uar.png',
+             '(a) Unsafe answer rate before and after abstention; the number above each bar is the coverage that arm retains, so the height is the risk and the label is its price. (b) Screening AUROC, unstable-angina recall and the share of attribution carried by laboratory features, against the disclosure horizon.',
              False)),
 
     ("P",
-     "Fig. 3 shows what the training schedule bought C2. Validation "
-     "macro-AUROC rises for roughly ten epochs, peaks near epoch 19 and then "
-     "drifts down by about 0.005 while the training loss keeps falling, so "
-     "checkpoints are selected on validation discrimination rather than at the "
-     "end of the schedule. The three seeds differ by less than the "
-     "epoch-to-epoch noise, which is why we report seed variance for this "
-     "component and not run-to-run stability for the others."),
-
-    ("FIG", ("fig3_training.png",
-             "C2 validation macro-AUROC and training loss over 40 epochs, "
-             "three seeds. Grey lines are individual seeds, the solid line "
-             "their mean.",
-             False)),
-
-    ("H2", "What the Abstention Mechanisms Buy"),
-    ("P",
-     "Each result below is stated against a control, meaning an arm that keeps "
-     "the procedure and removes the signal. Fig. 4 shows one result per "
-     "component."),
-
-    ("FIG", ("fig4_results.png",
-             "(a) Accuracy gap between acquisition groups under three deferral "
-             "policies, with 95 % bootstrap intervals. (b) Screen AUROC, "
-             "unstable-angina recall and the share of attribution carried by "
-             "laboratory features, against the disclosure horizon.",
-             False)),
-
-    ("P",
-     "*Acquisition shift.* C1 scores AUROC 0.8224 on bedside images against "
+"*Acquisition shift.* C1 scores AUROC 0.8224 on bedside images against "
      "0.8864 on standing ones, a gap of 0.0639 [0.0491, 0.0790] in the same "
-     "direction for all eight labels. Fitting the operating point per group "
-     "cut the reported true-positive-rate disparity by 73.3 % with an AUROC "
-     "spread of exactly zero, at no significant accuracy cost (+0.02 points, "
-     "[−0.26, +0.31], McNemar mid-*p* 0.885). We also reimplemented the "
-     "representation-side alternative [[16]] on our own data, backbone and "
-     "split: it reached complete invariance, projection-detection AUC 0.5000, "
-     "and still made the disparity 25.4 % *worse* at a cost of 0.0789 AUROC. "
-     "Deferral behaves the same way (Fig. 4a). Deferring the same fraction of "
-     "both groups leaves the 6.68-point gap at 6.28, the behaviour [[21]] "
-     "describes; deferring per group at matched coverage closes it to −0.62 "
-     "[−2.78, 1.37], a difference of 5.83 points with paired bootstrap "
-     "*p* = 0.0004, at 85.8 % coverage overall."),
+     "direction for all eight labels. Fitting the operating point per group cut "
+     "the reported true-positive-rate disparity by 73.3 % with an AUROC spread "
+     "of exactly zero and no discernible accuracy cost (+0.02 points, McNemar "
+     "mid-*p* 0.885). We also reimplemented the representation-side alternative "
+     "[[17]] on our own data, backbone and split: it reached complete "
+     "invariance, projection-detection AUC 0.5000, and still made the disparity "
+     "25.4 % *worse* at a cost of 0.0789 AUROC. Deferral behaves the same way "
+     "(Fig. 2a): deferring uniformly leaves the gap at 6.28, the behaviour "
+     "[[22]] describes, while deferring per group at matched coverage closes it, "
+     "a difference of 5.83 points with paired bootstrap *p* = 0.0004."
+     ),
 
     ("P",
-     "*Conditional validity.* Fitted marginally, the conformal bound held in "
+"*Conditional validity.* Fitted marginally, the conformal bound held in "
      "only 14 of 23 class-by-subgroup cells, and two violations survive Holm "
-     "correction: one class at a miss rate of 0.333 against a promised 0.10 "
-     "under age 50, another at 0.330 against 0.20 at age 70 and over, with "
-     "adjusted *p* of 5.1 × 10^{−6} and 0.029. Refitting one threshold per "
-     "subgroup [[19]] restored the bound in 22 of 23 cells, at the "
-     "cost that every cell now needs its own positives: one with 42 cannot "
-     "support a finite threshold and is reported as unattainable."),
+     "correction: miss rates of 0.333 against a promised 0.10 under age 50, and "
+     "0.330 against 0.20 at age 70 and over. Refitting one threshold per "
+     "subgroup [[20]] restored the bound in 22 of 23, at the expense that every "
+     "cell now needs its own positives: one cell with 42 cannot support a finite "
+     "threshold and is reported unattainable."
+     ),
 
     ("P",
-     "*Silent corruption and open-set inputs.* Simulating each of the three "
+"*Silent corruption and open-set inputs.* Simulating each of the three "
      "limb-electrode swaps on 200 test recordings, the corrupted signal passes "
-     "the quality gate in 197 to 198 of them, because it is a clean recording "
-     "wired wrongly; up to 87 % of diagnoses change and 7 guarantees are "
-     "voided. The physiology check catches 65.5 % and 60.5 % of two swaps at "
-     "4.5 % false positives, and 4.0 % of the third, which leaves the "
-     "diagnostic lead untouched. Separately, 114 recordings carry a rhythm the "
-     "label space cannot express, and 113 received a bounded rule-out for a "
-     "disease the model has no output unit for; the irregularity gate "
-     "withholds it on 48.9 % of them. The claim is withdrawn, not the "
-     "diagnosis."),
+     "the quality gate in 197 to 198 of them, because the recording is clean but "
+     "wired wrongly; up to 87 % of diagnoses change and 7 guarantees are voided. "
+     "The physiology check detects 65.5 % and 60.5 % of two swaps at 4.5 % false "
+     "positives. Separately, 114 recordings carry a rhythm the label space "
+     "cannot represent, and the irregularity gate withholds the bounded claim on "
+     "48.9 % of them."
+     ),
 
     ("P",
-     "*Shrinkage under imbalance.* On identical weights, the expansion in (6) "
-     "lifted recall on the rarest class from 0.590 to 0.687, and seed "
-     "averaging carried the worst class to 0.723. Selective "
-     "prediction, which helped C1, failed here: at 88.4 % coverage worst-class "
-     "recall fell to 0.706 while overall accuracy rose to 0.770. The "
-     "uncertainty signal is fine, since accuracy on deferred studies is 0.426 "
-     "against 0.770 on answered ones; the problem is geometric, in that one "
-     "class occupies a 10-point interior band and abstention removes its "
-     "members first."),
+"*Shrinkage under imbalance.* On identical weights, the expansion in (8) "
+     "lifted recall on the rarest class from 0.590 to 0.687, and seed averaging "
+     "carried the worst class to 0.723. Selective prediction, which helped C1, "
+     "failed here: at 88.4 % coverage worst-class recall fell to 0.706 while "
+     "overall accuracy rose. The uncertainty signal is sound, since accuracy on "
+     "deferred studies is 0.426 against 0.770 on answered ones; the problem is "
+     "geometric, in that one class occupies a 10-point interior band and "
+     "abstention removes its members first."
+     ),
 
     ("P",
-     "*Temporal leakage.* One comorbidity column equals 1 for every positive "
+"*Temporal leakage.* One comorbidity column equals 1 for every positive "
      "stay and reaches AUROC 0.9200 alone; adding it back to an otherwise safe "
-     "feature set moves the screen from AUROC 0.9665 to 0.9889, which is how "
-     "an apparently excellent result gets manufactured. A random split puts "
+     "feature set moves the screen from 0.9665 to 0.9889, which is how an "
+     "apparently outstanding result gets manufactured. A random split places "
      "5,804 patients on both sides and contaminates 7,627 test rows; the "
-     "patient-grouped split shares none. Under the availability contract, "
-     "performance becomes a function of time (Fig. 4b): screen AUROC 0.8763, "
-     "0.9121 and 0.9560, and recall on the hardest subtype 37.3 %, 58.2 % and "
-     "80.0 % at *H* = 0, 6 and 24. That subtype is defined by a normal blood "
-     "test, so it cannot be separated from its neighbour until the test "
-     "returns. At *H* = 0 the laboratory channel carries exactly 0.0 % of the "
-     "attribution mass, rising to 4.6 % and 29.6 %; a leaking pipeline cannot "
-     "produce that pattern."),
+     "patient-grouped split shares none. Under the availability contract "
+     "performance becomes a function of time (Fig. 2b), and recall on the "
+     "hardest subtype moves 37.3 %, 58.2 %, 80.0 % at *H* = 0, 6, 24. At *H* = 0 "
+     "the laboratory channel carries exactly 0.0 % of the attribution mass, "
+     "rising to 4.6 % and 29.6 %; a leaking pipeline cannot produce that "
+     "pattern."
+     ),
 
-    ("H2", "Turning the Same Standard on Our Own Designs"),
-    ("P",
-     "The mechanisms above were tested against controls. So were four of our "
-     "own design decisions, and three came back negative. The sharpest is "
-     "C2's architecture, which adds three things to a plain one-dimensional "
-     "residual network. At three seeds each, compared by paired bootstrap on "
-     "the untouched fold, they do not earn their 566 k parameters: the stem "
-     "and attention pooling change nothing (*p* = 0.741), and "
-     "squeeze-and-excitation on top of them costs 0.0042 macro-AUROC "
-     "(*p* = 0.0040). Almost the whole loss sits on one class, +0.0147 AUROC "
-     "without it and three times the next largest effect, and there is a "
-     "mechanism rather than a coincidence: that diagnosis is read from QRS "
-     "amplitude, and squeeze-and-excitation recalibrates channels by learned "
-     "importance, an operation on relative amplitude across leads. The shipped "
-     "model is still the worse one, because swapping it means refitting the "
-     "calibrator and the conformal thresholds and re-verifying every figure."),
+    ('H2', 'Turning the Same Standard on Our Own Designs'),
 
     ("P",
-     "C4's infarct-wall head is the second. With every feature it reaches "
-     "AUROC 0.9074 and no per-class metric below 0.7551 on 104 test cases; "
-     "removing three features parsed from the recording device's own printed "
-     "interpretation costs 0.133 AUROC and drops the weakest metric to 0.6038, "
-     "and those three alone reach AUROC 0.841. This is not temporal leakage, "
-     "since they exist at triage, but the person who assigned the diagnosis "
-     "code read the same printout, so feature and label share a source and the "
-     "model largely transcribes an interpretation already in the record. Both "
-     "numbers belong in any report of it. Widening the head beyond two "
-     "territories was measured too: a third class is recalled in 1 case of 12 "
-     "and drags the other two down with it. The remaining two ablations are "
-     "quieter. C3's backbone, inherited from a benchmark, was tested against "
-     "the un-factorised alternative at three matched seeds and is worth "
-     "keeping, though only on the classification metrics; the first version of "
-     "that test was single-seed and confounded, which we found and re-ran. "
-     "C2's neural report generator beats a constant sentence and a "
-     "five-string lookup on BLEU-4 by 0.054, a real gain and a small one, and "
-     "preserves the classifier's findings exactly in 73.9 % of reports. "
-     "Neither it nor the wall head is served."),
+"The mechanisms above were tested against controls. So were four of our own "
+     "design choices, and three came back negative. The sharpest is C2's "
+     "architecture, which adds three things to a plain one-dimensional residual "
+     "network. At three seeds each, compared by paired bootstrap on the "
+     "untouched fold, they do not earn their 566 k parameters: the stem and "
+     "attention pooling change nothing (*p* = 0.741), and squeeze-and-excitation "
+     "costs 0.0042 macro-AUROC (*p* = 0.0040). Almost the whole loss sits on one "
+     "class, +0.0147 AUROC without it, and there is a mechanism rather than a "
+     "coincidence: that diagnosis is read from QRS amplitude, and "
+     "squeeze-and-excitation recalibrates channels by learned importance, an "
+     "operation on relative amplitude across leads."
+     ),
 
     ("P",
-     "One check of the same kind closes the loop. Research and serving code "
-     "drift apart, so beside the service's 132 automated tests the radiograph "
-     "endpoint was scored on 200 stratified real studies posted through the "
-     "live HTTP path. Served accuracy was 0.790 "
-     "[0.728, 0.841], sensitivity 0.880 [0.802, 0.930] and specificity 0.700 "
-     "[0.604, 0.781], all consistent with the offline figures at 14.0 % "
-     "deferred, and accuracy was 0.766 on bedside images against 0.833 on "
-     "standing ones. The covariate shift reappears on real inputs through the "
-     "deployed path, and the horizon contract is enforced per patient: for a "
-     "single record the laboratory channel reads 0.000 % at triage."),
-
-    # ---------------------------------------------------------------- VII
-    ("H1", "Discussion and Limitations"),
-
-    ("P",
-     "Across all four modalities the useful intervention sat in the decision "
-     "rule, not the representation: three attempts to close the acquisition "
-     "gap by changing the model failed against a null arm, while a threshold "
-     "and a deferral budget conditioned on the same variable worked at no cost "
-     "in ranking quality. Much of clinical reliability is therefore "
-     "post-processing, which is cheap to fit, auditable and changeable "
-     "without retraining."),
+"C4's infarct-wall head is the second. With every feature it reaches AUROC "
+     "0.9074 on 104 test cases; removing three features parsed from the printed "
+     "interpretation of the recording device costs 0.133 AUROC, and those three "
+     "alone reach AUROC 0.841. This is not temporal leakage, since they exist at "
+     "triage, but the person who assigned the diagnosis code read the same "
+     "printout. Feature and label therefore share a source: the label is partly "
+     "defined by an input the model is given, a circularity no timestamp check "
+     "can detect. Widening the head beyond two territories was measured too, and "
+     "a third class is recalled in 1 case of 12. C3's backbone was tested "
+     "against the un-factorised alternative at three matched seeds and is worth "
+     "keeping, though only on the classification metrics. Text generation exists "
+     "in two components but is not evaluated here, and neither it nor the wall "
+     "head is served."
+     ),
 
     ("P",
-     "The limitations are real. No component has external validation; each "
-     "uses one dataset, or one pair, and every evaluation is retrospective. "
-     "The C1 split is custom, its positive class enriched to 50.4 %, and "
-     "98.3 % of its test images fall inside the official MIMIC-CXR training "
-     "split, so those numbers are not comparable with published MIMIC-CXR "
-     "results; C2 keeps only codes at full likelihood and drops 21 % of "
-     "PTB-XL, so the same applies there. Training variance is measured for C2 "
-     "and C3 and not for the other two. "
-     "The four cohorts are disjoint, so the ordering in Section III is how the "
-     "components would compose clinically and not a validated end-to-end "
-     "study. Subgroup coverage is partial: C1 covers the acquisition field "
-     "only, C2 sex and three age bands, the C3 cohort has no demographic "
-     "fields, and C4 has them but no breakdown yet. The electrode audit rests "
-     "on 200 recordings, and regular out-of-scope rhythms remain silent "
-     "failures. The infarct-wall head has 104 test cases, and two either way "
-     "move its weakest metric across 0.75. C3 does not reach its 0.75 "
-     "worst-class target. Grad-CAM is a sanity "
-     "check, not evidence of localisation, its repeatability on chest "
-     "radiographs measured at a structural similarity of 0.12 [[27]]. This "
-     "is not a medical device."),
+"Research and serving code drift apart, so the radiograph endpoint was also "
+     "scored on 200 stratified real studies posted through the live HTTP path: "
+     "served accuracy 0.790 [0.728, 0.841] at 14.0 % deferred, and 0.766 on "
+     "bedside images against 0.833 on standing ones. The covariate shift "
+     "reappears on real inputs through the deployed path."
+     ),
 
-    # --------------------------------------------------------------- VIII
-    ("H1", "Conclusion"),
+    ('H1', 'Discussion, Threats to Validity and Limitations'),
+
     ("P",
-     "We built a four-modality clinical decision-support system in which every "
-     "component has an explicit rule for declining to answer, and every rule "
-     "is measured against a control. Conditioning that rule on whatever "
-     "variable actually causes the failure, an acquisition setting, a patient "
-     "subgroup, a rhythm outside the label space, or the time a feature became "
-     "available, beat changing the model in every case we tested and usually "
-     "cost nothing in ranking quality. The same standard applied to our own "
-     "design decisions returned three negative results out of four. Reducing "
-     "four refusal vocabularies to one five-level field then lets client code "
-     "apply a single rule everywhere. Next are external validation, multi-seed "
-     "training for the two components that lack it, subgroup analysis on "
-     "whatever axes each cohort supports, and a paired study on the 19,979 "
-     "patients two of our cohorts share."),
+"Answering RQ1 and RQ3 together: in these experiments the effective "
+     "intervention was in the decision layer rather than the representation. "
+     "Three attempts to close the acquisition gap by altering the model failed "
+     "against a null arm, while a threshold and a deferral budget conditioned on "
+     "the same variable worked, and the unsafe answer rate fell in every "
+     "component where coverage is measurable. We do not conclude that clinical "
+     "reliability is generally post-processing. We draw a narrower conclusion: "
+     "on these four tasks, several reliability problems were addressed "
+     "effectively by decision-layer controls that are inexpensive to fit and "
+     "auditable, and conditioning each control on the variable that truly causes "
+     "the failure mattered more than the strength of the control. RQ2 is "
+     "answered by construction and tested through use: four mechanisms with "
+     "nothing in common reduced to one five-state field without losing "
+     "information, since the component-native payload is returned alongside it."
+     ),
+
+    ("P",
+"*Threats to validity.* All four cohorts are retrospective and public, so "
+     "distribution, labelling convention and case mix reflect the institutions "
+     "that released them: MIMIC-CXR and MIMIC-IV-ED from one US hospital, PTB-XL "
+     "from a German cohort of the 1990s, EchoNet-Dynamic from one US centre and "
+     "CAMUS from one French centre. No result here transfers to another site "
+     "without being re-measured. Every reliability threshold is fitted on "
+     "validation and frozen, so it inherits that cohort's case mix; the coverage "
+     "targets and the recall floor *rho* = 0.75 are chosen by us, not derived "
+     "from a clinical standard. There is no external validation, no prospective "
+     "evaluation, no clinician-in-the-loop study and no patient outcome "
+     "measured, so we can report that a decision was withheld but not whether "
+     "withholding it benefited anyone. Without fully paired multimodal data, the "
+     "aggregation rule of Section III is tested per component and not end to "
+     "end."
+     ),
+
+    ("P",
+"*Limitations.* The C1 split is custom, its positive class enriched to 50.4 "
+     "%, and 98.3 % of its test images fall inside the official MIMIC-CXR "
+     "training split; we therefore treat it as an internal operating point, make "
+     "no comparison with published MIMIC-CXR benchmarks anywhere, and put a "
+     "strict patient-level holdout first in further work. The same restriction "
+     "applies to C2, which drops 21 % of PTB-XL. Training variance is measured "
+     "for C2 and C3 only, and subgroup coverage is partial: C1 has the "
+     "acquisition field, C2 sex and three age bands, C3 none, C4 has them but no "
+     "breakdown yet. The electrode audit rests on 200 recordings and the "
+     "infarct-wall head on 104 test cases. C3's worst-class recall improved but "
+     "fell short of the 0.75 target we set, on test and on validation. Grad-CAM "
+     "is used as a sanity check rather than proof of localisation, its "
+     "repeatability on chest radiographs assessed at a structural similarity of "
+     "0.12 [[28]], so we make no explainability claim beyond that. This is a "
+     "retrospective research prototype, not a clinically validated system and "
+     "not a medical device."
+     ),
+
+    ('H1', 'Conclusion'),
+
+    ("P",
+"A deployed clinical model should not only produce a prediction; it should "
+     "state whether that prediction is reliable enough to act on. We made that "
+     "statement a first-class output through a reliability contract, five "
+     "ordered states assigned by a precedence rule over a component's own "
+     "quality, uncertainty and validity signals, and instantiated it in four "
+     "cardiovascular modalities that share no patients and no features. "
+     "Conditioning abstention on the variable that actually causes the failure "
+     "beat altering the model in every comparison we ran, and lowered the unsafe "
+     "answer rate wherever coverage could be measured. The same standard applied "
+     "to our own design choices returned three negative results out of four. "
+     "What the contract buys is that a caller applies one rule everywhere. Next "
+     "are external validation, a strict patient-level holdout for C1, and a "
+     "paired study on the 19,979 patients our radiograph and triage cohorts "
+     "share."
+     ),
+
 ]
 
 REFERENCES = [
     # 1
-    "R. A. Byrne et al., “2023 ESC guidelines for the management of acute coronary syndromes,” Eur. Heart J., vol. 44, no. 38, pp. 3720–3826, 2023.",
+    'R. A. Byrne et al., “2023 ESC guidelines for the management of acute coronary syndromes,” Eur. Heart J., vol. 44, no. 38, pp. 3720–3826, 2023.',
     # 2
-    "M. Gulati et al., “2021 AHA/ACC/ASE/CHEST/SAEM/SCCT/SCMR guideline for the evaluation and diagnosis of chest pain,” Circulation, vol. 144, no. 22, pp. e368–e454, 2021.",
+    'M. Gulati et al., “2021 AHA/ACC/ASE/CHEST/SAEM/SCCT/SCMR guideline for the evaluation and diagnosis of chest pain,” Circulation, vol. 144, no. 22, pp. e368–e454, 2021.',
     # 3
-    "A. E. W. Johnson et al., “MIMIC-CXR-JPG, a large publicly available database of labeled chest radiographs,” arXiv:1901.07042, 2019.",
+    'A. E. W. Johnson et al., “MIMIC-CXR-JPG, a large publicly available database of labeled chest radiographs,” arXiv:1901.07042, 2019.',
     # 4
-    "Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A ConvNet for the 2020s,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), 2022, pp. 11976–11986.",
+    'Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A ConvNet for the 2020s,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), 2022, pp. 11976–11986.',
     # 5
-    "H. Yuan, Z. Yuan, R. Gan, J. Zhang, Y. Xie, and S. Yu, “BioBART: Pretraining and evaluation of a biomedical generative language model,” in Proc. BioNLP Workshop, 2022, pp. 97–109.",
+    'H. Yuan, Z. Yuan, R. Gan, J. Zhang, Y. Xie, and S. Yu, “BioBART: Pretraining and evaluation of a biomedical generative language model,” in Proc. BioNLP Workshop, 2022, pp. 97–109.',
     # 6
-    "P. Wagner et al., “PTB-XL, a large publicly available electrocardiography dataset,” Sci. Data, vol. 7, art. 154, 2020.",
+    'P. Wagner et al., “PTB-XL, a large publicly available electrocardiography dataset,” Sci. Data, vol. 7, art. 154, 2020.',
     # 7
-    "D. Ouyang et al., “Video-based AI for beat-to-beat assessment of cardiac function,” Nature, vol. 580, pp. 252–256, 2020.",
+    'D. Ouyang et al., “Video-based AI for beat-to-beat assessment of cardiac function,” Nature, vol. 580, pp. 252–256, 2020.',
     # 8
-    "D. Tran, H. Wang, L. Torresani, J. Ray, Y. LeCun, and M. Paluri, “A closer look at spatiotemporal convolutions for action recognition,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), 2018, pp. 6450–6459.",
+    'D. Tran, H. Wang, L. Torresani, J. Ray, Y. LeCun, and M. Paluri, “A closer look at spatiotemporal convolutions for action recognition,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), 2018, pp. 6450–6459.',
     # 9
-    "S. Leclerc et al., “Deep learning for segmentation using an open large-scale dataset in 2D echocardiography,” IEEE Trans. Med. Imag., vol. 38, no. 9, pp. 2198–2210, 2019.",
+    'S. Leclerc et al., “Deep learning for segmentation using an open large-scale dataset in 2D echocardiography,” IEEE Trans. Med. Imag., vol. 38, no. 9, pp. 2198–2210, 2019.',
     # 10
-    "G. Ke et al., “LightGBM: A highly efficient gradient boosting decision tree,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS), 2017, pp. 3146–3154.",
+    'G. Ke et al., “LightGBM: A highly efficient gradient boosting decision tree,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS), 2017, pp. 3146–3154.',
     # 11
-    "S. M. Lundberg and S.-I. Lee, “A unified approach to interpreting model predictions,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS), 2017, pp. 4765–4774.",
+    'T. Chen and C. Guestrin, “XGBoost: A scalable tree boosting system,” in Proc. 22nd ACM SIGKDD Int. Conf. Knowl. Discovery Data Mining, 2016, pp. 785–794.',
     # 12
-    "A. E. W. Johnson et al., “MIMIC-IV-ED, a large, publicly available database of emergency department electronic health records,” Sci. Data, vol. 10, art. 1, 2023.",
+    'S. M. Lundberg and S.-I. Lee, “A unified approach to interpreting model predictions,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS), 2017, pp. 4765–4774.',
     # 13
-    "R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, “Grad-CAM: Visual explanations from deep networks via gradient-based localization,” in Proc. IEEE Int. Conf. Comput. Vis. (ICCV), 2017, pp. 618–626.",
+    'A. E. W. Johnson et al., “MIMIC-IV, a freely accessible electronic health record dataset,” Sci. Data, vol. 10, art. 1, 2023.',
     # 14
-    "L. Seyyed-Kalantari, G. Liu, M. McDermott, I. Y. Chen, and M. Ghassemi, “CheXclusion: Fairness gaps in deep chest X-ray classifiers,” in Proc. Pacific Symp. Biocomputing (PSB), 2021, pp. 232–243.",
+    'R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, “Grad-CAM: Visual explanations from deep networks via gradient-based localization,” in Proc. IEEE Int. Conf. Comput. Vis. (ICCV), 2017, pp. 618–626.',
     # 15
-    "M. Hardt, E. Price, and N. Srebro, “Equality of opportunity in supervised learning,” in Proc. Adv. Neural Inf. Process. Syst. (NIPS), 2016, pp. 3315–3323.",
+    'L. Seyyed-Kalantari, G. Liu, M. McDermott, I. Y. Chen, and M. Ghassemi, “CheXclusion: Fairness gaps in deep chest X-ray classifiers,” in Proc. Pacific Symp. Biocomputing (PSB), 2021, pp. 232–243.',
     # 16
-    "S. C. Pereira, J. Rocha, A. Gaudio, A. Smailagic, A. Campilho, and A. M. Mendonça, “Addressing chest radiograph projection bias in deep classification models,” in Proc. Med. Imag. Deep Learn. (MIDL), PMLR, vol. 227, 2023, pp. 1199–1210.",
+    'M. Hardt, E. Price, and N. Srebro, “Equality of opportunity in supervised learning,” in Proc. Adv. Neural Inf. Process. Syst. (NIPS), 2016, pp. 3315–3323.',
     # 17
-    "C. K. Chow, “On optimum recognition error and reject tradeoff,” IEEE Trans. Inf. Theory, vol. 16, no. 1, pp. 41–46, 1970.",
+    'S. C. Pereira, J. Rocha, A. Gaudio, A. Smailagic, A. Campilho, and A. M. Mendonça, “Addressing chest radiograph projection bias in deep classification models,” in Proc. Med. Imag. Deep Learn. (MIDL), PMLR, vol. 227, 2023, pp. 1199–1210.',
     # 18
-    "V. Vovk, “Conditional validity of inductive conformal predictors,” in Proc. Asian Conf. Mach. Learn. (ACML), PMLR, vol. 25, 2012, pp. 475–490.",
+    'C. K. Chow, “On optimum recognition error and reject tradeoff,” IEEE Trans. Inf. Theory, vol. 16, no. 1, pp. 41–46, 1970.',
     # 19
-    "V. Vovk, D. Lindsay, I. Nouretdinov, and A. Gammerman, “Mondrian confidence machine,” Tech. Rep., 2003.",
+    'V. Vovk, “Conditional validity of inductive conformal predictors,” in Proc. Asian Conf. Mach. Learn. (ACML), PMLR, vol. 25, 2012, pp. 475–490.',
     # 20
-    "C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, “On calibration of modern neural networks,” in Proc. Int. Conf. Mach. Learn. (ICML), 2017, pp. 1321–1330.",
+    'V. Vovk, D. Lindsay, I. Nouretdinov, and A. Gammerman, “Mondrian confidence machine,” Tech. Rep., 2003.',
     # 21
-    "E. Jones, S. Sagawa, P. W. Koh, A. Kumar, and P. Liang, “Selective classification can magnify disparities across groups,” in Proc. Int. Conf. Learn. Represent. (ICLR), 2021.",
+    'C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, “On calibration of modern neural networks,” in Proc. Int. Conf. Mach. Learn. (ICML), 2017, pp. 1321–1330.',
     # 22
-    "W. Cao, V. Mirjalili, and S. Raschka, “Rank consistent ordinal regression for neural networks with application to age estimation,” Pattern Recognit. Lett., vol. 140, pp. 325–331, 2020.",
+    'E. Jones, S. Sagawa, P. W. Koh, A. Kumar, and P. Liang, “Selective classification can magnify disparities across groups,” in Proc. Int. Conf. Learn. Represent. (ICLR), 2021.',
     # 23
-    "K. Cao, C. Wei, A. Gaidon, N. Arechiga, and T. Ma, “Learning imbalanced datasets with label-distribution-aware margin loss,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS), 2019, pp. 1567–1578.",
+    'W. Cao, V. Mirjalili, and S. Raschka, “Rank consistent ordinal regression for neural networks with application to age estimation,” Pattern Recognit. Lett., vol. 140, pp. 325–331, 2020.',
     # 24
-    "S. Kaufman, S. Rosset, C. Perlich, and O. Stitelman, “Leakage in data mining: Formulation, detection, and avoidance,” ACM Trans. Knowl. Discovery Data, vol. 6, no. 4, art. 15, 2012.",
+    'K. Cao, C. Wei, A. Gaidon, N. Arechiga, and T. Ma, “Learning imbalanced datasets with label-distribution-aware margin loss,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS), 2019, pp. 1567–1578.',
     # 25
-    "Q. McNemar, “Note on the sampling error of the difference between correlated proportions or percentages,” Psychometrika, vol. 12, no. 2, pp. 153–157, 1947.",
+    'S. Kaufman, S. Rosset, C. Perlich, and O. Stitelman, “Leakage in data mining: Formulation, detection, and avoidance,” ACM Trans. Knowl. Discovery Data, vol. 6, no. 4, art. 15, 2012.',
     # 26
-    "S. Holm, “A simple sequentially rejective multiple test procedure,” Scand. J. Statist., vol. 6, no. 2, pp. 65–70, 1979.",
+    'Q. McNemar, “Note on the sampling error of the difference between correlated proportions or percentages,” Psychometrika, vol. 12, no. 2, pp. 153–157, 1947.',
     # 27
-    "N. Arun et al., “Assessing the trustworthiness of saliency maps for localizing abnormalities in medical imaging,” Radiol. Artif. Intell., vol. 3, no. 6, art. e200267, 2021.",
+    'S. Holm, “A simple sequentially rejective multiple test procedure,” Scand. J. Statist., vol. 6, no. 2, pp. 65–70, 1979.',
+    # 28
+    'N. Arun et al., “Assessing the trustworthiness of saliency maps for localizing abnormalities in medical imaging,” Radiol. Artif. Intell., vol. 3, no. 6, art. e200267, 2021.',
 ]
