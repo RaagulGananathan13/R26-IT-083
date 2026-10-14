@@ -12,10 +12,6 @@ const fields = [
 const fmt = (v) => `${(Number(v || 0) * 100).toFixed(1)}%`
 const clsText = { No_ACS: 'No ACS', UA: 'Unstable angina', NSTEMI: 'NSTEMI', STEMI: 'STEMI' }
 
-
-
-
-
 // Plausibility checks for research-form inputs; not diagnostic reference ranges.
 const inputLimits = {
   age: { min: 0, max: 120 },
@@ -62,6 +58,14 @@ function App() {
   const [tab, setTab] = useState('overview')
   const update = (key, value) => { setPatient(old => ({ ...old, [key]: value })); setResult(null); setSource(''); setError('') }
   const load = (s) => { setSelected(s.id); setPatient({ ...s.patient }); setResult(structuredClone(s.result)); setSource('illustration'); setTab('overview'); setError('') }
+  const resetPatientForm = () => {
+    setPatient({ ...initial })
+    setResult(null)
+    setSource('')
+    setSelected('')
+    setTab('overview')
+    setError('')
+  }
   async function analyze(e) {
     e.preventDefault(); setError('')
     const validationError = validatePatientInput(patient)
@@ -100,7 +104,7 @@ function App() {
           <form className="inputs" onSubmit={analyze}>
             <Section title="Patient information" meta="01 — PROFILE"><div className="panel-body"><div className="input-grid"><label className="field"><span>Sex</span><select value={patient.sex} onChange={e=>update('sex',e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></label><label className="field"><span>Age <em>years</em></span><input type="number" min={inputLimits.age.min} max={inputLimits.age.max} step="1" required value={patient.age} onChange={e=>update('age',e.target.value)}/></label></div><div className="subheading">VITAL SIGNS</div><div className="input-grid">{fields.slice(1,8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" step={inputLimits[key].integer ? '1' : 'any'} min={inputLimits[key].min} max={inputLimits[key].max} value={patient[key] ?? ''} onChange={e=>update(key,e.target.value)}/></label>)}</div></div></Section>
             <Section title="Clinical evidence" meta="02 — INPUT"><div className="panel-body"><label className="field"><span>Chief complaint <em>free text</em></span><textarea rows="3" value={patient.chief_complaint} onChange={e=>update('chief_complaint',e.target.value)} placeholder="Describe presenting symptoms"/></label><div className="subheading">BIOMARKERS</div><div className="input-grid">{fields.slice(8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" min="0" step="any" placeholder="Not available" value={patient[key]} onChange={e=>update(key,e.target.value)}/></label>)}</div><div className="subheading">ECG INTERPRETATION FLAGS</div><div className="checks">{[['st_elevation','ST elevation'],['st_depression','ST depression'],['t_inversion','T-wave inversion']].map(([key,title])=><label key={key}><input type="checkbox" checked={Boolean(patient[key])} onChange={e=>update(key,e.target.checked)}/>{title}</label>)}</div></div></Section>
-            <div className="input-actions"><button type="submit" className="primary" disabled={busy || !configured}>{busy ? 'Analyzing…' : 'Run ACS analysis'} <span>→</span></button><small>{configured ? 'Sends input to your configured research API' : 'Connect an API to enable live analysis. Example records work offline.'}</small>{error && <div className="error" role="alert">{error}</div>}</div>
+            <div className="input-actions"><button type="submit" className="primary" disabled={busy || !configured}>{busy ? 'Analyzing…' : 'Run ACS analysis'} <span>→</span></button><button type="button" className="secondary" onClick={resetPatientForm} disabled={busy}>Reset patient form</button><small>{configured ? 'Sends input to your configured research API' : 'Connect an API to enable live analysis. Example records work offline.'}</small>{error && <div className="error" role="alert">{error}</div>}</div>
           </form>
           <div className="results">
             {!result ? <div className="empty"><div className="empty-graphic"><svg viewBox="0 0 200 90" fill="none"><path d="M0 45h56l13-16 11 34 14-52 19 61 15-28h72" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div><div className="empty-overline">NO ANALYSIS SELECTED</div><h2>Begin with an example record</h2><p>Select a synthetic case from the left panel to explore the analysis view. Adjusting a field clears the illustrative result until a new case is loaded.</p><button type="button" className="secondary" onClick={()=>load(scenarios[0])}>Open example case <span>→</span></button></div> : <>
