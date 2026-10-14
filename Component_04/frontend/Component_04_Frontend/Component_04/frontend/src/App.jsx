@@ -26,7 +26,33 @@ const inputLimits = {
   troponin_second: { min: 0 }
 }
 
+// Validate the recorded biomarker values independently of API availability.
+// Zero is a legitimate recorded value; only an empty input means unmeasured.
+function validateTroponinInputs(patient) {
+  const first = patient.troponin_first
+  const second = patient.troponin_second
+  const missing = value => value == null || String(value).trim() === ''
+  const check = (value, label) => {
+    if (missing(value)) return ''
+    const number = Number(value)
+    if (!Number.isFinite(number)) return `${label} must be a finite numeric value.`
+    if (number < 0) return `${label} cannot be negative.`
+    return ''
+  }
+  const firstError = check(first, 'First troponin')
+  const secondError = check(second, 'Second troponin')
+  if (!missing(second) && missing(first)) {
+    return { troponin_first: 'Enter the first troponin reading before the second.' }
+  }
+  return {
+    ...(firstError && { troponin_first: firstError }),
+    ...(secondError && { troponin_second: secondError })
+  }
+}
+
 function validatePatientInput(patient) {
+  const biomarkerErrors = validateTroponinInputs(patient)
+  if (Object.keys(biomarkerErrors).length) return Object.values(biomarkerErrors)[0]
   for (const [key, label] of fields) {
     const raw = patient[key]
     if (raw === '' || raw == null) {
@@ -40,13 +66,6 @@ function validatePatientInput(patient) {
       return `${label} must be ${limit.max == null ? `at least ${limit.min}` : `between ${limit.min} and ${limit.max}`}.`
     }
     if (limit.integer && !Number.isInteger(value)) return `${label} must be a whole number.`
-  }
-  // Preserve the sequence of serial samples: a second value must not
-  // silently become the first sample when the first field is blank.
-  const first = patient.troponin_first
-  const second = patient.troponin_second
-  if ((first === '' || first == null) && second !== '' && second != null) {
-    return 'Enter the first troponin value before the second, or move the value into the first field.'
   }
   return ''
 }
@@ -74,6 +93,7 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [tab, setTab] = useState('overview')
+  const troponinErrors = validateTroponinInputs(patient)
   const update = (key, value) => { setPatient(old => ({ ...old, [key]: value })); setResult(null); setSource(''); setError('') }
   const load = (s) => { setSelected(s.id); setPatient({ ...s.patient }); setResult(structuredClone(s.result)); setSource('illustration'); setTab('overview'); setError('') }
   const resetPatientForm = () => {
@@ -129,7 +149,7 @@ function App() {
         <div className="layout">
           <form className="inputs" onSubmit={analyze}>
             <Section title="Patient information" meta="01 — PROFILE"><div className="panel-body"><div className="input-grid"><label className="field"><span>Sex</span><select value={patient.sex} onChange={e=>update('sex',e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></label><label className="field"><span>Age <em>years</em></span><input type="number" min={inputLimits.age.min} max={inputLimits.age.max} step="1" required value={patient.age} onChange={e=>update('age',e.target.value)}/></label></div><div className="subheading">VITAL SIGNS</div><div className="input-grid">{fields.slice(1,8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" step={inputLimits[key].integer ? '1' : 'any'} min={inputLimits[key].min} max={inputLimits[key].max} value={patient[key] ?? ''} onChange={e=>update(key,e.target.value)}/></label>)}</div></div></Section>
-            <Section title="Clinical evidence" meta="02 — INPUT"><div className="panel-body"><label className="field"><span>Chief complaint <em>free text</em></span><textarea rows="3" value={patient.chief_complaint} onChange={e=>update('chief_complaint',e.target.value)} placeholder="Describe presenting symptoms"/></label><div className="subheading">BIOMARKERS</div><div className="input-grid">{fields.slice(8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" min="0" step="any" placeholder="Not available" value={patient[key]} onChange={e=>update(key,e.target.value)}/></label>)}</div><p className="notice" id="troponin-help">Leave both troponin fields empty when tests were not performed. Enter the first result before adding a second result. Missing readings are not treated as zero.</p><div className="subheading">ECG INTERPRETATION FLAGS</div><div className="checks">{[['st_elevation','ST elevation'],['st_depression','ST depression'],['t_inversion','T-wave inversion']].map(([key,title])=><label key={key}><input type="checkbox" checked={Boolean(patient[key])} onChange={e=>update(key,e.target.checked)}/>{title}</label>)}</div></div></Section>
+            <Section title="Clinical evidence" meta="02 — INPUT"><div className="panel-body"><label className="field"><span>Chief complaint <em>free text</em></span><textarea rows="3" value={patient.chief_complaint} onChange={e=>update('chief_complaint',e.target.value)} placeholder="Describe presenting symptoms"/></label><div className="subheading">BIOMARKERS</div><div className="input-grid">{fields.slice(8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" min="0" step="any" placeholder="Not available" value={patient[key] ?? ''} aria-invalid={Boolean(troponinErrors[key])} aria-describedby={troponinErrors[key] ? `${key}-error` : 'troponin-help'} onChange={e=>update(key,e.target.value)}/>{troponinErrors[key] && <span id={`${key}-error`} className="error" role="alert">{troponinErrors[key]}</span>}</label>)}</div><p className="notice" id="troponin-help">Leave both troponin fields empty when tests were not performed. Enter the first result before adding a second result. Missing readings are not treated as zero.</p><div className="subheading">ECG INTERPRETATION FLAGS</div><div className="checks">{[['st_elevation','ST elevation'],['st_depression','ST depression'],['t_inversion','T-wave inversion']].map(([key,title])=><label key={key}><input type="checkbox" checked={Boolean(patient[key])} onChange={e=>update(key,e.target.checked)}/>{title}</label>)}</div></div></Section>
             <div className="input-actions"><button type="submit" className="primary" disabled={busy || !configured}>{busy ? 'Analyzing…' : 'Run ACS analysis'} <span>→</span></button><button type="button" className="secondary" onClick={resetPatientForm} disabled={busy}>Reset patient form</button><button type="button" className="secondary" onClick={clearPredictionResults} disabled={busy || !result}>Clear prediction results</button><small>{configured ? 'Sends input to your configured research API' : 'Connect an API to enable live analysis. Example records work offline.'}</small>{error && <div className="error" role="alert">{error}</div>}</div>
           </form>
           <div className="results">
