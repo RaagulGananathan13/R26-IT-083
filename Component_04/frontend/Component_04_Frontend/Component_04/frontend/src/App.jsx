@@ -12,6 +12,38 @@ const fields = [
 const fmt = (v) => `${(Number(v || 0) * 100).toFixed(1)}%`
 const clsText = { No_ACS: 'No ACS', UA: 'Unstable angina', NSTEMI: 'NSTEMI', STEMI: 'STEMI' }
 
+// Plausibility checks for research-form inputs; not diagnostic reference ranges.
+const inputLimits = {
+  age: { min: 0, max: 120 },
+  heartrate: { min: 20, max: 300 },
+  sbp: { min: 40, max: 300 },
+  dbp: { min: 15, max: 200 },
+  o2sat: { min: 40, max: 100 },
+  resprate: { min: 4, max: 80 },
+  pain: { min: 0, max: 10, integer: true },
+  acuity: { min: 1, max: 5, integer: true },
+  troponin_first: { min: 0 },
+  troponin_second: { min: 0 }
+}
+
+function validatePatientInput(patient) {
+  for (const [key, label] of fields) {
+    const raw = patient[key]
+    if (raw === '' || raw == null) {
+      if (key === 'age') return `${label} is required.`
+      continue // Missing measurements are supported by the model.
+    }
+    const value = Number(raw)
+    const limit = inputLimits[key]
+    if (!Number.isFinite(value)) return `${label} must be a valid number.`
+    if (value < limit.min || (limit.max != null && value > limit.max)) {
+      return `${label} must be ${limit.max == null ? `at least ${limit.min}` : `between ${limit.min} and ${limit.max}`}.`
+    }
+    if (limit.integer && !Number.isInteger(value)) return `${label} must be a whole number.`
+  }
+  return ''
+} 
+
 function Mark({ children, variant = '' }) { return <span className={`mark ${variant}`}>{children}</span> }
 function Section({ title, meta, children }) { return <section className="panel"><div className="panel-title"><h2>{title}</h2>{meta && <span>{meta}</span>}</div>{children}</section> }
 function Progress({ value, color }) { const width = Math.max(0, Math.min(100, Number(value || 0) * 100)); return <div className="track"><span style={{ width: `${width}%`, background: color || 'var(--blue)' }} /></div> }
@@ -28,6 +60,8 @@ function App() {
   const load = (s) => { setSelected(s.id); setPatient({ ...s.patient }); setResult(structuredClone(s.result)); setSource('illustration'); setTab('overview'); setError('') }
   async function analyze(e) {
     e.preventDefault(); setError('')
+    const validationError = validatePatientInput(patient)
+    if (validationError) { setError(validationError); return }
     if (!configured) { setError('Live inference is unavailable until a backend adapter is configured. Choose a synthetic scenario to explore the UI.'); return }
     setBusy(true); setResult(null); setSource('')
     try {
@@ -60,7 +94,7 @@ function App() {
         <div className="safety"><span className="safety-icon">!</span><div><strong>Research use only — not a diagnosis.</strong> The synthetic scenarios show invented probabilities for interface demonstration. Actual predictions require a separately configured, validated backend. Do not use these results for patient care.</div></div>
         <div className="layout">
           <form className="inputs" onSubmit={analyze}>
-            <Section title="Patient information" meta="01 — PROFILE"><div className="panel-body"><div className="input-grid"><label className="field"><span>Sex</span><select value={patient.sex} onChange={e=>update('sex',e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></label><label className="field"><span>Age <em>years</em></span><input type="number" min="0" max="120" required value={patient.age} onChange={e=>update('age',e.target.value)}/></label></div><div className="subheading">VITAL SIGNS</div><div className="input-grid">{fields.slice(1,8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" step="any" min="0" value={patient[key]} onChange={e=>update(key,e.target.value)}/></label>)}</div></div></Section>
+            <Section title="Patient information" meta="01 — PROFILE"><div className="panel-body"><div className="input-grid"><label className="field"><span>Sex</span><select value={patient.sex} onChange={e=>update('sex',e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></label><label className="field"><span>Age <em>years</em></span><input type="number" min={inputLimits.age.min} max={inputLimits.age.max} step="1" required value={patient.age} onChange={e=>update('age',e.target.value)}/></label></div><div className="subheading">VITAL SIGNS</div><div className="input-grid">{fields.slice(1,8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" step={inputLimits[key].integer ? '1' : 'any'} min={inputLimits[key].min} max={inputLimits[key].max} value={patient[key] ?? ''} onChange={e=>update(key,e.target.value)}/></label>)}</div></div></Section>
             <Section title="Clinical evidence" meta="02 — INPUT"><div className="panel-body"><label className="field"><span>Chief complaint <em>free text</em></span><textarea rows="3" value={patient.chief_complaint} onChange={e=>update('chief_complaint',e.target.value)} placeholder="Describe presenting symptoms"/></label><div className="subheading">BIOMARKERS</div><div className="input-grid">{fields.slice(8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" min="0" step="any" placeholder="Not available" value={patient[key]} onChange={e=>update(key,e.target.value)}/></label>)}</div><div className="subheading">ECG INTERPRETATION FLAGS</div><div className="checks">{[['st_elevation','ST elevation'],['st_depression','ST depression'],['t_inversion','T-wave inversion']].map(([key,title])=><label key={key}><input type="checkbox" checked={Boolean(patient[key])} onChange={e=>update(key,e.target.checked)}/>{title}</label>)}</div></div></Section>
             <div className="input-actions"><button type="submit" className="primary" disabled={busy || !configured}>{busy ? 'Analyzing…' : 'Run ACS analysis'} <span>→</span></button><small>{configured ? 'Sends input to your configured research API' : 'Connect an API to enable live analysis. Example records work offline.'}</small>{error && <div className="error" role="alert">{error}</div>}</div>
           </form>
