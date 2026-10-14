@@ -14,14 +14,7 @@ const clsText = { No_ACS: 'No ACS', UA: 'Unstable angina', NSTEMI: 'NSTEMI', STE
 
 
 
-<button
-  type="button"
-  className="secondary"
-  onClick={resetPatientForm}
-  disabled={busy}
->
-  Reset patient form
-</button>
+
 
 // Plausibility checks for research-form inputs; not diagnostic reference ranges.
 const inputLimits = {
