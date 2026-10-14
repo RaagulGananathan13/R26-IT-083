@@ -83,13 +83,15 @@ function App() {
   }
 
   
-const clearPredictionResults = () => {
-  setResult(null)
-  setSource('')
-  setSelected('')
-  setTab('overview')
-  setError('')
-}
+
+<button
+  type="button"
+  className="secondary"
+  onClick={clearPredictionResults}
+  disabled={busy || !result}
+>
+  Clear prediction results
+</button>
 
 
   return <div className="shell">
