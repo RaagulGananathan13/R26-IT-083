@@ -1,0 +1,32 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { buildTroponinSeries, validatePatientInput, validateTroponinInputs } from '../src/utils/clinicalValidation.js'
+
+const base = { age: 61, heartrate: 90, sbp: 120, dbp: 80, o2sat: 97, resprate: 17, pain: 4, acuity: 3, troponin_first: '', troponin_second: '' }
+
+test('missing troponin values remain missing', () => {
+  assert.deepEqual(buildTroponinSeries(base), [])
+  assert.deepEqual(buildTroponinSeries({ ...base, troponin_first: 0 }), [0])
+})
+test('serial troponin retains original order', () => {
+  assert.deepEqual(buildTroponinSeries({ ...base, troponin_first: '0.04', troponin_second: '0.08' }), [0.04, 0.08])
+})
+test('second reading cannot be supplied without first', () => {
+  assert.match(validateTroponinInputs({ ...base, troponin_second: 0.1 }).troponin_first, /first/)
+  assert.throws(() => buildTroponinSeries({ ...base, troponin_second: 0.1 }))
+})
+test('reject negative and nonnumeric troponin', () => {
+  assert.match(validatePatientInput({ ...base, troponin_first: -1 }), /negative/)
+  assert.match(validatePatientInput({ ...base, troponin_first: 'abc' }), /finite/)
+})
+test('reject invalid saturation and acuity', () => {
+  assert.match(validatePatientInput({ ...base, o2sat: 110 }), /o2sat/)
+  assert.match(validatePatientInput({ ...base, acuity: 3.5 }), /whole number/)
+})
+test('allow an absent optional measurement', () => {
+  assert.equal(validatePatientInput({ ...base, heartrate: '' }), '')
+})
+test('reject missing age', () => {
+  assert.match(validatePatientInput({ ...base, age: '' }), /Age is required/)
+})
+
