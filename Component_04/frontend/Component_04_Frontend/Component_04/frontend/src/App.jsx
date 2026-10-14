@@ -12,6 +12,17 @@ const fields = [
 const fmt = (v) => `${(Number(v || 0) * 100).toFixed(1)}%`
 const clsText = { No_ACS: 'No ACS', UA: 'Unstable angina', NSTEMI: 'NSTEMI', STEMI: 'STEMI' }
 
+
+
+<button
+  type="button"
+  className="secondary"
+  onClick={resetPatientForm}
+  disabled={busy}
+>
+  Reset patient form
+</button>
+
 // Plausibility checks for research-form inputs; not diagnostic reference ranges.
 const inputLimits = {
   age: { min: 0, max: 120 },
