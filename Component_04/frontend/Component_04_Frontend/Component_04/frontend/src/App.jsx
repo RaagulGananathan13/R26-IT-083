@@ -82,6 +82,16 @@ function App() {
     } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
 
+  
+const clearPredictionResults = () => {
+  setResult(null)
+  setSource('')
+  setSelected('')
+  setTab('overview')
+  setError('')
+}
+
+
   return <div className="shell">
     <aside className="rail">
       <div className="brand"><div className="brand-icon"><svg viewBox="0 0 38 38" fill="none"><path d="M3 20h9l4-10 6 19 4-9h9" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round"/></svg></div><div><strong>CARDIO<span>INTEL</span></strong><small>RESEARCH CONSOLE / C04</small></div></div>
