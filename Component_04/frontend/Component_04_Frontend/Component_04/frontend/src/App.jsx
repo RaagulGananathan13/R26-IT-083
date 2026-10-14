@@ -41,8 +41,26 @@ function validatePatientInput(patient) {
     }
     if (limit.integer && !Number.isInteger(value)) return `${label} must be a whole number.`
   }
+  // Preserve the sequence of serial samples: a second value must not
+  // silently become the first sample when the first field is blank.
+  const first = patient.troponin_first
+  const second = patient.troponin_second
+  if ((first === '' || first == null) && second !== '' && second != null) {
+    return 'Enter the first troponin value before the second, or move the value into the first field.'
+  }
   return ''
-} 
+}
+
+// Unmeasured troponin is represented as no measurements, never as zero.
+// Only contiguous, recorded samples are sent to the research API.
+function buildTroponinSeries(patient) {
+  if (patient.troponin_first === '' || patient.troponin_first == null) return []
+  const readings = [Number(patient.troponin_first)]
+  if (patient.troponin_second !== '' && patient.troponin_second != null) {
+    readings.push(Number(patient.troponin_second))
+  }
+  return readings
+}
 
 function Mark({ children, variant = '' }) { return <span className={`mark ${variant}`}>{children}</span> }
 function Section({ title, meta, children }) { return <section className="panel"><div className="panel-title"><h2>{title}</h2>{meta && <span>{meta}</span>}</div>{children}</section> }
@@ -66,6 +84,14 @@ function App() {
     setTab('overview')
     setError('')
   }
+  // Dismiss an analysis without removing the patient's entered information.
+  const clearPredictionResults = () => {
+    setResult(null)
+    setSource('')
+    setSelected('')
+    setTab('overview')
+    setError('')
+  }
   async function analyze(e) {
     e.preventDefault(); setError('')
     const validationError = validatePatientInput(patient)
@@ -74,25 +100,13 @@ function App() {
     setBusy(true); setResult(null); setSource('')
     try {
       const payload = { ...patient, age: Number(patient.age), sex: patient.sex, chief_complaint: patient.chief_complaint,
-        troponin: [patient.troponin_first, patient.troponin_second].filter(v => v !== '' && v != null).map(Number),
+        troponin: buildTroponinSeries(patient),
         ecg: { st_elevation: patient.st_elevation, st_depression: patient.st_depression, t_inversion: patient.t_inversion } }
       for (const [key] of fields) { if (key.startsWith('troponin_')) delete payload[key]; else if (payload[key] !== '') payload[key] = Number(payload[key]); else delete payload[key] }
       delete payload.st_elevation; delete payload.st_depression; delete payload.t_inversion
       setResult(await predict(payload)); setSource('backend'); setTab('overview')
     } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
-
-  
-
-<button
-  type="button"
-  className="secondary"
-  onClick={clearPredictionResults}
-  disabled={busy || !result}
->
-  Clear prediction results
-</button>
-
 
   return <div className="shell">
     <aside className="rail">
@@ -115,8 +129,8 @@ function App() {
         <div className="layout">
           <form className="inputs" onSubmit={analyze}>
             <Section title="Patient information" meta="01 — PROFILE"><div className="panel-body"><div className="input-grid"><label className="field"><span>Sex</span><select value={patient.sex} onChange={e=>update('sex',e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></label><label className="field"><span>Age <em>years</em></span><input type="number" min={inputLimits.age.min} max={inputLimits.age.max} step="1" required value={patient.age} onChange={e=>update('age',e.target.value)}/></label></div><div className="subheading">VITAL SIGNS</div><div className="input-grid">{fields.slice(1,8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" step={inputLimits[key].integer ? '1' : 'any'} min={inputLimits[key].min} max={inputLimits[key].max} value={patient[key] ?? ''} onChange={e=>update(key,e.target.value)}/></label>)}</div></div></Section>
-            <Section title="Clinical evidence" meta="02 — INPUT"><div className="panel-body"><label className="field"><span>Chief complaint <em>free text</em></span><textarea rows="3" value={patient.chief_complaint} onChange={e=>update('chief_complaint',e.target.value)} placeholder="Describe presenting symptoms"/></label><div className="subheading">BIOMARKERS</div><div className="input-grid">{fields.slice(8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" min="0" step="any" placeholder="Not available" value={patient[key]} onChange={e=>update(key,e.target.value)}/></label>)}</div><div className="subheading">ECG INTERPRETATION FLAGS</div><div className="checks">{[['st_elevation','ST elevation'],['st_depression','ST depression'],['t_inversion','T-wave inversion']].map(([key,title])=><label key={key}><input type="checkbox" checked={Boolean(patient[key])} onChange={e=>update(key,e.target.checked)}/>{title}</label>)}</div></div></Section>
-            <div className="input-actions"><button type="submit" className="primary" disabled={busy || !configured}>{busy ? 'Analyzing…' : 'Run ACS analysis'} <span>→</span></button><button type="button" className="secondary" onClick={resetPatientForm} disabled={busy}>Reset patient form</button><small>{configured ? 'Sends input to your configured research API' : 'Connect an API to enable live analysis. Example records work offline.'}</small>{error && <div className="error" role="alert">{error}</div>}</div>
+            <Section title="Clinical evidence" meta="02 — INPUT"><div className="panel-body"><label className="field"><span>Chief complaint <em>free text</em></span><textarea rows="3" value={patient.chief_complaint} onChange={e=>update('chief_complaint',e.target.value)} placeholder="Describe presenting symptoms"/></label><div className="subheading">BIOMARKERS</div><div className="input-grid">{fields.slice(8).map(([key,title,unit])=><label key={key} className="field"><span>{title} <em>{unit}</em></span><input type="number" min="0" step="any" placeholder="Not available" value={patient[key]} onChange={e=>update(key,e.target.value)}/></label>)}</div><p className="notice" id="troponin-help">Leave both troponin fields empty when tests were not performed. Enter the first result before adding a second result. Missing readings are not treated as zero.</p><div className="subheading">ECG INTERPRETATION FLAGS</div><div className="checks">{[['st_elevation','ST elevation'],['st_depression','ST depression'],['t_inversion','T-wave inversion']].map(([key,title])=><label key={key}><input type="checkbox" checked={Boolean(patient[key])} onChange={e=>update(key,e.target.checked)}/>{title}</label>)}</div></div></Section>
+            <div className="input-actions"><button type="submit" className="primary" disabled={busy || !configured}>{busy ? 'Analyzing…' : 'Run ACS analysis'} <span>→</span></button><button type="button" className="secondary" onClick={resetPatientForm} disabled={busy}>Reset patient form</button><button type="button" className="secondary" onClick={clearPredictionResults} disabled={busy || !result}>Clear prediction results</button><small>{configured ? 'Sends input to your configured research API' : 'Connect an API to enable live analysis. Example records work offline.'}</small>{error && <div className="error" role="alert">{error}</div>}</div>
           </form>
           <div className="results">
             {!result ? <div className="empty"><div className="empty-graphic"><svg viewBox="0 0 200 90" fill="none"><path d="M0 45h56l13-16 11 34 14-52 19 61 15-28h72" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div><div className="empty-overline">NO ANALYSIS SELECTED</div><h2>Begin with an example record</h2><p>Select a synthetic case from the left panel to explore the analysis view. Adjusting a field clears the illustrative result until a new case is loaded.</p><button type="button" className="secondary" onClick={()=>load(scenarios[0])}>Open example case <span>→</span></button></div> : <>
